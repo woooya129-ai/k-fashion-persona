@@ -1,5 +1,7 @@
 # k-fashion-persona
 
+![AI 디지털 패션 패널 개요](docs/assets/k-fashion-persona-images.jpeg)
+
 ## K-fashion 컨셉을
 
 ## AI 페르소나로 먼저 점검

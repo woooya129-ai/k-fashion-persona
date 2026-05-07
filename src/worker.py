@@ -66,16 +66,12 @@ def _validate_payload(payload: dict) -> None:
             raise KeyError(f"persona payload missing required key: {key!r}")
 
 
-def _result_cache_key(payload: dict, result: EvaluatorResult) -> str | None:
+def _result_cache_key(_payload: dict, result: EvaluatorResult) -> str | None:
     """Return a cache FK only when a cache row should exist."""
     explicit = result.get("cache_key")
     if explicit is not None:
         return str(explicit)
-    if result.get("status") in {"cached", "success"}:
-        key = payload.get("cache_key") or payload.get("_cache_key")
-        return None if key is None else str(key)
-    key = payload.get("cache_key")
-    return None if key is None else str(key)
+    return None
 
 
 def _save_result_from_evaluator_result(

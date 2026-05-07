@@ -139,7 +139,7 @@ def test_run_worker_mixed_cached_and_success(tmp_path: Path) -> None:
     assert record.status == "completed"
 
 
-def test_run_worker_persists_private_cache_key_when_cache_row_exists(tmp_path: Path) -> None:
+def test_run_worker_persists_explicit_cache_key_when_cache_row_exists(tmp_path: Path) -> None:
     db = _db(tmp_path)
     cache_key = "c" * 64
     with get_connection(db) as conn:
@@ -177,6 +177,7 @@ def test_run_worker_persists_private_cache_key_when_cache_row_exists(tmp_path: P
             "error_type": None,
             "response_json": '{"ok":1}',
             "latency_ms": 1,
+            "cache_key": cache_key,
         }
 
     job_id = create_job(db, total_count=1)
@@ -194,6 +195,44 @@ def test_run_worker_persists_private_cache_key_when_cache_row_exists(tmp_path: P
         row = conn.execute("SELECT cache_key FROM run_results WHERE persona_id = 'p001'").fetchone()
 
     assert row[0] == cache_key
+
+
+@pytest.mark.parametrize("payload_key", ["_cache_key", "cache_key"])
+def test_run_worker_does_not_promote_payload_cache_key_without_explicit_result(
+    tmp_path: Path,
+    payload_key: str,
+) -> None:
+    db = _db(tmp_path)
+    cache_key = "m" * 64
+
+    def evaluator(_payload: dict) -> dict:
+        return {
+            "status": "success",
+            "error_type": None,
+            "response_json": '{"ok":1}',
+            "latency_ms": 1,
+        }
+
+    job_id = create_job(db, total_count=1)
+    run_worker(
+        WorkerInput(
+            db_path=db,
+            job_id=job_id,
+            run_meta=_run_meta(job_id),
+            persona_payloads=[{"persona_id": "p001", payload_key: cache_key}],
+            evaluator=evaluator,
+        )
+    )
+
+    with get_connection(db) as conn:
+        row = conn.execute(
+            "SELECT status, cache_key FROM run_results WHERE persona_id = 'p001'"
+        ).fetchone()
+
+    record = load_job(db, job_id)
+    assert record.status == "completed"
+    assert record.success_count == 1
+    assert row == ("success", None)
 
 
 def test_run_worker_async_evaluator_uses_configured_concurrency(tmp_path: Path) -> None:

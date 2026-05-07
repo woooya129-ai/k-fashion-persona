@@ -15,6 +15,7 @@ import csv
 import html
 import io
 import json
+import logging
 import os
 import sys
 import time
@@ -22,7 +23,6 @@ import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from itertools import islice
 from pathlib import Path
 from typing import Any, cast
 from urllib.parse import quote
@@ -82,7 +82,6 @@ from src.llm_client import (
 from src.persona_filter import (
     PersonaFilter,
     apply_filter,
-    has_active_filter,
     sample_iterable_to_result,
     sample_to_result,
 )
@@ -107,6 +106,7 @@ DIRECTION_BG_PATH: Path = REPO_ROOT / "design" / "direction-bg.png"
 HF_DATASET_URL = "https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea"
 PUBLIC_GITHUB_REPO_URL = "https://github.com/woooya129-ai/k-fashion-persona"
 PUBLIC_GITHUB_LICENSE_URL = f"{PUBLIC_GITHUB_REPO_URL}/blob/main/LICENSE"
+logger = logging.getLogger(__name__)
 
 # GitHub Octicons "mark-github" (16x16), same path as docs/docs.html.
 GITHUB_MARK_PATH = (
@@ -5424,9 +5424,16 @@ def make_cached_evaluator_async(
 
         result = await llm_evaluator_async(payload)
         if result.get("status") == "success" and result.get("response_json"):
-            _cache_store(db_path, cache_key, result, metadata_by_key[cache_key])
             result = dict(result)
-            result["cache_key"] = cache_key
+            try:
+                _cache_store(db_path, cache_key, result, metadata_by_key[cache_key])
+            except Exception as exc:  # noqa: BLE001 - cache is best-effort.
+                logger.warning(
+                    "cache_store failed; continuing successful evaluation without cache FK: %s",
+                    type(exc).__name__,
+                )
+            else:
+                result["cache_key"] = cache_key
         return result
 
     return _evaluate
@@ -5506,16 +5513,12 @@ def _load_and_sample(dataset: dict[str, Any], sample: dict[str, Any]):
             revision=dataset["revision"],
         )
         personas_iter = normalize_rows_to_personas(rows)
-        if not has_active_filter(sample["filter"]):
-            personas = list(islice(personas_iter, sample["sample_size"]))
-            sampled = sample_to_result(personas, sample["sample_size"], sample["sampling_seed"])
-        else:
-            sampled = sample_iterable_to_result(
-                personas_iter,
-                sample["filter"],
-                sample["sample_size"],
-                sample["sampling_seed"],
-            )
+        sampled = sample_iterable_to_result(
+            personas_iter,
+            sample["filter"],
+            sample["sample_size"],
+            sample["sampling_seed"],
+        )
         return loaded, sampled
     else:
         loaded, rows = load_local_file(_repo_relative_path(Path(dataset["local_path"])))

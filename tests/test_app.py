@@ -17,9 +17,11 @@ from streamlit.testing.v1 import AppTest
 import src.app as app
 from src.data_loader import LoadedDataset
 from src.db import get_connection, init_db
+from src.job_manager import create_job, load_job
 from src.llm_client import LLMRawResponse
 from src.persona_normalizer import normalize_persona
 from src.result_parser import EvaluationResult
+from src.worker import WorkerInput, run_worker
 from tests.fixtures.app_apptest_e2e import install_apptest_e2e_patches
 from tests.fixtures.mock_evaluation_results import MOCK_PERSONA_ATTRIBUTES, MOCK_RESULTS
 from tests.fixtures.mock_personas import ALL_MOCK_PERSONAS
@@ -299,6 +301,150 @@ def test_cache_store_persists_actual_usage_and_cost(tmp_path: Path) -> None:
     assert row[0] == 1000
     assert row[1] == 500
     assert row[2] == pytest.approx(0.00045)
+
+
+def test_cached_worker_success_tracks_cache_key_when_cache_store_succeeds(
+    tmp_path: Path,
+    model: dict,
+    hashes: dict[str, str],
+) -> None:
+    db_path = tmp_path / "cache-success-worker.db"
+    init_db(db_path)
+    cache_key = "s" * 64
+    persona_id = MOCK_RESULTS[0].persona_id
+    response_json = MOCK_RESULTS[0].model_dump_json()
+    metadata = {
+        "persona_id": persona_id,
+        "concept_hash": hashes["concept_hash"],
+        "price_context_hash": hashes["price_context_hash"],
+        "provider": model["provider"],
+        "model_name": model["model_name"],
+        "temperature": model["temperature"],
+        "prompt_version": app.PROMPT_VERSION,
+        "schema_version": app.SCHEMA_VERSION,
+        "price_context_version": app.DEFAULT_PRICE_CONTEXT_VERSION,
+    }
+    payload = {"persona_id": persona_id, "_cache_key": cache_key, "cache_metadata": metadata}
+
+    async def llm_success(_payload: dict) -> dict:
+        return {
+            "status": "success",
+            "error_type": None,
+            "response_json": response_json,
+            "latency_ms": 10,
+        }
+
+    evaluator = app.make_cached_evaluator_async(db_path, [payload], llm_success)
+    job_id = create_job(db_path, total_count=1)
+    run_id = "run-cache-success"
+    run_worker(
+        WorkerInput(
+            db_path=db_path,
+            job_id=job_id,
+            run_meta=app.make_run_meta(
+                job_id=job_id,
+                run_id=run_id,
+                loaded_dataset=LoadedDataset("huggingface:test", "fixture", -1),
+                sample_size=1,
+                sampling_seed=42,
+                model=model,
+                hashes=hashes,
+            ),
+            persona_payloads=[payload],
+            evaluator_async=evaluator,
+        )
+    )
+
+    with get_connection(db_path) as conn:
+        cache_row = conn.execute(
+            "SELECT cache_key FROM llm_cache WHERE cache_key = ?",
+            (cache_key,),
+        ).fetchone()
+        result_row = conn.execute(
+            "SELECT status, cache_key, response_json FROM run_results WHERE run_id = ?",
+            (run_id,),
+        ).fetchone()
+
+    record = load_job(db_path, job_id)
+    assert record.status == "completed"
+    assert record.success_count == 1
+    assert cache_row[0] == cache_key
+    assert result_row == ("success", cache_key, response_json)
+
+
+def test_cached_worker_cache_store_failure_keeps_llm_success_without_cache_fk(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    model: dict,
+    hashes: dict[str, str],
+) -> None:
+    db_path = tmp_path / "cache-failure-worker.db"
+    init_db(db_path)
+    cache_key = "f" * 64
+    persona_id = MOCK_RESULTS[0].persona_id
+    response_json = MOCK_RESULTS[0].model_dump_json()
+    metadata = {
+        "persona_id": persona_id,
+        "concept_hash": hashes["concept_hash"],
+        "price_context_hash": hashes["price_context_hash"],
+        "provider": model["provider"],
+        "model_name": model["model_name"],
+        "temperature": model["temperature"],
+        "prompt_version": app.PROMPT_VERSION,
+        "schema_version": app.SCHEMA_VERSION,
+        "price_context_version": app.DEFAULT_PRICE_CONTEXT_VERSION,
+    }
+    payload = {"persona_id": persona_id, "_cache_key": cache_key, "cache_metadata": metadata}
+
+    def cache_store_raises(*_args: object, **_kwargs: object) -> None:
+        raise RuntimeError("simulated cache write failure")
+
+    async def llm_success(_payload: dict) -> dict:
+        return {
+            "status": "success",
+            "error_type": None,
+            "response_json": response_json,
+            "latency_ms": 10,
+        }
+
+    monkeypatch.setattr(app, "_cache_store", cache_store_raises)
+    evaluator = app.make_cached_evaluator_async(db_path, [payload], llm_success)
+    job_id = create_job(db_path, total_count=1)
+    run_id = "run-cache-failure"
+    run_worker(
+        WorkerInput(
+            db_path=db_path,
+            job_id=job_id,
+            run_meta=app.make_run_meta(
+                job_id=job_id,
+                run_id=run_id,
+                loaded_dataset=LoadedDataset("huggingface:test", "fixture", -1),
+                sample_size=1,
+                sampling_seed=42,
+                model=model,
+                hashes=hashes,
+            ),
+            persona_payloads=[payload],
+            evaluator_async=evaluator,
+        )
+    )
+
+    with get_connection(db_path) as conn:
+        cache_row = conn.execute(
+            "SELECT cache_key FROM llm_cache WHERE cache_key = ?",
+            (cache_key,),
+        ).fetchone()
+        result_row = conn.execute(
+            "SELECT status, cache_key, response_json FROM run_results WHERE run_id = ?",
+            (run_id,),
+        ).fetchone()
+
+    record = load_job(db_path, job_id)
+    assert record.status == "completed"
+    assert record.success_count == 1
+    assert record.failed_count == 0
+    assert cache_row is None
+    assert result_row == ("success", None, response_json)
 
 
 def test_make_llm_evaluator_async_parses_success(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -600,32 +746,40 @@ def test_app_sampling_and_filter_limits_are_explicit() -> None:
     assert app.ui_text("KR", "sampling_seed") == "sampling-seed"
 
 
-def test_load_and_sample_hf_unfiltered_does_not_materialize_stream(
+def test_load_and_sample_hf_unfiltered_uses_seeded_reservoir_sampling(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     def rows():
-        for index, row in enumerate(ALL_MOCK_PERSONAS):
-            if index >= 2:
-                raise AssertionError("stream was consumed past requested sample size")
-            yield {**row, "uuid": f"stream-{index}"}
+        for index in range(10):
+            row = ALL_MOCK_PERSONAS[index % len(ALL_MOCK_PERSONAS)]
+            yield {**row, "uuid": f"stream-{index}", "age": 20 + index}
 
     def fake_load_huggingface_dataset(**_kwargs):
         return LoadedDataset("huggingface:test", "fixture", -1), rows()
 
     monkeypatch.setattr(app, "load_huggingface_dataset", fake_load_huggingface_dataset)
 
-    _loaded, sampled = app._load_and_sample(  # noqa: SLF001 - app orchestration helper.
-        {
-            "source": "huggingface",
-            "dataset_id": app.DEFAULT_HF_DATASET_ID,
-            "split": app.DEFAULT_SPLIT,
-            "revision": None,
-        },
-        {"sample_size": 2, "sampling_seed": 42, "filter": app.PersonaFilter()},
-    )
+    def ids_for(seed: int) -> list[str]:
+        _loaded, sampled = app._load_and_sample(  # noqa: SLF001 - app orchestration helper.
+            {
+                "source": "huggingface",
+                "dataset_id": app.DEFAULT_HF_DATASET_ID,
+                "split": app.DEFAULT_SPLIT,
+                "revision": None,
+            },
+            {"sample_size": 3, "sampling_seed": seed, "filter": app.PersonaFilter()},
+        )
+        assert sampled.matched_count_before_sample == 10
+        assert sampled.sample_size == 3
+        return [p.persona_id for p in sampled.rows]
 
-    assert sampled.sample_size == 2
-    assert [p.persona_id for p in sampled.rows] == ["stream-0", "stream-1"]
+    seed_42_a = ids_for(42)
+    seed_42_b = ids_for(42)
+    seed_999 = ids_for(999)
+
+    assert seed_42_a == seed_42_b
+    assert seed_42_a != seed_999
+    assert seed_42_a != ["stream-0", "stream-1", "stream-2"]
 
 
 def test_app_default_prompt_template_is_v0_3() -> None:

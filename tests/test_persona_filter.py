@@ -8,6 +8,7 @@ from src.persona_filter import (
     apply_filter,
     filter_summary,
     preview_first_n,
+    sample_iterable_to_result,
     sample_personas,
     sample_to_result,
 )
@@ -237,6 +238,33 @@ class TestSampleToResult:
         result = sample_to_result(SAMPLE_PERSONAS, 3, seed=42)
         ids = [p.persona_id for p in result.rows]
         assert ids == sorted(ids)
+
+
+class TestSampleIterableToResult:
+    def test_seeded_reservoir_sampling_is_deterministic(self):
+        personas = [_make(f"p{i}", 20 + i, "F") for i in range(10)]
+
+        a = sample_iterable_to_result(iter(personas), PersonaFilter(), 3, seed=42)
+        b = sample_iterable_to_result(iter(personas), PersonaFilter(), 3, seed=42)
+
+        assert [p.persona_id for p in a.rows] == [p.persona_id for p in b.rows]
+        assert a.matched_count_before_sample == 10
+        assert a.sample_size == 3
+
+    def test_seeded_reservoir_sampling_is_not_fixed_first_n(self):
+        personas = [_make(f"p{i}", 20 + i, "F") for i in range(10)]
+
+        result = sample_iterable_to_result(iter(personas), PersonaFilter(), 3, seed=42)
+
+        assert [p.persona_id for p in result.rows] != ["p0", "p1", "p2"]
+
+    def test_seed_affects_reservoir_sample(self):
+        personas = [_make(f"p{i}", 20 + i, "F") for i in range(10)]
+
+        seed_42 = sample_iterable_to_result(iter(personas), PersonaFilter(), 3, seed=42)
+        seed_999 = sample_iterable_to_result(iter(personas), PersonaFilter(), 3, seed=999)
+
+        assert [p.persona_id for p in seed_42.rows] != [p.persona_id for p in seed_999.rows]
 
 
 class TestPreviewFirstN:

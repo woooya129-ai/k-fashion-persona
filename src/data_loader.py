@@ -107,6 +107,7 @@ class LoadedDataset:
     source: str  # "huggingface:..." 또는 "local:filename"
     dataset_revision: str  # HF commit SHA 또는 loader loaded_at ISO8601
     total_rows: int
+    dataset_split: str | None = None
 
 
 def validate_columns(columns: list[str]) -> None:
@@ -314,6 +315,7 @@ def load_huggingface_dataset(
             source=f"huggingface:{dataset_id}",
             dataset_revision=rev_str,
             total_rows=total,
+            dataset_split=split,
         ),
         ds if streaming else iter(ds),
     )
@@ -381,6 +383,7 @@ def load_local_file(file_path: Path) -> tuple[LoadedDataset, Iterator[dict[str, 
             source=f"local:{file_path.name}",
             dataset_revision=f"loaded_at:{loaded_at}",
             total_rows=len(df),
+            dataset_split=None,
         ),
         rows,
     )

@@ -197,6 +197,7 @@ def test_make_run_meta_uses_dataset_and_hash_metadata(
         source="local:test.csv",
         dataset_revision="loaded_at:test",
         total_rows=3,
+        dataset_split=None,
     )
     meta = app.make_run_meta(
         job_id="job-1",
@@ -206,12 +207,19 @@ def test_make_run_meta_uses_dataset_and_hash_metadata(
         sampling_seed=42,
         model=model,
         hashes=hashes,
+        matched_count_before_sample=7,
+        sampling_strategy="filter_then_seeded_random_sample",
+        filter_summary_text="연령 20-40세",
     )
 
     assert meta.job_id == "job-1"
     assert meta.run_id == "run-1"
     assert meta.dataset_name == "local:test.csv"
     assert meta.dataset_revision == "loaded_at:test"
+    assert meta.dataset_split is None
+    assert meta.matched_count_before_sample == 7
+    assert meta.sampling_strategy == "filter_then_seeded_random_sample"
+    assert meta.filter_summary == "연령 20-40세"
     assert meta.concept_hash == hashes["concept_hash"]
     assert meta.price_context_hash == hashes["price_context_hash"]
     assert meta.prompt_version == app.PROMPT_VERSION
@@ -945,6 +953,12 @@ def test_apptest_mock_end_to_end_worker_report_ui(
     assert db_path.is_file()
     assert str(db_path).startswith(str(tmp_path))
     assert db_path == app.DB_PATH
+    with get_connection(db_path) as conn:
+        run_row = conn.execute(
+            "SELECT sample_size, matched_count_before_sample, sampling_seed, "
+            "sampling_strategy, filter_summary FROM runs"
+        ).fetchone()
+    assert run_row == (2, 2, 42, "filter_then_seeded_reservoir", "필터 없음 (전체)")
     if real_db_stat_before is None:
         assert not real_db_path.exists()
     else:

@@ -46,5 +46,8 @@ This works as an early check because the goal is not to predict real buying beha
 - The default API key flow is the password field in the Streamlit screen.
 - API keys, cache, outputs, and raw data are not included in the public repository.
 - Local persona files are read only under `data/`. The recommended location is `data/raw/`.
+- The Hugging Face path uses seeded reservoir sampling; the local-file path uses seeded random sampling after filtering.
+- Run metadata is stored locally in `cache/screener.db`: dataset source/split/revision, matched count, final sample size, sampling seed, sampling strategy, filter summary, model/prompt/hash metadata.
+- The DB does not store raw API keys, HF tokens, raw provider responses, or raw concept text in dedicated columns.
 - NVIDIA Nemotron-Personas-Korea is attributed under CC BY 4.0.
 - The public code license is GNU AGPL-3.0-only.

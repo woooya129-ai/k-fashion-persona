@@ -48,5 +48,8 @@ NVIDIA Nemotron-Personas-Korea는 한국 맥락을 반영한 합성 페르소나
 - 기본 API key 입력 방식은 Streamlit 화면의 password 입력칸입니다.
 - API key, cache, outputs, raw data는 공개 저장소에 포함하지 않습니다.
 - 로컬 persona 파일은 `data/` 하위에서만 읽습니다. 권장 위치는 `data/raw/`입니다.
+- Hugging Face 기본 경로는 seed 기반 reservoir sampling을 사용하고, 로컬 파일 경로는 필터 후 seed 기반 random sampling을 사용합니다.
+- 실행 메타데이터는 로컬 `cache/screener.db`에 저장됩니다. dataset source/split/revision, 후보 수, 최종 샘플 수, sampling seed, sampling strategy, filter summary, model/prompt/hash를 추적합니다.
+- DB는 raw API key, HF token, raw provider response, raw concept text를 별도 컬럼으로 저장하지 않습니다.
 - NVIDIA Nemotron-Personas-Korea 데이터셋은 CC BY 4.0 attribution 대상입니다.
 - 코드 공개 라이선스는 GNU AGPL-3.0-only입니다.

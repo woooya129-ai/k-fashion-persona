@@ -114,6 +114,10 @@ uv run python -m http.server 8510
 
 If you use the default `NVIDIA dataset` mode, you do not need to place the raw dataset inside the repository. The app reads `nvidia/Nemotron-Personas-Korea` from Hugging Face. If access is required, configure `HF_TOKEN` through your local environment file or shell environment variables outside the repository.
 
+For stronger reproducibility, paste the Hugging Face dataset commit SHA into the app's `revision` field. If you leave it empty, run metadata records `unpinned:HEAD`.
+
+Sampling is seed-based. The Hugging Face streaming path uses reservoir sampling after filtering; the local-file path uses random sampling after filtering. The target contract is that the same dataset split/revision, filter, seed, and sample size reproduce the same panel.
+
 If you use local file mode, place a `.csv` or `.parquet` file under the repository's `data/` directory. The recommended location is:
 
 ```text
@@ -134,6 +138,8 @@ data/raw/nemotron-personas-korea.parquet
 ```
 
 Paths outside `data/` are rejected for safety. Do not include raw data, cache, outputs, or logs in the public repository.
+
+The run-tracking DB is `cache/screener.db` by default. Each runs row stores dataset source/split/revision, matched count, final sample size, sampling seed, sampling strategy, filter summary, provider/model, prompt/schema version, and concept/price-context hashes. It does not store raw API keys, HF tokens, raw provider responses, or raw concept text in dedicated columns.
 
 ## 7. What You Enter in the App
 

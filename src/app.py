@@ -82,6 +82,7 @@ from src.llm_client import (
 from src.persona_filter import (
     PersonaFilter,
     apply_filter,
+    filter_summary,
     sample_iterable_to_result,
     sample_to_result,
 )
@@ -5254,6 +5255,9 @@ def make_run_meta(
     sampling_seed: int,
     model: dict[str, Any],
     hashes: dict[str, str],
+    matched_count_before_sample: int = 0,
+    sampling_strategy: str = "unknown",
+    filter_summary_text: str = "",
 ) -> RunMeta:
     return RunMeta(
         run_id=run_id,
@@ -5270,6 +5274,10 @@ def make_run_meta(
         price_context_version=DEFAULT_PRICE_CONTEXT_VERSION,
         concept_hash=hashes["concept_hash"],
         price_context_hash=hashes["price_context_hash"],
+        dataset_split=loaded_dataset.dataset_split,
+        matched_count_before_sample=matched_count_before_sample,
+        sampling_strategy=sampling_strategy,
+        filter_summary=filter_summary_text,
     )
 
 
@@ -5529,6 +5537,12 @@ def _load_and_sample(dataset: dict[str, Any], sample: dict[str, Any]):
     return loaded, sampled
 
 
+def _sampling_strategy_for_dataset(dataset: dict[str, Any]) -> str:
+    if dataset["source"] == "huggingface":
+        return "filter_then_seeded_reservoir"
+    return "filter_then_seeded_random_sample"
+
+
 def start_screening(
     concept: dict[str, Any],
     dataset: dict[str, Any],
@@ -5577,6 +5591,9 @@ def start_screening(
         sampling_seed=sampled.sampling_seed,
         model=model,
         hashes=hashes,
+        matched_count_before_sample=sampled.matched_count_before_sample,
+        sampling_strategy=_sampling_strategy_for_dataset(dataset),
+        filter_summary_text=filter_summary(sample["filter"]),
     )
     llm_evaluator = make_llm_evaluator_async(
         provider=_provider_from_str(model["provider"]),

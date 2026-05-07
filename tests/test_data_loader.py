@@ -263,6 +263,7 @@ class TestLoadHuggingfaceDataset:
         meta, rows_iter = load_huggingface_dataset("nvidia/Nemotron-Personas-Korea")
         assert meta.source == "huggingface:nvidia/Nemotron-Personas-Korea"
         assert "unpinned" in meta.dataset_revision or "pinned" in meta.dataset_revision
+        assert meta.dataset_split == "train"
 
     # 2. revision 고정 시 pinned: 반영
     def test_revision_pinned_reflected(self, monkeypatch):
@@ -275,6 +276,7 @@ class TestLoadHuggingfaceDataset:
 
         meta, _ = load_huggingface_dataset("nvidia/Nemotron-Personas-Korea", revision="abc123")
         assert meta.dataset_revision == "pinned:abc123"
+        assert meta.dataset_split == "train"
 
     # 3. GatedRepoError → error_type="gated"
     def test_gated_repo_error_maps_to_gated(self, monkeypatch):
@@ -534,6 +536,7 @@ class TestLoadLocalFileErrors:
         meta, rows_iter = load_local_file(dest)
         rows = list(rows_iter)
         assert meta.source == "local:mock_local_csv.csv"
+        assert meta.dataset_split is None
         assert len(rows) == 5
 
     def test_mock_parquet_fixture_loads_ok(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

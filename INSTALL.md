@@ -114,6 +114,10 @@ uv run python -m http.server 8510
 
 기본값인 `NVIDIA dataset` 모드를 쓰면 원본 데이터셋을 저장소에 직접 넣지 않아도 됩니다. 앱이 Hugging Face의 `nvidia/Nemotron-Personas-Korea`를 읽습니다. 접근이 필요한 경우에는 저장소 밖 환경 파일이나 환경변수에 `HF_TOKEN`을 설정합니다.
 
+재현성이 강한 실행이 필요하면 앱의 `revision` 입력칸에 Hugging Face dataset commit SHA를 넣으세요. 비워두면 실행 메타데이터에는 `unpinned:HEAD`로 기록됩니다.
+
+샘플링은 seed 기반입니다. Hugging Face streaming 경로는 필터 후 reservoir sampling을 사용하고, 로컬 파일 경로는 필터 후 random sampling을 사용합니다. 같은 dataset split/revision, 같은 필터, 같은 seed, 같은 sample size에서는 같은 패널을 재현하는 것이 목표입니다.
+
 로컬 파일 모드를 쓰는 경우에는 `.csv` 또는 `.parquet` 파일을 저장소의 `data/` 하위에 둬야 합니다. 권장 위치는 다음입니다.
 
 ```text
@@ -134,6 +138,8 @@ data/raw/nemotron-personas-korea.parquet
 ```
 
 `data/` 바깥 경로는 보안상 거부됩니다. 원본 데이터, cache, outputs, logs는 공개 저장소에 포함하지 않습니다.
+
+실행 추적 DB는 기본적으로 `cache/screener.db`입니다. runs row에는 dataset source/split/revision, 후보 수, 최종 샘플 수, sampling seed, sampling strategy, filter summary, provider/model, prompt/schema version, concept/price-context hash가 저장됩니다. raw API key, HF token, raw provider response, raw concept text는 별도 컬럼으로 저장하지 않습니다.
 
 ## 7. 앱에서 입력하는 내용
 

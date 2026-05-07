@@ -14,6 +14,7 @@ from src.report_writer import (
     FORBIDDEN_PHRASES,
     assert_safe_phrasing,
     escape_csv_cell,
+    escape_markdown_table_cell,
     render_csv,
     render_markdown,
     required_footer_text,
@@ -296,6 +297,17 @@ class TestEscapeCsvCell:
     def test_non_string_converted(self):
         assert escape_csv_cell(42) == "42"
         assert escape_csv_cell(3.14) == "3.14"
+
+
+class TestEscapeMarkdownTableCell:
+    def test_pipe_is_escaped(self):
+        assert escape_markdown_table_cell("a|b") == r"a\|b"
+
+    def test_newline_becomes_br(self):
+        assert escape_markdown_table_cell("a\nb") == "a<br>b"
+
+    def test_html_is_escaped(self):
+        assert escape_markdown_table_cell("<script>") == "&lt;script&gt;"
 
 
 # ---------------------------------------------------------------------------

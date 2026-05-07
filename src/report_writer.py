@@ -12,6 +12,7 @@ No LLM / HF / DB calls.
 """
 
 import csv
+import html
 import re
 from io import StringIO
 from pathlib import Path
@@ -102,6 +103,14 @@ def escape_csv_cell(value: object) -> str:
     return text
 
 
+def escape_markdown_table_cell(value: object) -> str:
+    """Escape text inserted into a Markdown table cell."""
+    text = html.escape(str(value), quote=False)
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    text = text.replace("\n", "<br>")
+    return text.replace("|", r"\|")
+
+
 # ---------------------------------------------------------------------------
 # fashion-public-beta v3 helpers
 #
@@ -145,7 +154,10 @@ def _append_fashion_risk_sections(lines: list[str], report: AggregateReport) -> 
         label = FASHION_RISK_CATEGORY_LABELS.get(key, key)
         count = risks.counts.get(key, 0)
         example_text = _format_examples(risks.examples.get(key, []))
-        lines.append(f"| {label} | {count} | {example_text} |")
+        lines.append(
+            f"| {escape_markdown_table_cell(label)} | {count} | "
+            f"{escape_markdown_table_cell(example_text)} |"
+        )
     lines.append("")
     lines.append(
         f"> 분류 대상 concern 총 {risks.total_concerns}건 중 "
@@ -241,7 +253,12 @@ def _append_representative_responses_section(lines: list[str], report: Aggregate
         sentiment = rep.get("sentiment", "")
         score = rep.get("interest_score", "")
         reason = rep.get("main_reasons", "")
-        lines.append(f"| {segment} | {sentiment} | {score} | {reason} |")
+        lines.append(
+            f"| {escape_markdown_table_cell(segment)} | "
+            f"{escape_markdown_table_cell(sentiment)} | "
+            f"{escape_markdown_table_cell(score)} | "
+            f"{escape_markdown_table_cell(reason)} |"
+        )
     lines.append("")
 
 
@@ -378,7 +395,7 @@ def render_markdown(report: AggregateReport) -> str:
         lines.append("|---|---:|---:|---:|")
         for row in rows:
             cell = (
-                f"| {row.segment_label} | {row.n}"
+                f"| {escape_markdown_table_cell(row.segment_label)} | {row.n}"
                 f" | {row.positive_pct}% | {row.avg_interest_score} |"
             )
             lines.append(cell)

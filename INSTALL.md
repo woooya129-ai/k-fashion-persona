@@ -82,8 +82,11 @@ $HOME\secrets\k-fashion\.env
 ```env
 OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
+GOOGLE_API_KEY=
 HF_TOKEN=
 ```
+
+`GOOGLE_API_KEY` is for the Gemini API key from Google AI Studio, not Vertex AI.
 
 셸 환경변수로 직접 지정해도 됩니다.
 
@@ -99,6 +102,12 @@ uv run streamlit run src/app.py
 
 ```text
 http://localhost:8501
+```
+
+Docs link uses a separate local static server by default. In another terminal:
+
+```bash
+uv run python -m http.server 8510
 ```
 
 ## 6. 데이터셋 위치

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import os
 import re
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from datetime import UTC
 from pathlib import Path
@@ -26,13 +26,14 @@ _DATASET_ID_RE = re.compile(r"^(?!.*\.\.)[\w\-./]+$")
 
 DEFAULT_HF_DATASET_ID = "nvidia/Nemotron-Personas-Korea"
 DEFAULT_SPLIT = "train"
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 ALLOWED_LOCAL_EXTENSIONS: tuple[str, ...] = (".csv", ".parquet")
 MAX_LOCAL_FILE_BYTES: int = 500 * 1024 * 1024  # 500MB 보호 한도
 
 # I2 해소 (current-update-review 2026-05-01): path traversal / 외부 디렉토리 접근 차단.
 # 호출자가 allowed_roots 명시하지 않으면 cwd 기준 data/ 아래만 허용.
-DEFAULT_ALLOWED_ROOTS: tuple[Path, ...] = (Path("data").resolve(),)
+DEFAULT_ALLOWED_ROOTS: tuple[Path, ...] = ((REPO_ROOT / "data").resolve(),)
 
 EXPECTED_COLUMNS: tuple[str, ...] = (
     "uuid",
@@ -162,7 +163,7 @@ def _is_relative_to(path: Path, base: Path) -> bool:
 
 
 def normalize_rows_to_personas(
-    rows: Iterator[dict[str, Any]],
+    rows: Iterable[dict[str, Any]],
 ) -> Iterator[Persona]:
     """raw rows → Persona objects. 정규화 실패 (None 반환) row 는 skip."""
     for idx, row in enumerate(rows):
@@ -314,7 +315,7 @@ def load_huggingface_dataset(
             dataset_revision=rev_str,
             total_rows=total,
         ),
-        iter(ds),
+        ds if streaming else iter(ds),
     )
 
 

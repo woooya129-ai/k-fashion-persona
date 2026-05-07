@@ -126,6 +126,7 @@ _ErrorType = Literal[
     "timeout",
     "network",
     "context_length",
+    "bad_request",
     "server_error",
     "structured_failed",
 ]
@@ -195,6 +196,30 @@ def _try_parse_json(text: str) -> dict | None:
     if isinstance(obj, dict):
         return obj
     return None
+
+
+_CONTEXT_LENGTH_PATTERNS: tuple[str, ...] = (
+    "context_length",
+    "context length",
+    "context window",
+    "maximum context",
+    "too many tokens",
+    "token limit",
+    "prompt is too long",
+    "input is too long",
+)
+
+
+def _is_context_length_error(resp: httpx.Response) -> bool:
+    text = resp.text.lower()
+    return any(pattern in text for pattern in _CONTEXT_LENGTH_PATTERNS)
+
+
+def _bad_request_error(provider_name: str) -> LLMClientError:
+    return LLMClientError(
+        "bad_request",
+        f"{provider_name} API request is invalid. Check model id and provider parameters.",
+    )
 
 
 def _build_openai_messages(req: LLMRequest) -> list[dict]:
@@ -283,6 +308,8 @@ def _handle_openai_response(resp: httpx.Response) -> LLMRawResponse:
             retry_after_seconds=retry_after,
         )
     if resp.status_code == 400:
+        if not _is_context_length_error(resp):
+            raise _bad_request_error("OpenAI")
         raise LLMClientError(
             "context_length",
             "입력이 너무 깁니다. 컨셉 또는 페르소나 텍스트를 줄여주세요.",
@@ -384,6 +411,8 @@ def _handle_anthropic_response(resp: httpx.Response) -> LLMRawResponse:
             retry_after_seconds=retry_after,
         )
     if resp.status_code == 400:
+        if not _is_context_length_error(resp):
+            raise _bad_request_error("Anthropic")
         raise LLMClientError(
             "context_length",
             "입력이 너무 깁니다. 컨셉 또는 페르소나 텍스트를 줄여주세요.",

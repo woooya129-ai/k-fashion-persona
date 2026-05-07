@@ -22,6 +22,7 @@ import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from itertools import islice
 from pathlib import Path
 from typing import Any, cast
 from urllib.parse import quote
@@ -78,7 +79,13 @@ from src.llm_client import (
 from src.llm_client import (
     parse_evaluation_result as parse_llm_evaluation_result,
 )
-from src.persona_filter import PersonaFilter, apply_filter, sample_to_result
+from src.persona_filter import (
+    PersonaFilter,
+    apply_filter,
+    has_active_filter,
+    sample_iterable_to_result,
+    sample_to_result,
+)
 from src.persona_normalizer import Persona
 from src.pricing_config import ModelPricing, get_model_pricing, load_pricing_config
 from src.prompt_builder import (
@@ -92,9 +99,9 @@ from src.result_parser import EvaluationResult, parse_evaluation_result
 from src.secrets_loader import HF_TOKEN_VAR, get_provider_key, load_secrets_from_env_path
 from src.worker import WorkerInput, start_worker_thread
 
-DB_PATH: Path = Path("cache") / "screener.db"
-PRICING_CONFIG_PATH: Path = Path("config") / "pricing_config.yaml"
-PROMPT_TEMPLATE_PATH: Path = Path("prompts") / "concept_eval_ko_v0_3.md"
+DB_PATH: Path = REPO_ROOT / "cache" / "screener.db"
+PRICING_CONFIG_PATH: Path = REPO_ROOT / "config" / "pricing_config.yaml"
+PROMPT_TEMPLATE_PATH: Path = REPO_ROOT / "prompts" / "concept_eval_ko_v0_3.md"
 FABRIC_PATH: Path = REPO_ROOT / "design" / "hero-skyblue-fabric.png"
 DIRECTION_BG_PATH: Path = REPO_ROOT / "design" / "direction-bg.png"
 HF_DATASET_URL = "https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea"
@@ -3896,6 +3903,24 @@ def _utc_now_iso8601_z() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
+def _repo_relative_path(path: Path) -> Path:
+    return path if path.is_absolute() else REPO_ROOT / path
+
+
+def _active_job_status() -> str | None:
+    job_id = st.session_state.get("active_job_id")
+    if not job_id:
+        return None
+    try:
+        return load_job_stats(DB_PATH, str(job_id)).status
+    except KeyError:
+        return None
+
+
+def _has_active_job_in_progress() -> bool:
+    return _active_job_status() in {"queued", "running"}
+
+
 def _provider_from_str(provider: str) -> Provider:
     normalized = provider.lower()
     if normalized not in {"openai", "anthropic", "google"}:
@@ -5164,6 +5189,7 @@ def build_persona_payloads(
 ) -> list[dict[str, Any]]:
     payloads: list[dict[str, Any]] = []
     economic_context_text = _economic_context_text(concept, price_context)
+    pricing = model.get("pricing")
     for persona in personas:
         prompt = build_prompt(
             persona_id=persona.persona_id,
@@ -5204,6 +5230,16 @@ def build_persona_payloads(
                     "prompt_version": prompt.prompt_version,
                     "schema_version": prompt.schema_version,
                     "price_context_version": DEFAULT_PRICE_CONTEXT_VERSION,
+                    "input_per_million_usd": getattr(
+                        pricing,
+                        "input_per_million_usd",
+                        None,
+                    ),
+                    "output_per_million_usd": getattr(
+                        pricing,
+                        "output_per_million_usd",
+                        None,
+                    ),
                 },
             }
         )
@@ -5255,6 +5291,22 @@ def _cache_store(
     response_json = result.get("response_json")
     if not response_json:
         return
+    input_tokens_raw = result.get("input_tokens_actual")
+    output_tokens_raw = result.get("output_tokens_actual")
+    input_tokens_actual = None if input_tokens_raw is None else int(input_tokens_raw)
+    output_tokens_actual = None if output_tokens_raw is None else int(output_tokens_raw)
+    input_price = metadata.get("input_per_million_usd")
+    output_price = metadata.get("output_per_million_usd")
+    cost_actual_usd = None
+    if (
+        input_tokens_actual is not None
+        and output_tokens_actual is not None
+        and input_price is not None
+        and output_price is not None
+    ):
+        cost_actual_usd = (int(input_tokens_actual) / 1_000_000) * float(input_price) + (
+            int(output_tokens_actual) / 1_000_000
+        ) * float(output_price)
     with get_connection(db_path) as conn:
         conn.execute(
             "INSERT OR IGNORE INTO llm_cache ("
@@ -5276,9 +5328,9 @@ def _cache_store(
                 metadata["price_context_version"],
                 response_json,
                 None,
-                None,
-                None,
-                None,
+                input_tokens_actual,
+                output_tokens_actual,
+                cost_actual_usd,
                 _utc_now_iso8601_z(),
             ),
         )
@@ -5298,20 +5350,31 @@ def make_llm_evaluator_async(
 ) -> Callable[[dict[str, Any]], Any]:
     async def _evaluate(payload: dict[str, Any]) -> EvaluatorResult:
         prompt = payload["prompt"]
-        request = LLMRequest(
-            provider=provider,
-            model_name=model_name,
-            api_key=api_key,
-            system=prompt["system"],
-            developer=prompt["developer"],
-            user=prompt["user"],
-            temperature=temperature,
-            max_output_tokens=max_output_tokens,
-        )
+        request_kwargs = {
+            "provider": provider,
+            "model_name": model_name,
+            "api_key": api_key,
+            "system": prompt["system"],
+            "developer": prompt["developer"],
+            "user": prompt["user"],
+            "max_output_tokens": max_output_tokens,
+        }
         started = time.perf_counter()
         try:
             async with httpx.AsyncClient() as client:
+                request = LLMRequest(temperature=temperature, **request_kwargs)
                 raw = await call_with_retry(request, client)
+                status, parsed, error_summary = parse_llm_evaluation_result(
+                    raw,
+                    expected_persona_id=payload["persona_id"],
+                )
+                if status != "success" and temperature != 0.1:
+                    retry_request = LLMRequest(temperature=0.1, **request_kwargs)
+                    raw = await call_with_retry(retry_request, client)
+                    status, parsed, error_summary = parse_llm_evaluation_result(
+                        raw,
+                        expected_persona_id=payload["persona_id"],
+                    )
         except LLMClientError as exc:
             return {
                 "status": "api_failed",
@@ -5320,10 +5383,6 @@ def make_llm_evaluator_async(
                 "latency_ms": int((time.perf_counter() - started) * 1000),
             }
 
-        status, parsed, error_summary = parse_llm_evaluation_result(
-            raw,
-            expected_persona_id=payload["persona_id"],
-        )
         latency_ms = int((time.perf_counter() - started) * 1000)
         if status == "success" and parsed is not None:
             return {
@@ -5331,6 +5390,8 @@ def make_llm_evaluator_async(
                 "error_type": None,
                 "response_json": _result_json(parsed),
                 "latency_ms": latency_ms,
+                "input_tokens_actual": raw.input_tokens_actual,
+                "output_tokens_actual": raw.output_tokens_actual,
             }
         return {
             "status": "parse_failed",
@@ -5342,11 +5403,11 @@ def make_llm_evaluator_async(
     return _evaluate
 
 
-def make_cached_sync_evaluator(
+def make_cached_evaluator_async(
     db_path: Path,
     payloads: list[dict[str, Any]],
     llm_evaluator_async: Callable[[dict[str, Any]], Any],
-) -> SyncEvaluator:
+) -> Callable[[dict[str, Any]], Any]:
     metadata_by_key = {payload["_cache_key"]: payload["cache_metadata"] for payload in payloads}
 
     async def _evaluate(payload: dict[str, Any]) -> EvaluatorResult:
@@ -5358,14 +5419,27 @@ def make_cached_sync_evaluator(
                 "error_type": None,
                 "response_json": cached_json,
                 "latency_ms": 0,
+                "cache_key": cache_key,
             }
 
         result = await llm_evaluator_async(payload)
         if result.get("status") == "success" and result.get("response_json"):
             _cache_store(db_path, cache_key, result, metadata_by_key[cache_key])
+            result = dict(result)
+            result["cache_key"] = cache_key
         return result
 
-    return make_sync_evaluator_for_worker(_evaluate)
+    return _evaluate
+
+
+def make_cached_sync_evaluator(
+    db_path: Path,
+    payloads: list[dict[str, Any]],
+    llm_evaluator_async: Callable[[dict[str, Any]], Any],
+) -> SyncEvaluator:
+    return make_sync_evaluator_for_worker(
+        make_cached_evaluator_async(db_path, payloads, llm_evaluator_async)
+    )
 
 
 def load_result_rows(db_path: Path, run_id: str) -> list[ResultRow]:
@@ -5431,8 +5505,20 @@ def _load_and_sample(dataset: dict[str, Any], sample: dict[str, Any]):
             streaming=True,
             revision=dataset["revision"],
         )
+        personas_iter = normalize_rows_to_personas(rows)
+        if not has_active_filter(sample["filter"]):
+            personas = list(islice(personas_iter, sample["sample_size"]))
+            sampled = sample_to_result(personas, sample["sample_size"], sample["sampling_seed"])
+        else:
+            sampled = sample_iterable_to_result(
+                personas_iter,
+                sample["filter"],
+                sample["sample_size"],
+                sample["sampling_seed"],
+            )
+        return loaded, sampled
     else:
-        loaded, rows = load_local_file(Path(dataset["local_path"]))
+        loaded, rows = load_local_file(_repo_relative_path(Path(dataset["local_path"])))
 
     personas = list(normalize_rows_to_personas(rows))
     filtered = apply_filter(personas, sample["filter"])
@@ -5450,6 +5536,9 @@ def start_screening(
     api_key: str,
 ) -> None:
     init_db(DB_PATH)
+    if _has_active_job_in_progress():
+        st.warning("A screening job is already running. Cancel it or wait for completion.")
+        return
     hf_token = str(model.get("hf_token", "")).strip()
     previous_hf_token = os.environ.get(HF_TOKEN_VAR)
     if hf_token:
@@ -5492,13 +5581,14 @@ def start_screening(
         api_key=api_key,
         temperature=float(model["temperature"]),
     )
-    evaluator = make_cached_sync_evaluator(DB_PATH, payloads, llm_evaluator)
+    evaluator = make_cached_evaluator_async(DB_PATH, payloads, llm_evaluator)
     worker_input = WorkerInput(
         db_path=DB_PATH,
         job_id=job_id,
         run_meta=run_meta,
         persona_payloads=payloads,
-        evaluator=evaluator,
+        evaluator_async=evaluator,
+        concurrency=DEFAULT_CONCURRENCY,
     )
     thread = start_worker_thread(worker_input)
     st.session_state["active_job_id"] = job_id
@@ -5713,17 +5803,23 @@ def main() -> None:
 
     local_ready = dataset["source"] == "huggingface" or bool(dataset.get("local_path"))
     has_user_concept_input = bool(concept.get("description"))
-    run_button_disabled = not (
-        cost_state.get("ready")
-        and confirmed
-        and injection_confirmed
-        and has_user_concept_input
-        and concept["category"]
-        and api_key
-        and local_ready
+    active_job_in_progress = _has_active_job_in_progress()
+    run_button_disabled = (
+        not (
+            cost_state.get("ready")
+            and confirmed
+            and injection_confirmed
+            and has_user_concept_input
+            and concept["category"]
+            and api_key
+            and local_ready
+        )
+        or active_job_in_progress
     )
     if not api_key:
         render_inline_note(ui_text(lang, "need_api_key"))
+    if active_job_in_progress:
+        render_inline_note("A screening job is already running. Cancel it or wait for completion.")
 
     render_enter_button(enter_button_placeholder, lang, disabled=run_button_disabled)
 

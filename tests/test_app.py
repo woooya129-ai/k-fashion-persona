@@ -16,12 +16,13 @@ from streamlit.testing.v1 import AppTest
 
 import src.app as app
 from src.data_loader import LoadedDataset
-from src.db import init_db
+from src.db import get_connection, init_db
 from src.llm_client import LLMRawResponse
 from src.persona_normalizer import normalize_persona
 from src.result_parser import EvaluationResult
 from tests.fixtures.app_apptest_e2e import install_apptest_e2e_patches
 from tests.fixtures.mock_evaluation_results import MOCK_PERSONA_ATTRIBUTES, MOCK_RESULTS
+from tests.fixtures.mock_personas import ALL_MOCK_PERSONAS
 
 pytestmark = pytest.mark.no_network
 
@@ -259,6 +260,47 @@ def test_cached_sync_evaluator_uses_cache_without_llm_call(tmp_path: Path) -> No
     assert result["latency_ms"] == 0
 
 
+def test_cache_store_persists_actual_usage_and_cost(tmp_path: Path) -> None:
+    db_path = tmp_path / "usage-cache.db"
+    init_db(db_path)
+    cache_key = "u" * 64
+
+    app._cache_store(  # noqa: SLF001 - app integration boundary helper.
+        db_path,
+        cache_key,
+        {
+            "status": "success",
+            "response_json": MOCK_RESULTS[0].model_dump_json(),
+            "input_tokens_actual": 1000,
+            "output_tokens_actual": 500,
+        },
+        {
+            "persona_id": MOCK_RESULTS[0].persona_id,
+            "concept_hash": "c" * 64,
+            "price_context_hash": "p" * 64,
+            "provider": "openai",
+            "model_name": "gpt-4o-mini",
+            "temperature": 0.3,
+            "prompt_version": app.PROMPT_VERSION,
+            "schema_version": app.SCHEMA_VERSION,
+            "price_context_version": app.DEFAULT_PRICE_CONTEXT_VERSION,
+            "input_per_million_usd": 0.15,
+            "output_per_million_usd": 0.60,
+        },
+    )
+
+    with get_connection(db_path) as conn:
+        row = conn.execute(
+            "SELECT input_tokens_actual, output_tokens_actual, cost_actual_usd "
+            "FROM llm_cache WHERE cache_key = ?",
+            (cache_key,),
+        ).fetchone()
+
+    assert row[0] == 1000
+    assert row[1] == 500
+    assert row[2] == pytest.approx(0.00045)
+
+
 def test_make_llm_evaluator_async_parses_success(monkeypatch: pytest.MonkeyPatch) -> None:
     expected = EvaluationResult(
         persona_id="p001",
@@ -298,6 +340,60 @@ def test_make_llm_evaluator_async_parses_success(monkeypatch: pytest.MonkeyPatch
     assert result["error_type"] is None
     assert json.loads(result["response_json"])["persona_id"] == "p001"
     assert result["latency_ms"] >= 0
+    assert result["input_tokens_actual"] == 100
+    assert result["output_tokens_actual"] == 50
+
+
+def test_make_llm_evaluator_async_retries_parse_failure_at_low_temperature(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    expected = EvaluationResult(
+        persona_id="p001",
+        sentiment="positive",
+        interest_score=8,
+        price_burden="medium",
+        main_reasons=["retry-ok"],
+        main_concerns=[],
+        confidence_note="test",
+    )
+    temperatures_seen: list[float] = []
+
+    async def fake_call_with_retry(request, _client):
+        temperatures_seen.append(request.temperature)
+        if len(temperatures_seen) == 1:
+            return LLMRawResponse(
+                text="not json",
+                input_tokens_actual=10,
+                output_tokens_actual=5,
+                used_structured_output=False,
+            )
+        return LLMRawResponse(
+            text=expected.model_dump_json(),
+            input_tokens_actual=100,
+            output_tokens_actual=50,
+            used_structured_output=True,
+        )
+
+    monkeypatch.setattr(app, "call_with_retry", fake_call_with_retry)
+    evaluator = app.make_llm_evaluator_async(
+        provider="openai",
+        model_name="gpt-4o-mini",
+        api_key="fake-openai-key",
+        temperature=0.3,
+    )
+
+    result = asyncio.run(
+        evaluator(
+            {
+                "persona_id": "p001",
+                "prompt": {"system": "s", "developer": None, "user": "u"},
+            }
+        )
+    )
+
+    assert result["status"] == "success"
+    assert temperatures_seen == [0.3, 0.1]
+    assert json.loads(result["response_json"])["main_reasons"] == ["retry-ok"]
 
 
 def test_build_run_report_counts_cached_and_success_rows() -> None:
@@ -504,10 +600,37 @@ def test_app_sampling_and_filter_limits_are_explicit() -> None:
     assert app.ui_text("KR", "sampling_seed") == "sampling-seed"
 
 
+def test_load_and_sample_hf_unfiltered_does_not_materialize_stream(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def rows():
+        for index, row in enumerate(ALL_MOCK_PERSONAS):
+            if index >= 2:
+                raise AssertionError("stream was consumed past requested sample size")
+            yield {**row, "uuid": f"stream-{index}"}
+
+    def fake_load_huggingface_dataset(**_kwargs):
+        return LoadedDataset("huggingface:test", "fixture", -1), rows()
+
+    monkeypatch.setattr(app, "load_huggingface_dataset", fake_load_huggingface_dataset)
+
+    _loaded, sampled = app._load_and_sample(  # noqa: SLF001 - app orchestration helper.
+        {
+            "source": "huggingface",
+            "dataset_id": app.DEFAULT_HF_DATASET_ID,
+            "split": app.DEFAULT_SPLIT,
+            "revision": None,
+        },
+        {"sample_size": 2, "sampling_seed": 42, "filter": app.PersonaFilter()},
+    )
+
+    assert sampled.sample_size == 2
+    assert [p.persona_id for p in sampled.rows] == ["stream-0", "stream-1"]
+
+
 def test_app_default_prompt_template_is_v0_3() -> None:
-    repo_root = Path(__file__).resolve().parent.parent
     assert app.PROMPT_TEMPLATE_PATH.name == "concept_eval_ko_v0_3.md"
-    assert PROMPT_TEMPLATE_PATH.relative_to(repo_root) == app.PROMPT_TEMPLATE_PATH
+    assert app.PROMPT_TEMPLATE_PATH == PROMPT_TEMPLATE_PATH
 
 
 def test_model_options_sort_claude_family_order() -> None:

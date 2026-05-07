@@ -82,8 +82,11 @@ Required variables depend on the provider you use.
 ```env
 OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
+GOOGLE_API_KEY=
 HF_TOKEN=
 ```
+
+`GOOGLE_API_KEY` is for the Gemini API key from Google AI Studio, not Vertex AI.
 
 You can also provide these values through shell environment variables.
 
@@ -99,6 +102,12 @@ Open this address in your browser:
 
 ```text
 http://localhost:8501
+```
+
+The Docs link uses a separate local static server by default. In another terminal:
+
+```bash
+uv run python -m http.server 8510
 ```
 
 ## 6. Dataset Location

@@ -52,6 +52,19 @@ def apply_filter(
     return [p for p in personas if filt.matches(p)]
 
 
+def has_active_filter(filt: PersonaFilter) -> bool:
+    """Return True when any filter condition is active."""
+    return any(
+        (
+            filt.age_min is not None,
+            filt.age_max is not None,
+            bool(filt.sex),
+            bool(filt.province),
+            bool(filt.occupation_contains),
+        )
+    )
+
+
 def sample_personas(
     personas: list[Persona],
     sample_size: int,
@@ -148,6 +161,51 @@ def sample_to_result(
         rows=sorted(selected, key=lambda p: p.persona_id),
         matched_count_before_sample=matched_count,
         sample_size=sample_size,
+        sampling_seed=seed,
+    )
+
+
+def sample_iterable_to_result(
+    personas: Iterable[Persona],
+    filt: PersonaFilter,
+    sample_size: int,
+    seed: int,
+) -> SampleResult:
+    """Filter and sample an iterable without materializing all personas.
+
+    Uses reservoir sampling so memory stays bounded by sample_size. The input
+    iterable may still be consumed fully when filters are active.
+    """
+    if sample_size <= 0:
+        raise ValueError(f"sample_size must be positive, got {sample_size}")
+
+    rng = random.Random(seed)  # nosec B311
+    reservoir: list[Persona] = []
+    matched_count = 0
+
+    for persona in personas:
+        if not filt.matches(persona):
+            continue
+        matched_count += 1
+        if len(reservoir) < sample_size:
+            reservoir.append(persona)
+            continue
+        index = rng.randrange(matched_count)
+        if index < sample_size:
+            reservoir[index] = persona
+
+    if matched_count == 0:
+        return SampleResult(
+            rows=[],
+            matched_count_before_sample=0,
+            sample_size=0,
+            sampling_seed=seed,
+        )
+
+    return SampleResult(
+        rows=sorted(reservoir, key=lambda p: p.persona_id),
+        matched_count_before_sample=matched_count,
+        sample_size=min(sample_size, matched_count),
         sampling_seed=seed,
     )
 

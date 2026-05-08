@@ -175,7 +175,7 @@ NVIDIA Nemotron-Personas-Korea는 한국 맥락을 반영한 합성 페르소나
 Data source (only external dataset): NVIDIA Nemotron-Personas-Korea, CC BY 4.0.
 Dataset URL: https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea
 CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
-K-Fashion Persona Screener.
+K-Fashion Persona.
 Contact: woooya129 [at] gmail [dot] com
 ```
 

@@ -8,6 +8,7 @@
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
 [![Twin Project](https://img.shields.io/badge/GitHub-us--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/us-fashion-persona)
 [![Docs](https://img.shields.io/badge/Docs-INSTALL-2563EB?logo=readthedocs&logoColor=white)](INSTALL.md)
+[![English README](https://img.shields.io/badge/README-English-2563EB)](README-ENG.md)
 [![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-0F766E.svg)](LICENSE)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Woody%20Kim-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/woody-kim-ab2741403/)
 
@@ -179,6 +180,7 @@ Data source (only external dataset): NVIDIA Nemotron-Personas-Korea, CC BY 4.0.
 Dataset URL: https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea
 CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
 k-fashion-persona.
+Price context uses Statistics Korea (KOSTAT) / KOSIS public statistics for annual household clothing and footwear spending; it does not infer income or assets.
 Built with Codex and Claude Code.
 Contact: woooya129 [at] gmail [dot] com
 ```
@@ -199,6 +201,8 @@ section,key,value
 기본 데이터셋은 [NVIDIA Nemotron-Personas-Korea](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)입니다.
 
 이 데이터셋은 한국 맥락을 반영한 합성 페르소나 데이터셋입니다. 실제 인물 데이터가 아니며, 실제 소비자의 구매 행동을 직접 나타내지 않습니다.
+
+소득과 자산은 개별 페르소나 속성으로 직접 보강하거나 추정하지 않습니다. 가격 부담도는 [통계청(KOSTAT)](https://kostat.go.kr/) 및 [국가통계포털(KOSIS)](https://kosis.kr/index)의 공개 통계 중 연간 가구 평균 의류·신발 지출 기준값을 참고해 맥락화합니다.
 
 로컬 CSV 또는 Parquet 파일을 사용할 경우 `data/` 하위에 두어야 합니다. 권장 위치는 `data/raw/`입니다.
 

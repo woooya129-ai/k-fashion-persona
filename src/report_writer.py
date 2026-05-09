@@ -65,6 +65,7 @@ def required_footer_text() -> str:
         "Dataset URL: https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea\n"
         "CC BY 4.0: https://creativecommons.org/licenses/by/4.0/\n"
         "k-fashion-persona.\n"
+        "Price context uses Statistics Korea (KOSTAT) / KOSIS public statistics for annual household clothing and footwear spending; it does not infer income or assets.\n"
         "Built with Codex and Claude Code.\n"
         f"Contact: {CONTACT_DISPLAY}"
     )

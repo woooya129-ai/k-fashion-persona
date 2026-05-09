@@ -26,6 +26,15 @@ If any dataset sample, transformed row, generated persona text, or derived
 artifact is later added to the public repository, update this section with the
 exact file path, transformation method, and change statement before release.
 
+## Statistics Korea / KOSIS
+
+- Provider: Statistics Korea (KOSTAT), via KOSIS public statistics
+- Use in this project: price-burden context based on annual household clothing
+  and footwear spending
+- Not used for: direct inference of individual persona income, assets, or real
+  purchasing power
+- Data bundled in this repository: No
+
 ## Direct Python Dependencies
 
 The public source repository lists dependencies in `pyproject.toml` and

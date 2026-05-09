@@ -25,6 +25,8 @@ flowchart LR
 
 NVIDIA Nemotron-Personas-Korea is a synthetic persona dataset with Korean context. This tool shows a fashion product card to synthetic personas and helps you scan taste fit, interest reasons, hesitation points, and risk signals before a main survey.
 
+Income and assets are not directly enriched or inferred as individual persona attributes. Price burden is contextualized against annual household clothing and footwear spending from Statistics Korea (KOSTAT) / KOSIS public statistics.
+
 This works as an early check because the goal is not to predict real buying behavior. The goal is to see which parts of the concept create interest and which parts may block the reaction. Final decisions should still use real surveys, sales data, and expert review.
 
 ![k-fashion-persona main screen](docs/assets/kfashionpersona-screenshot-03.webp)

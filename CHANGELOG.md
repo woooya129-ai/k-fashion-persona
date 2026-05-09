@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.5.1 - 2026-05-09 (License policy)
+
+### License
+
+- Project license remains GNU AGPL-3.0-only (unchanged for OSS use).
+- Added: Commercial license option for closed-source/SaaS adoption.
+- See `LICENSE-COMMERCIAL.md` and contact woooya129@gmail.com.
+- Pre-0.5.1 versions are AGPL-3.0-only and remain valid under that license
+  for those who already received them.
+
+### Contributing
+
+- All future contributions require DCO signoff (`git commit -s`).
+- By contributing, you acknowledge the project may be redistributed under
+  additional written license terms by the copyright holder. Unless a separate
+  contributor agreement says otherwise, public repository contributions are
+  accepted under AGPL-3.0-only.
+
+### CI
+
+- Added GitHub Actions CI for linting, formatting, security scan, and tests.
+
 ## 0.5.0 - 2026-05-09
 
 - Split the large Streamlit entry point into `src/ui/`, `src/orchestrator/`, and `src/app_config.py`.

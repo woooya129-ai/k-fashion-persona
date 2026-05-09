@@ -734,7 +734,7 @@ def test_app_source_uses_readable_comfort_tokens_with_targeted_hero_gradient() -
     assert "docs/docs.html" in source
     assert "📄" in source
     assert "woooya129-ai/k-fashion-persona" in source
-    assert "로컬 퍼블릭 베타 · v0.5.0" in source
+    assert "로컬 퍼블릭 베타 · v0.5.1" in source
     assert "설명 ⇄ 도구" not in source
     assert "st.segmented_control" in source
 

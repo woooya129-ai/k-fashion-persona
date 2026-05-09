@@ -4,7 +4,7 @@
 
 ## K-fashion 컨셉을 AI 페르소나로 먼저 점검
 
-[![Version](https://img.shields.io/badge/version-0.5.0-0F766E)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.5.1-0F766E)](pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
 [![Twin Project](https://img.shields.io/badge/GitHub-us--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/us-fashion-persona)
@@ -351,6 +351,13 @@ KOSIS참고통계_항목,월평균 가구소득,"5,422,000원 | 2025_Q4 | 2025�
 - 통계 컨텍스트: KOSTAT / KOSIS 공개 통계
 
 상업적 서비스나 폐쇄형 제품에 도입하려면 AGPL-3.0-only 라이선스 조건을 반드시 검토해야 합니다.
+
+### 라이선스와 상용 도입
+
+- Open source: GNU AGPL-3.0-only (`LICENSE` 파일)
+- Commercial license: 상업적 폐쇄 도입, 사내 SaaS, 재배포 제품, AGPL 조건 적용이 어려운 사용은 별도 상용 라이선스 또는 듀얼 라이선스 협의 가능
+
+문의: woooya129 [at] gmail [dot] com
 
 Codex와 Claude Code를 함께 사용해 만들었습니다.
 

@@ -1,6 +1,6 @@
 [project]
 name = "k-fashion-persona"
-version = "0.5.0"
+version = "0.5.1"
 description = "Synthetic persona-based exploratory tool for Korean fashion concepts."
 requires-python = ">=3.11"
 license = { text = "AGPL-3.0-only" }
@@ -59,6 +59,7 @@ line-ending = "auto"
 exclude_dirs = ["tests", ".venv", "data", "outputs", "cache", "logs"]
 skips = [
   "B101", # assert 사용은 테스트/내부 검증에서 허용
+  "B105", # env var names and UI labels are not hardcoded secrets
 ]
 
 [tool.pytest.ini_options]

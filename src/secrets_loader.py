@@ -24,11 +24,11 @@ SECRETS_ENV_PATH: Path = Path.home() / "secrets" / "k-fashion" / ".env"
 
 # 아래 상수는 환경변수 *이름* 이며 실제 자격증명 값이 아니다.
 # bandit B105 hardcoded_password_string false-positive 회피.
-OPENAI_KEY_VAR = "OPENAI_API_KEY"  # nosec B105
-ANTHROPIC_KEY_VAR = "ANTHROPIC_API_KEY"  # nosec B105
-GOOGLE_KEY_VAR = "GOOGLE_API_KEY"  # nosec B105
-HF_TOKEN_VAR = "HF_TOKEN"  # nosec B105
-KOSIS_API_KEY_VAR = "KOSIS_API_KEY"  # nosec B105
+OPENAI_KEY_VAR = "OPENAI_API_KEY"
+ANTHROPIC_KEY_VAR = "ANTHROPIC_API_KEY"
+GOOGLE_KEY_VAR = "GOOGLE_API_KEY"
+HF_TOKEN_VAR = "HF_TOKEN"
+KOSIS_API_KEY_VAR = "KOSIS_API_KEY"
 
 
 @dataclass(frozen=True)

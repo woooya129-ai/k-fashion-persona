@@ -2,7 +2,7 @@
 
 ## Check K-fashion Concepts With AI Personas First
 
-[![Version](https://img.shields.io/badge/version-0.5.0-0F766E)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.5.1-0F766E)](pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
 [![Twin Project](https://img.shields.io/badge/GitHub-us--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/us-fashion-persona)
@@ -277,6 +277,13 @@ Inappropriate use:
 - Statistics context: KOSTAT / KOSIS public statistics
 
 Review AGPL-3.0-only terms before using this in a commercial service or closed-source product.
+
+### License And Commercial Use
+
+- Open source: GNU AGPL-3.0-only (`LICENSE` file)
+- Commercial license: closed-source commercial use, internal SaaS, redistributed products, or use cases that cannot adopt AGPL terms may be handled under a separate written commercial license or dual-license arrangement
+
+Contact: woooya129 [at] gmail [dot] com
 
 Built with Codex and Claude Code.
 

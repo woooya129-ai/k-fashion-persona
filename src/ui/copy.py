@@ -36,7 +36,7 @@ UI_COPY: dict[str, dict[str, str]] = {
             "패션 컨셉을 AI 페르소나 패널을 통해 전문 설문이나 "
             "본조사 전 반응의 흐름을 빠르게 확인합니다."
         ),
-        "hero_eyebrow": "로컬 퍼블릭 베타 · v0.5.0",
+        "hero_eyebrow": "로컬 퍼블릭 베타 · v0.5.1",
         "hero_pill_1": "로컬 실행",
         "hero_pill_2": "원문 저장 없음",
         "hero_pill_3": "리포트 내보내기",
@@ -97,7 +97,7 @@ UI_COPY: dict[str, dict[str, str]] = {
         "mode_max_help": "1000명 패널. 비용 상한선까지 확인.",
         "simple_summary": "{mode} · 합성 패널 {sample_size}명 · temperature {temperature}",
         "estimated_price_label": "실행 추정",
-        "token_price_basis": "{sample_size}명 기준",  # nosec B105
+        "token_price_basis": "{sample_size}명 기준",
         "total_cost_label": "실행 1회 추정",
         "total_cost_basis": "input + output",
         "provider_label": "Provider",
@@ -181,9 +181,9 @@ UI_COPY: dict[str, dict[str, str]] = {
         "api_key": "API KEY",
         "api_key_placeholder": "키를 붙여넣기",
         "api_key_help": "LLM API 요청용 키야. 입력값은 화면에 표시하지 않아.",
-        "hf_token": "HF TOKEN",  # nosec B105
-        "hf_token_placeholder": "토큰을 붙여넣기",  # nosec B105
-        "hf_token_help": "Hugging Face 데이터 접근용 토큰이야. 공개 데이터셋은 보통 없어도 돼.",  # nosec B105
+        "hf_token": "HF TOKEN",
+        "hf_token_placeholder": "토큰을 붙여넣기",
+        "hf_token_help": "Hugging Face 데이터 접근용 토큰이야. 공개 데이터셋은 보통 없어도 돼.",
         "kosis_header": "KOSIS 통계",
         "kosis_api_key": "KOSIS API KEY",
         "kosis_api_key_placeholder": "선택 사항",
@@ -198,8 +198,8 @@ UI_COPY: dict[str, dict[str, str]] = {
         ),
         "secrets_status_header": "API KEY / HF TOKEN 상태",
         "env_file_missing": ".env 파일 없음",
-        "secret_present": "OK",  # nosec B105
-        "secret_missing": "MISSING",  # nosec B105
+        "secret_present": "OK",
+        "secret_missing": "MISSING",
         "openai_key_help": "OpenAI 모델 실행용 API KEY 상태야. 값은 표시하지 않아.",
         "anthropic_key_help": "Claude 모델 실행용 API KEY 상태야. 값은 표시하지 않아.",
         "google_key_help": "Gemini 모델 실행용 API KEY 상태야. 값은 표시하지 않아.",
@@ -295,7 +295,7 @@ UI_COPY: dict[str, dict[str, str]] = {
             "Show a fashion concept to an AI persona panel and quickly check reaction flow "
             "before expert surveys or main research."
         ),
-        "hero_eyebrow": "Local public beta · v0.5.0",
+        "hero_eyebrow": "Local public beta · v0.5.1",
         "hero_pill_1": "Local run",
         "hero_pill_2": "No raw concept storage",
         "hero_pill_3": "Report export",
@@ -362,7 +362,7 @@ UI_COPY: dict[str, dict[str, str]] = {
         "mode_max_help": "1000-person panel. Uses the full cost guardrail.",
         "simple_summary": "{mode} · {sample_size} synthetic personas · temperature {temperature}",
         "estimated_price_label": "Run estimate",
-        "token_price_basis": "{sample_size} personas",  # nosec B105
+        "token_price_basis": "{sample_size} personas",
         "total_cost_label": "One-run estimate",
         "total_cost_basis": "input + output",
         "provider_label": "Provider",
@@ -451,10 +451,10 @@ UI_COPY: dict[str, dict[str, str]] = {
         "api_key": "API KEY",
         "api_key_placeholder": "Paste key",
         "api_key_help": "Used for LLM API requests. Typed values are hidden on screen.",
-        "hf_token": "HF TOKEN",  # nosec B105
-        "hf_token_placeholder": "Paste token",  # nosec B105
+        "hf_token": "HF TOKEN",
+        "hf_token_placeholder": "Paste token",
         "hf_token_help": (
-            "Used for Hugging Face data access. Public datasets usually do not need it."  # nosec B105
+            "Used for Hugging Face data access. Public datasets usually do not need it."
         ),
         "kosis_header": "KOSIS statistics",
         "kosis_api_key": "KOSIS API KEY",
@@ -473,8 +473,8 @@ UI_COPY: dict[str, dict[str, str]] = {
         ),
         "secrets_status_header": "API KEY / HF TOKEN status",
         "env_file_missing": ".env file not found",
-        "secret_present": "OK",  # nosec B105
-        "secret_missing": "MISSING",  # nosec B105
+        "secret_present": "OK",
+        "secret_missing": "MISSING",
         "openai_key_help": "OpenAI API KEY status for model calls. Values are never shown.",
         "anthropic_key_help": "Claude API KEY status for model calls. Values are never shown.",
         "google_key_help": "Gemini API KEY status for model calls. Values are never shown.",

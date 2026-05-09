@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.2 - 2026-05-09 (CI validation)
+
+- Verified that `actions/checkout@v6` and `actions/setup-python@v6` are published GitHub Marketplace versions.
+- Kept `pip install -e . --group dev`; current pip documents the `--group` install option.
+- Added `pip-audit --skip-editable` to CI after pip upgrade and local validation.
+- Updated release labels to `0.5.2`.
+
 ## 0.5.1 - 2026-05-09 (License policy)
 
 ### License

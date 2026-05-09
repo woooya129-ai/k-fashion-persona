@@ -31,7 +31,7 @@ PRODUCT_CARD_FIELD_LABELS_KR: dict[str, str] = {
     "description": "브랜드 메시지/제품 설명",
 }
 
-APP_VERSION = "0.5.1"
+APP_VERSION = "0.5.2"
 DEFAULT_PRICE_CONTEXT_VERSION = "kosis_hybrid_2026_v1"
 DEFAULT_TEMPERATURE = 0.3
 MAX_SAMPLE_SIZE = 1000

@@ -57,5 +57,8 @@ jobs:
       - name: Bandit security scan
         run: bandit -q -c pyproject.toml -r src
 
+      - name: Dependency vulnerability audit
+        run: pip-audit --skip-editable
+
       - name: Pytest
         run: python -m pytest -q --basetemp .pytest_tmp -p no:cacheprovider

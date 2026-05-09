@@ -51,11 +51,34 @@ flowchart LR
 
 기본 페르소나 데이터셋은 [NVIDIA Nemotron-Personas-Korea](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)입니다. 실제 인물 데이터가 아니라 한국 맥락을 반영한 합성 페르소나 데이터셋입니다.
 
+Hugging Face 공식 데이터셋 기준으로 이 데이터셋은 100만 레코드, 700만 페르소나 설명, 26개 필드, 약 1.98GB Parquet 파일로 제공됩니다. 앱 기본 모드는 Hugging Face `datasets` streaming 로딩을 사용하므로 전체 데이터셋을 한 번에 RAM에 올리지 않고, 로컬에서 필터링과 reservoir sampling을 수행합니다.
+
 소득과 자산은 NVIDIA 데이터셋에 있는 개별 페르소나 속성으로 추정하거나 보강하지 않습니다. 리포트 작성 시 참고하는 소득, 자산, 의류·신발 지출 값은 [통계청(KOSTAT)](https://kostat.go.kr/)과 [국가통계포털(KOSIS)](https://kosis.kr/index)의 공개 통계를 기반으로 한 `data/public/kosis_household_context.csv` 스냅샷에서 가져옵니다.
 
 KOSIS API key와 `statisticsData` URL을 입력하면 실행 시 해당 URL의 응답을 우선 참고합니다. API 갱신에 실패하거나 지원 항목을 찾지 못하면 저장소에 포함된 공개 통계 스냅샷으로 자동 fallback합니다.
 
 이 통계는 가구 단위 집계값입니다. 개별 합성 페르소나의 실제 소득, 자산, 구매력을 뜻하지 않습니다.
+
+## 로컬 실행 범위와 권장 사양
+
+앱 UI, 데이터셋 필터링, 샘플링, 프롬프트 생성, SQLite 캐시, Markdown/CSV 리포트 생성은 사용자 PC에서 로컬로 실행됩니다. 다만 기본 Hugging Face 데이터셋을 처음 사용할 때는 Hugging Face Hub에서 데이터셋을 읽어오며, LLM 평가는 선택한 OpenAI, Anthropic, Gemini API 서버로 프롬프트를 전송합니다. KOSIS API 갱신을 켠 경우에만 KOSIS API에도 요청합니다.
+
+현재 버전은 로컬 LLM 또는 로컬 Vision 모델을 돌리지 않으므로 그래픽카드는 필요하지 않습니다.
+
+| 구분 | 최소 | 권장 |
+|---|---:|---:|
+| CPU | 2코어 이상 | 4코어 이상 |
+| RAM | 8GB | 16GB 이상 |
+| 저장공간 | 5GB 이상 여유 | 10-20GB 이상 여유 |
+| GPU | 필요 없음 | 필요 없음 |
+| 네트워크 | HF 데이터셋 로딩과 LLM API 호출에 필요 | 안정적인 broadband 권장 |
+
+주의:
+
+- HF 기본 모드는 streaming 로딩이라 1.98GB 데이터셋 전체를 RAM에 올리지 않습니다.
+- 로컬 CSV/Parquet 파일 모드는 pandas로 파일을 읽으므로 큰 파일은 RAM을 더 씁니다. 전체 2GB급 Parquet/CSV를 로컬 파일로 직접 읽을 계획이면 16-32GB RAM을 권장합니다.
+- `MAX`처럼 큰 샘플을 실행하면 RAM보다 LLM API 비용과 실행 시간이 먼저 증가합니다.
+- 향후 로컬 LLM/Vision 모델을 직접 돌리는 모드를 추가한다면 GPU 요구사항은 별도로 생깁니다. 현재 공개 버전 기준으로는 GPU를 쓰지 않습니다.
 
 ## 빠른 실행
 

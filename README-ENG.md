@@ -49,11 +49,34 @@ flowchart LR
 
 The default persona dataset is [NVIDIA Nemotron-Personas-Korea](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea). It is a synthetic persona dataset, not real-person data.
 
+According to the official Hugging Face dataset page, the dataset contains 1M records, 7M persona descriptions, 26 fields, and about 1.98GB of Parquet data. The app's default mode uses Hugging Face `datasets` streaming, so it does not load the full dataset into RAM at once. Filtering and reservoir sampling run locally.
+
 Income and asset values are not inferred as individual persona attributes from the NVIDIA dataset. The report context for income, assets, and household clothing-footwear spending comes from Statistics Korea (KOSTAT) / KOSIS public statistics stored in `data/public/kosis_household_context.csv`.
 
 If you enter a KOSIS API key and a `statisticsData` URL, the run attempts to use that API response first. If refresh fails or no supported metrics are found, it falls back to the committed public-statistics snapshot.
 
 These are household-level aggregate statistics. They do not represent a synthetic persona's real income, assets, or purchasing power.
+
+## Local Runtime And Recommended Specs
+
+The app UI, dataset filtering, sampling, prompt construction, SQLite cache, and Markdown/CSV report generation run on your local machine. However, the first use of the default Hugging Face dataset reads data from Hugging Face Hub, and LLM evaluation sends prompts to the selected OpenAI, Anthropic, or Gemini API server. KOSIS API requests are made only when API refresh is enabled.
+
+The current version does not run a local LLM or local Vision model, so a graphics card is not required.
+
+| Item | Minimum | Recommended |
+|---|---:|---:|
+| CPU | 2+ cores | 4+ cores |
+| RAM | 8GB | 16GB+ |
+| Disk space | 5GB+ free | 10-20GB+ free |
+| GPU | Not required | Not required |
+| Network | Required for HF dataset loading and LLM API calls | Stable broadband recommended |
+
+Notes:
+
+- The default HF mode streams the dataset and does not load the full 1.98GB into RAM.
+- Local CSV/Parquet mode uses pandas and can use more RAM. If you plan to read a full 2GB-class Parquet/CSV file locally, 16-32GB RAM is recommended.
+- Large `MAX` runs usually increase LLM API cost and runtime before RAM becomes the main bottleneck.
+- If a future mode runs local LLM/Vision models directly, GPU requirements will be separate. The current public version does not use a GPU.
 
 ## Quick Start
 

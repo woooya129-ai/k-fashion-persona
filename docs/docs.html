@@ -635,10 +635,10 @@
 <body data-lang="ko" data-theme="light">
   <header class="site-header" role="banner">
     <div class="topbar">
-      <a class="brand" href="#top" aria-label="K-Fashion Personas Screener 홈">
+      <a class="brand" href="#top" aria-label="k-fashion-persona 홈">
         <span class="brand-name">
-          <span class="full">K-Fashion Personas Screener</span>
-          <span class="short">K-Fashion Personas Screener</span>
+          <span class="full">k-fashion-persona</span>
+          <span class="short">k-fashion-persona</span>
         </span>
       </a>
       <div class="top-controls" aria-label="Display settings">
@@ -662,7 +662,7 @@
   <main id="top">
     <section class="hero-app">
       <div class="wrap wrap-inner">
-        <div class="hero-eyebrow">로컬 퍼블릭 베타 · v0.3</div>
+        <div class="hero-eyebrow">로컬 퍼블릭 베타 · v0.2.0</div>
         <h1 class="title-app">설문 전, 먼저 반응을 읽다</h1>
         <p class="lede-app">
           이 페이지는 앱과 짝을 이루는 안내문서입니다.<br />
@@ -705,8 +705,8 @@
             <span class="source-dataset-text dataset-name">nvidia/Nemotron-Personas-Korea</span>
           </div>
           <p class="sub">
-            공개 표기, 앱 footer, 리포트 footer의 attribution은 이 데이터셋 하나로 고정합니다.
-            라이선스는 <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener">CC BY 4.0</a>입니다.
+            페르소나 데이터셋 attribution은 이 데이터셋으로 고정합니다.
+            가격·소득·자산 맥락은 KOSTAT/KOSIS 공개 통계를 별도로 표시합니다.
           </p>
         </div>
       </div>
@@ -733,13 +733,13 @@
           <article class="feature feature-wide" role="listitem">
             <span class="num" aria-hidden="true">3</span>
             <h3>제품 카드 → 균형형 패널 평가 → 수정 제안 후보 → CSV/Markdown 리포트</h3>
-            <p>입력에서 리포트까지 한 흐름입니다. v0.3 평가는 리스크뿐 아니라 취향 적합성·관심/공감부터 망설임·리스크까지 7개 축으로 균형 있게 설계되어 있습니다.<br />리포트에서는 concern 문장을 패션 리스크 7분류로 집계하고, deterministic rule 기반 수정 제안 후보와 대표 페르소나 카드로 정리합니다.</p>
+            <p>입력에서 리포트까지 한 흐름입니다. v0.2.0은 패널 평가에 KOSIS 공개 통계 컨텍스트를 함께 넣어 가격·소득·자산 맥락을 더 명확히 분리합니다.<br />리포트에서는 concern 문장을 패션 리스크 7분류로 집계하고, deterministic rule 기반 수정 제안 후보와 대표 페르소나 카드로 정리합니다.</p>
           </article>
 
           <article class="feature" role="listitem">
             <span class="num" aria-hidden="true">4</span>
             <h3>가격 부담도는 예측이 아니라 맥락값</h3>
-            <p>소득이나 구매력을 직접 추정하지 않습니다.<br />가격이 부담 요인으로 작동할 수 있는지 정도만 표시합니다.</p>
+            <p>개별 페르소나의 소득이나 구매력을 직접 추정하지 않습니다.<br />KOSIS/KOSTAT 가구 단위 공개 통계를 참고 맥락으로만 표시합니다.</p>
           </article>
 
           <article class="feature" role="listitem">
@@ -823,9 +823,9 @@
     <div class="wrap">
       <div class="footer-row">
         <p class="small">
-          © K-Fashion Persona Screener · local beta · v0.3<br />
+          © k-fashion-persona · local beta · v0.2.0<br />
           Code license: <strong>GNU AGPL v3.0 only</strong> (SPDX <code>AGPL-3.0-only</code>) ·
-          Data source: <a href="https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea" rel="noopener">🤗 nvidia/Nemotron-Personas-Korea</a> only · <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener">CC BY 4.0</a>.<br />
+          Persona dataset: <a href="https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea" rel="noopener">🤗 nvidia/Nemotron-Personas-Korea</a> · <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener">CC BY 4.0</a> · Public statistics: KOSTAT/KOSIS.<br />
           This page documents the local beta and links to the local app; it is not hosted evaluation.
         </p>
         <div class="footer-actions">
@@ -847,7 +847,7 @@
         title: "설문 전, 먼저 반응을 읽다",
         description: "K-fashion 전용 질문 설계로 컨셉을 합성 패널에 빠르게 점검하는 한국 패션 실무자용 로컬 도구. 실제 소비자 조사 대체가 아닌 합성 패널 반응 분포 기준의 A-B 상대 비교 보조도구.",
         items: {
-          ".hero-eyebrow": "로컬 퍼블릭 베타 · v0.3",
+          ".hero-eyebrow": "로컬 퍼블릭 베타 · v0.2.0",
           ".title-app": "설문 전, 먼저 반응을 읽다",
           ".lede-app": "이 페이지는 앱과 짝을 이루는 안내문서입니다.<br />실행하기를 누르면 바로 이용할 수 있습니다.<br /><br />고민 중인 패션 컨셉을 합성 패널(Personas-Dataset)에 먼저 보여주고,<br />전문 설문 전 반응의 방향성을 빠르게 확인해보세요.",
           ".btn-primary": "실행하기",
@@ -857,7 +857,7 @@
           ".cta-hint span:nth-of-type(2)": "실행 후",
           ".cta-hint span:nth-of-type(3)": "접속",
           ".btn-source-primary": "공식 데이터셋 보기",
-          ".source-lock .sub": "공개 표기, 앱 footer, 리포트 footer의 attribution은 이 데이터셋 하나로 고정합니다. 라이선스는 <a href=\"https://creativecommons.org/licenses/by/4.0/\" rel=\"noopener\">CC BY 4.0</a>입니다.",
+          ".source-lock .sub": "페르소나 데이터셋 attribution은 이 데이터셋으로 고정합니다. 가격·소득·자산 맥락은 KOSTAT/KOSIS 공개 통계를 별도로 표시합니다.",
           "#why-h": "이 도구가 좁히는 범위",
           "#why-h + .sub": "완전한 SaaS도, 실제 소비자 조사 대체도 아닙니다. 패션 컨셉을 합성 패널에 빠르게 확인하는 보조도구입니다.",
           ".features .feature:nth-child(1) h3": "K-fashion 전용 질문 설계",
@@ -865,9 +865,9 @@
           ".features .feature:nth-child(2) h3": "한국 패션 실무자용 local app",
           ".features .feature:nth-child(2) p": "SaaS가 아니라 local Streamlit GUI입니다.<br />API Key와 결과는 사용자 실행 환경에 남습니다.",
           ".features .feature:nth-child(3) h3": "제품 카드 → 균형형 패널 평가 → 수정 제안 후보 → CSV/Markdown 리포트",
-          ".features .feature:nth-child(3) p": "입력에서 리포트까지 한 흐름입니다. v0.3 평가는 리스크뿐 아니라 취향 적합성·관심/공감부터 망설임·리스크까지 7개 축으로 균형 있게 설계되어 있습니다.<br />리포트에서는 concern 문장을 패션 리스크 7분류로 집계하고, deterministic rule 기반 수정 제안 후보와 대표 페르소나 카드로 정리합니다.",
+          ".features .feature:nth-child(3) p": "입력에서 리포트까지 한 흐름입니다. v0.2.0은 패널 평가에 KOSIS 공개 통계 컨텍스트를 함께 넣어 가격·소득·자산 맥락을 더 명확히 분리합니다.<br />리포트에서는 concern 문장을 패션 리스크 7분류로 집계하고, deterministic rule 기반 수정 제안 후보와 대표 페르소나 카드로 정리합니다.",
           ".features .feature:nth-child(4) h3": "가격 부담도는 예측이 아니라 맥락값",
-          ".features .feature:nth-child(4) p": "소득이나 구매력을 직접 추정하지 않습니다.<br />가격이 부담 요인으로 작동할 수 있는지 정도만 표시합니다.",
+          ".features .feature:nth-child(4) p": "개별 페르소나의 소득이나 구매력을 직접 추정하지 않습니다.<br />KOSIS/KOSTAT 가구 단위 공개 통계를 참고 맥락으로만 표시합니다.",
           ".features .feature:nth-child(5) h3": "실제 소비자 조사 대체 아님 / A-B 상대 비교 중심",
           ".features .feature:nth-child(5) p": "합성 패널 기준이므로 절대 수치 단정은 피해야 합니다. 컨셉 A·B 상대 비교에 적합합니다.",
           "#scope-h": "포함과 한계",
@@ -894,7 +894,7 @@
           "#license-h .quick .card:nth-child(2) li:nth-child(1)": "프로젝트명·로고·도메인은 코드 라이선스로 자동 허가되지 않습니다 (<code>BRANDING_POLICY.md</code>)",
           "#license-h .quick .card:nth-child(2) li:nth-child(2)": "NVIDIA Nemotron-Personas-Korea 출처 표시는 <a href=\"https://creativecommons.org/licenses/by/4.0/\" rel=\"noopener\">CC BY 4.0</a><br />본 프로젝트는 NVIDIA 비공식",
           "#license-h .quick .card:nth-child(2) li:nth-child(3)": "제3자 dependency 고지는 <code>THIRD_PARTY_NOTICES.md</code>",
-          ".site-footer .small": "© K-Fashion Personas Screener · local beta · v0.3<br />Code license: <strong>GNU AGPL v3.0 only</strong> (SPDX <code>AGPL-3.0-only</code>) · Data source: <a href=\"https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea\" rel=\"noopener\">🤗 nvidia/Nemotron-Personas-Korea</a> only · <a href=\"https://creativecommons.org/licenses/by/4.0/\" rel=\"noopener\">CC BY 4.0</a>.<br />이 페이지는 로컬 베타와 로컬 앱 연결을 안내하며, 호스팅 평가 서비스가 아닙니다.",
+          ".site-footer .small": "© k-fashion-persona · local beta · v0.2.0<br />Code license: <strong>GNU AGPL v3.0 only</strong> (SPDX <code>AGPL-3.0-only</code>) · Persona dataset: <a href=\"https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea\" rel=\"noopener\">🤗 nvidia/Nemotron-Personas-Korea</a> · <a href=\"https://creativecommons.org/licenses/by/4.0/\" rel=\"noopener\">CC BY 4.0</a> · Public statistics: KOSTAT/KOSIS.<br />이 페이지는 로컬 베타와 로컬 앱 연결을 안내하며, 호스팅 평가 서비스가 아닙니다.",
           ".footer-links a:nth-child(1)": "로컬 앱"
         }
       },
@@ -902,7 +902,7 @@
         title: "Read concept reactions before the survey",
         description: "A local tool for Korean fashion teams to pre-check concepts through a synthetic persona panel. It supports A-B relative comparison and does not replace real consumer research.",
         items: {
-          ".hero-eyebrow": "Local public beta · v0.3",
+          ".hero-eyebrow": "Local public beta · v0.2.0",
           ".title-app": "Read reactions before the survey",
           ".lede-app": "This page is the companion guide for the local app.<br />Press Run to open the tool.<br /><br />Show a fashion concept to the synthetic Personas-Dataset panel first,<br />then quickly read the direction of reactions before expert surveys or main research.",
           ".btn-primary": "Run",
@@ -912,7 +912,7 @@
           ".cta-hint span:nth-of-type(2)": "then open",
           ".cta-hint span:nth-of-type(3)": "",
           ".btn-source-primary": "View official dataset",
-          ".source-lock .sub": "Public attribution, the app footer, and report footer use this dataset as the single fixed attribution. License is <a href=\"https://creativecommons.org/licenses/by/4.0/\" rel=\"noopener\">CC BY 4.0</a>.",
+          ".source-lock .sub": "Persona dataset attribution is fixed to this dataset. Price, income, and asset context is listed separately as KOSTAT/KOSIS public statistics.",
           "#why-h": "What This Tool Narrows",
           "#why-h + .sub": "It is not a full SaaS product and does not replace real consumer research. It is a supporting tool for quickly checking fashion concepts with a synthetic panel.",
           ".features .feature:nth-child(1) h3": "K-fashion-specific question design",
@@ -920,9 +920,9 @@
           ".features .feature:nth-child(2) h3": "Local app for Korean fashion practitioners",
           ".features .feature:nth-child(2) p": "It is a local Streamlit GUI, not SaaS.<br />API keys and results remain in the user's execution environment.",
           ".features .feature:nth-child(3) h3": "Product card → balanced panel evaluation → revision candidates → CSV/Markdown report",
-          ".features .feature:nth-child(3) p": "The flow runs from input to report. v0.3 evaluation is balanced across 7 axes, from taste fit and interest/empathy to hesitation and risk.<br />Reports aggregate concern sentences into 7 fashion-risk categories, then summarize deterministic rule-based revision candidates and representative persona cards.",
+          ".features .feature:nth-child(3) p": "The flow runs from input to report. v0.2.0 adds KOSIS public-statistics context so price, income, and asset context stays separate from persona attributes.<br />Reports aggregate concern sentences into 7 fashion-risk categories, then summarize deterministic rule-based revision candidates and representative persona cards.",
           ".features .feature:nth-child(4) h3": "Price burden is context, not prediction",
-          ".features .feature:nth-child(4) p": "It does not directly estimate income or purchasing power.<br />It only indicates whether price may operate as a burden factor.",
+          ".features .feature:nth-child(4) p": "It does not estimate individual persona income or purchasing power.<br />It uses KOSIS/KOSTAT household aggregate statistics only as reference context.",
           ".features .feature:nth-child(5) h3": "Not a substitute for real consumer research / best for A-B relative comparison",
           ".features .feature:nth-child(5) p": "Because it is based on a synthetic panel, avoid absolute-number claims. Use it for relative comparison between concepts A and B.",
           "#scope-h": "Included And Limited",
@@ -949,7 +949,7 @@
           "#license-h .quick .card:nth-child(2) li:nth-child(1)": "Project name, logo, and domain are not automatically licensed by the code license (<code>BRANDING_POLICY.md</code>)",
           "#license-h .quick .card:nth-child(2) li:nth-child(2)": "NVIDIA Nemotron-Personas-Korea attribution is <a href=\"https://creativecommons.org/licenses/by/4.0/\" rel=\"noopener\">CC BY 4.0</a><br />This project is not affiliated with NVIDIA",
           "#license-h .quick .card:nth-child(2) li:nth-child(3)": "Third-party dependency notices are in <code>THIRD_PARTY_NOTICES.md</code>",
-          ".site-footer .small": "© K-Fashion Personas Screener · local beta · v0.3<br />Code license: <strong>GNU AGPL v3.0 only</strong> (SPDX <code>AGPL-3.0-only</code>) · Data source: <a href=\"https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea\" rel=\"noopener\">🤗 nvidia/Nemotron-Personas-Korea</a> only · <a href=\"https://creativecommons.org/licenses/by/4.0/\" rel=\"noopener\">CC BY 4.0</a>.<br />This page documents the local beta and links to the local app; it is not hosted evaluation.",
+          ".site-footer .small": "© k-fashion-persona · local beta · v0.2.0<br />Code license: <strong>GNU AGPL v3.0 only</strong> (SPDX <code>AGPL-3.0-only</code>) · Persona dataset: <a href=\"https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea\" rel=\"noopener\">🤗 nvidia/Nemotron-Personas-Korea</a> · <a href=\"https://creativecommons.org/licenses/by/4.0/\" rel=\"noopener\">CC BY 4.0</a> · Public statistics: KOSTAT/KOSIS.<br />This page documents the local beta and links to the local app; it is not hosted evaluation.",
           ".footer-links a:nth-child(1)": "Local app"
         }
       }

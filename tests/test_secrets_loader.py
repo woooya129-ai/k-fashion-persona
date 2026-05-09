@@ -12,9 +12,11 @@ from src.secrets_loader import (
     ANTHROPIC_KEY_VAR,
     GOOGLE_KEY_VAR,
     HF_TOKEN_VAR,
+    KOSIS_API_KEY_VAR,
     OPENAI_KEY_VAR,
     LoadedSecretsStatus,
     get_hf_token,
+    get_kosis_api_key,
     get_provider_key,
     load_secrets_from_env_path,
     redact_for_log,
@@ -26,7 +28,13 @@ pytestmark = pytest.mark.no_network
 @pytest.fixture(autouse=True)
 def isolate_env(monkeypatch: pytest.MonkeyPatch):
     """각 테스트마다 환경변수 격리."""
-    for var in (OPENAI_KEY_VAR, ANTHROPIC_KEY_VAR, GOOGLE_KEY_VAR, HF_TOKEN_VAR):
+    for var in (
+        OPENAI_KEY_VAR,
+        ANTHROPIC_KEY_VAR,
+        GOOGLE_KEY_VAR,
+        HF_TOKEN_VAR,
+        KOSIS_API_KEY_VAR,
+    ):
         monkeypatch.delenv(var, raising=False)
     yield
 
@@ -40,6 +48,7 @@ class TestLoadSecretsFromEnvPath:
         assert status.openai_present is False
         assert status.anthropic_present is False
         assert status.hf_token_present is False
+        assert status.kosis_api_key_present is False
 
     def test_env_present_after_load(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv(OPENAI_KEY_VAR, "fake-openai-key-for-test")
@@ -98,6 +107,15 @@ class TestGetHfToken:
 
     def test_missing(self):
         assert get_hf_token() is None
+
+
+class TestGetKosisApiKey:
+    def test_present(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv(KOSIS_API_KEY_VAR, "fake-kosis-key")
+        assert get_kosis_api_key() == "fake-kosis-key"
+
+    def test_missing(self):
+        assert get_kosis_api_key() is None
 
 
 class TestRedactForLog:

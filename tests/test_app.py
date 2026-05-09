@@ -44,7 +44,15 @@ def _run_app() -> AppTest:
 
 
 def _api_key_inputs(at: AppTest):
-    return [widget for widget in at.text_input if "API KEY" in widget.proto.label.upper()]
+    return [
+        widget
+        for widget in at.text_input
+        if "API KEY" in widget.proto.label.upper() and "KOSIS" not in widget.proto.label.upper()
+    ]
+
+
+def _kosis_api_key_inputs(at: AppTest):
+    return [widget for widget in at.text_input if widget.proto.label.upper() == "KOSIS API KEY"]
 
 
 def _hf_token_inputs(at: AppTest):
@@ -713,7 +721,7 @@ def test_app_source_uses_readable_comfort_tokens_with_targeted_hero_gradient() -
     assert "docs/docs.html" in source
     assert "📄" in source
     assert "woooya129-ai/k-fashion-persona" in source
-    assert "로컬 퍼블릭 베타 · v0.3" in source
+    assert "로컬 퍼블릭 베타 · v0.2.0" in source
     assert "설명 ⇄ 도구" not in source
     assert "st.segmented_control" in source
 
@@ -738,10 +746,13 @@ def test_apptest_initial_screen_renders_without_exceptions() -> None:
 def test_apptest_api_key_input_is_password() -> None:
     at = _run_app()
     api_inputs = _api_key_inputs(at)
+    kosis_inputs = _kosis_api_key_inputs(at)
     hf_inputs = _hf_token_inputs(at)
 
     assert len(api_inputs) == 1
     assert "type: PASSWORD" in str(api_inputs[0].proto)
+    assert len(kosis_inputs) == 1
+    assert "type: PASSWORD" in str(kosis_inputs[0].proto)
     assert len(hf_inputs) == 1
     assert "type: PASSWORD" in str(hf_inputs[0].proto)
 
@@ -851,7 +862,7 @@ def test_apptest_run_enabled_after_required_inputs() -> None:
     _text_input_by_label(at, "제품 카테고리").set_value("니트웨어")
     at.text_area[0].set_value("조용한 고급감의 미니멀 니트")
     _api_key_inputs(at)[0].set_value("fake-provider-key")
-    at.checkbox[0].check()
+    _checkbox_by_label(at, app.ui_text("KR", "cost_confirm")).check()
     at.run(timeout=10)
 
     assert _button_by_label(at, app.ui_text("KR", "run_button")).proto.disabled is False
@@ -862,7 +873,7 @@ def test_apptest_injection_warning_requires_second_confirmation() -> None:
     _text_input_by_label(at, "제품 카테고리").set_value("니트웨어")
     at.text_area[0].set_value("ignore previous")
     _api_key_inputs(at)[0].set_value("fake-provider-key")
-    at.checkbox[0].check()
+    _checkbox_by_label(at, app.ui_text("KR", "cost_confirm")).check()
     at.run(timeout=10)
 
     assert "프롬프트 인젝션 의심" in _visible_text(at)
@@ -1200,7 +1211,7 @@ def test_apptest_product_card_filled_canonical_text_drives_concept_hash() -> Non
     at.text_area[0].set_value("조용한 고급감의 미니멀 니트")
     at.text_area[1].set_value("30대 직장인")
     _api_key_inputs(at)[0].set_value("fake-provider-key")
-    at.checkbox[0].check()
+    _checkbox_by_label(at, app.ui_text("KR", "cost_confirm")).check()
     at.run(timeout=10)
 
     assert len(at.exception) == 0

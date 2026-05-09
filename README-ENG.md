@@ -1,18 +1,23 @@
 # k-fashion-persona
 
-## Check K-fashion concepts
+## Check K-fashion Concepts With AI Personas First
 
-## with AI personas first
-
+[![Version](https://img.shields.io/badge/version-0.2.0-0F766E)](pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
-[![Docs](https://img.shields.io/badge/Docs-INSTALL--ENG-2563EB?logo=readthedocs&logoColor=white)](INSTALL-ENG.md)
+[![Twin Project](https://img.shields.io/badge/GitHub-us--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/us-fashion-persona)
+[![Docs](https://img.shields.io/badge/Docs-INSTALL--ENG-2563EB?logo=readthedocs&logoColor=white)](docs/INSTALL-ENG.md)
+[![Korean README](https://img.shields.io/badge/README-Korean-2563EB)](README.md)
 [![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-0F766E.svg)](LICENSE)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Woody%20Kim-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/woody-kim-ab2741403/)
 
-Enter a product card with category, price, fit, material, color, wearing context, and target hypothesis. The app checks taste fit, interest reasons, hesitation points, and fashion risk signals from synthetic persona-style reactions.
+k-fashion-persona is a local-first Streamlit tool for checking Korean fashion product concepts with synthetic AI personas before launch or formal research.
 
-This is a local-first public beta tool for checking the direction of fashion concept reactions before a professional survey or main research study. It is not a real consumer prediction, purchase-rate prediction, or sales prediction service.
+The twin project for US fashion concepts is [us-fashion-persona](https://github.com/woooya129-ai/us-fashion-persona).
+
+Enter a product card with category, price, fit, material, color, season, wearing context, style tone, brand message, and target hypothesis. The app scans interest reasons, hesitation points, price burden, and fashion risk signals.
+
+This is not a real consumer prediction, purchase-rate prediction, sales prediction, or market-share prediction service.
 
 ```mermaid
 flowchart LR
@@ -23,35 +28,229 @@ flowchart LR
   E --> F["Next step"]
 ```
 
-NVIDIA Nemotron-Personas-Korea is a synthetic persona dataset with Korean context. This tool shows a fashion product card to synthetic personas and helps you scan taste fit, interest reasons, hesitation points, and risk signals before a main survey.
-
-Income and assets are not directly enriched or inferred as individual persona attributes. Price burden is contextualized against annual household clothing and footwear spending from Statistics Korea (KOSTAT) / KOSIS public statistics.
-
-This works as an early check because the goal is not to predict real buying behavior. The goal is to see which parts of the concept create interest and which parts may block the reaction. Final decisions should still use real surveys, sales data, and expert review.
-
 ![k-fashion-persona main screen](docs/assets/kfashionpersona-screenshot-03.webp)
 
 ![k-fashion-persona result screen](docs/assets/kfashionpersona-screenshot-04.webp)
 
-## What You Can Check
+## What It Does
 
-- Product category, price range, fit, material, color
-- Season, wearing context, style tone
-- Brand message and product description
-- Target and brand hypothesis
-- Interest reasons, hesitation points, and risk signals by persona
-- Result report download
+- Builds a synthetic persona panel with Korean context
+- Accepts a product-card style fashion concept
+- Filters by age, sex, province, and occupation
+- Uses seed-based sampling
+- Lets you choose LLM provider/model
+- Accepts OpenAI, Anthropic, or Gemini API keys in the UI
+- Accepts a Hugging Face token in the UI or external `.env`
+- Uses a committed KOSIS public-statistics snapshot
+- Optionally refreshes statistics through a KOSIS `statisticsData` API URL
+- Exports Markdown and CSV reports
 
-## Boundary
+## Data And Statistics
 
-- Runs locally with your own API key.
-- The default API key flow is the password field in the Streamlit screen.
-- API keys, cache, outputs, and raw data are not included in the public repository.
-- Local persona files are read only under `data/`. The recommended location is `data/raw/`.
-- The Hugging Face path uses seeded reservoir sampling; the local-file path uses seeded random sampling after filtering.
-- Run metadata is stored locally in `cache/screener.db`: dataset source/split/revision, matched count, final sample size, sampling seed, sampling strategy, filter summary, model/prompt/hash metadata.
-- The DB does not store raw API keys, HF tokens, raw provider responses, or raw concept text in dedicated columns.
-- NVIDIA Nemotron-Personas-Korea is attributed under CC BY 4.0.
-- The public code license is GNU AGPL-3.0-only.
+The default persona dataset is [NVIDIA Nemotron-Personas-Korea](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea). It is a synthetic persona dataset, not real-person data.
+
+Income and asset values are not inferred as individual persona attributes from the NVIDIA dataset. The report context for income, assets, and household clothing-footwear spending comes from Statistics Korea (KOSTAT) / KOSIS public statistics stored in `data/public/kosis_household_context.csv`.
+
+If you enter a KOSIS API key and a `statisticsData` URL, the run attempts to use that API response first. If refresh fails or no supported metrics are found, it falls back to the committed public-statistics snapshot.
+
+These are household-level aggregate statistics. They do not represent a synthetic persona's real income, assets, or purchasing power.
+
+## Quick Start
+
+Requirements:
+
+- Git
+- Python 3.11 or newer
+- `uv`
+- An API key for your chosen LLM provider
+- Hugging Face token if needed
+- Optional KOSIS API key
+
+```bash
+git clone https://github.com/woooya129-ai/k-fashion-persona.git
+cd k-fashion-persona
+uv sync --all-extras --dev
+uv run streamlit run src/app.py
+```
+
+Open:
+
+```text
+http://localhost:8501
+```
+
+To make the local Docs button work, run this in another terminal:
+
+```bash
+uv run python -m http.server 8510
+```
+
+For the full setup guide, read [docs/INSTALL-ENG.md](docs/INSTALL-ENG.md).
+
+## API Keys
+
+The easiest path is to paste keys into the password fields in the Streamlit UI. The app does not show the raw key value and does not save it to the repository.
+
+For repeated local runs, place a local environment file outside the repository.
+
+### macOS / Linux
+
+```bash
+mkdir -p ~/secrets/k-fashion
+cp .env.example ~/secrets/k-fashion/.env
+```
+
+### Windows PowerShell
+
+```powershell
+New-Item -ItemType Directory -Force "$HOME\secrets\k-fashion"
+Copy-Item .env.example "$HOME\secrets\k-fashion\.env"
+```
+
+Environment file example:
+
+```env
+OPENAI_API_KEY=
+ANTHROPIC_API_KEY=
+GOOGLE_API_KEY=
+HF_TOKEN=
+KOSIS_API_KEY=
+KOSIS_STATISTICS_DATA_URL=
+```
+
+`GOOGLE_API_KEY` is for the Gemini API key from Google AI Studio, not Vertex AI.
+
+Do not place or commit a real `.env` file in the repository root.
+
+## How To Use
+
+1. Run the Streamlit app.
+2. Choose a provider and model.
+3. Enter the provider API key.
+4. Enter `HF TOKEN` if needed.
+5. Choose the KOSIS reference segment.
+6. Optionally enter `KOSIS API KEY` and `KOSIS statisticsData URL`, then enable API refresh.
+7. Fill in the product card.
+8. Adjust sample size, seed, and filters.
+9. Confirm estimated cost and time.
+10. Press `ENTER`.
+11. Download the Markdown or CSV report.
+
+Product-card fields:
+
+- Category
+- Price
+- Fit / silhouette
+- Material
+- Color
+- Season
+- Wearing context
+- Style tone
+- Target hypothesis
+- Brand message / product description
+
+For local CSV or Parquet data, files must stay under `data/`. The recommended path is `data/raw/`.
+
+## Report Example
+
+Below is a shortened Markdown report example. Numbers are illustrative. Real output depends on the product concept, persona filter, provider/model, sampling seed, and KOSIS reference segment.
+
+```markdown
+# k-fashion-persona — Synthetic Persona Panel Report
+
+## Synthetic Panel Reaction Distribution
+
+| Metric | Value |
+|---|---|
+| Positive reactions | 18 / 40 |
+| Neutral reactions | 14 / 40 |
+| Negative reactions | 8 / 40 |
+| Average interest score | 6.4 / 10 |
+| Price burden high or above | 13 / 40 |
+
+## KOSIS Reference Statistics
+
+- Reference segment: National total
+- Reference period: 2025_Q4, 2025, 2024
+- Price denominator: KRW 2,136,000 (annualized household clothing-footwear spending)
+- Product price / denominator: 0.09x (medium)
+
+| Metric | Value | Period | Source |
+|---|---:|---|---|
+| Annualized clothing-footwear spending | KRW 2,136,000 | 2025_Q4 | 2025 Q4 Household Income and Expenditure Survey |
+| Monthly clothing-footwear spending | KRW 178,000 | 2025_Q4 | 2025 Q4 Household Income and Expenditure Survey |
+| Monthly household income | KRW 5,422,000 | 2025_Q4 | 2025 Q4 Household Income and Expenditure Survey |
+| Average household assets | KRW 566,780,000 | 2025 | 2025 Household Finance and Welfare Survey |
+
+> These values are KOSIS/KOSTAT household aggregate statistics. They do not mean individual persona income, assets, or purchasing power.
+
+## Main Positive Reasons
+
+- Works for both office wear and weekend outings
+- Light khaki fits the spring season
+- Water-resistant cotton blend feels practical
+
+## Main Hesitation Reasons
+
+- KRW 189,000 may feel high for a basic outerwear item
+- Semi-oversized fit may look bulky on some body types
+- Care instructions and wrinkle resistance need more detail
+
+## Fashion Risk Signals
+
+| Category | Signal Count | Example Concern |
+|---|---:|---|
+| Price burden | 6 | Price feels high |
+| Fit risk | 4 | Semi-oversized fit may look bulky |
+| Material/care burden | 3 | Washing and wrinkles are a concern |
+
+---
+
+Persona dataset: NVIDIA Nemotron-Personas-Korea, CC BY 4.0.
+Public statistics context uses Statistics Korea (KOSTAT) / KOSIS household clothing-footwear spending, income, and asset statistics; it does not infer individual income or assets.
+Built with Codex and Claude Code.
+Contact: woooya129 [at] gmail [dot] com
+```
+
+CSV reports flatten the same content into `section,key,value`.
+
+## Interpreting Results
+
+Appropriate use:
+
+- Drafting survey questions before formal research
+- Finding weak points in product descriptions
+- Reviewing price, material, fit, and styling risks
+- Comparing early concept candidates
+
+Inappropriate use:
+
+- Real purchase-rate prediction
+- Real sales prediction
+- Market-share prediction
+- Replacement for real consumer research
+- Sole basis for launch, production, or inventory decisions
+
+## Limits
+
+- This is not a real consumer-data prediction model.
+- Synthetic persona reactions can differ from real buying behavior.
+- The dataset is not built specifically for fashion purchase research.
+- Images, lookbooks, fit photos, and body measurements are not included by default.
+- KOSIS/KOSTAT values are household-level aggregate statistics, not individual persona economics.
+- Final decisions should combine real research, sales data, and expert review.
+
+## License And Attribution
+
+- Code license: GNU AGPL-3.0-only
+- Persona dataset: NVIDIA Nemotron-Personas-Korea
+- Dataset license: CC BY 4.0 attribution applies
+- Statistics context: KOSTAT / KOSIS public statistics
+
+Review AGPL-3.0-only terms before using this in a commercial service or closed-source product.
 
 Built with Codex and Claude Code.
+
+## Contact
+
+woooya129 [at] gmail [dot] com

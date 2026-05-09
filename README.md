@@ -4,21 +4,22 @@
 
 ## K-fashion 컨셉을 AI 페르소나로 먼저 점검
 
+[![Version](https://img.shields.io/badge/version-0.2.0-0F766E)](pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
 [![Twin Project](https://img.shields.io/badge/GitHub-us--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/us-fashion-persona)
-[![Docs](https://img.shields.io/badge/Docs-INSTALL-2563EB?logo=readthedocs&logoColor=white)](INSTALL.md)
+[![Docs](https://img.shields.io/badge/Docs-INSTALL-2563EB?logo=readthedocs&logoColor=white)](docs/INSTALL.md)
 [![English README](https://img.shields.io/badge/README-English-2563EB)](README-ENG.md)
 [![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-0F766E.svg)](LICENSE)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Woody%20Kim-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/woody-kim-ab2741403/)
 
-k-fashion-persona는 패션 제품 컨셉을 실제 출시하거나 본조사를 하기 전에 AI 합성 페르소나 관점으로 빠르게 점검하는 local-first 도구입니다.
+k-fashion-persona는 패션 제품 컨셉을 실제 출시하거나 본조사를 하기 전에 AI 합성 페르소나 관점으로 점검하는 local-first 도구입니다.
 
 미국 패션 컨셉용 쌍둥이 프로젝트는 [us-fashion-persona](https://github.com/woooya129-ai/us-fashion-persona)입니다.
 
 제품 카드에 카테고리, 가격, 핏, 소재, 컬러, 시즌, 착용 상황, 스타일 톤, 브랜드 메시지, 타깃 가설을 입력하면 여러 합성 페르소나가 해당 컨셉을 어떻게 받아들일 수 있는지 확인할 수 있습니다.
 
-이 도구는 실제 소비자 반응, 구매율, 매출, 시장 점유율을 예측하는 서비스가 아닙니다. 본조사 전에 어떤 부분에서 관심이 생기고, 어떤 부분에서 망설임이 생길 수 있는지 초기 신호를 확인하는 보조 도구입니다.
+이 도구는 실제 소비자 반응, 구매율, 매출, 시장 점유율을 예측하는 서비스가 아닙니다. 본조사 전에 관심 이유, 망설임, 가격 부담, 소재/핏/코디 리스크 같은 초기 신호를 정리하는 보조 도구입니다.
 
 ```mermaid
 flowchart LR
@@ -29,38 +30,132 @@ flowchart LR
   E --> F["Next step"]
 ```
 
-NVIDIA Nemotron-Personas-Korea는 한국 맥락을 반영한 합성 페르소나 데이터셋입니다. 이 도구는 제품 카드를 여러 합성 페르소나에게 보여주는 방식으로, 본 설문조사 전에 취향 적합성, 관심 이유, 망설임, 리스크 신호를 빠르게 훑어봅니다.
-
-이 방식이 가능한 이유는 실제 구매를 예측하려는 것이 아니라, 제품 설명을 봤을 때 어떤 지점에서 관심이 생기고 어떤 지점에서 막히는지 early signal을 보는 용도이기 때문입니다. 최종 판단은 실제 설문, 판매 데이터, 전문가 검토와 함께 해야 합니다.
-
 ![k-fashion-persona main screen](docs/assets/kfashionpersona-screenshot-01.webp)
 
 ![k-fashion-persona result screen](docs/assets/kfashionpersona-screenshot-02.webp)
 
-## 무엇을 확인할 수 있나요?
+## 주요 기능
 
-- 제품 카테고리, 가격대, 핏과 실루엣, 소재, 컬러
-- 시즌, 착용 상황, 스타일 톤
-- 브랜드 메시지와 제품 설명
-- 타깃 고객 가설과 브랜드 가설
-- 페르소나별 관심 이유와 망설임 이유
-- 가격 부담, 핏 리스크, 소재와 관리 부담
-- 코디 난이도, 착용 상황 불일치, 스타일 부담
-- Markdown 또는 CSV 결과 리포트 다운로드
+- 한국 맥락의 합성 페르소나 패널 구성
+- 제품 카드 기반 컨셉 입력
+- 연령, 성별, 지역, 직업 필터
+- seed 기반 샘플링
+- LLM provider/model 선택
+- OpenAI, Anthropic, Gemini API key 화면 입력
+- Hugging Face token 입력 또는 외부 `.env` 사용
+- KOSIS 공개 통계 스냅샷 선택
+- 선택 시 KOSIS `statisticsData` API URL로 통계 갱신
+- Markdown / CSV 리포트 다운로드
 
-## 작동 방식
+## 데이터와 통계
 
-1. 사용자가 패션 제품 컨셉을 입력합니다.
-2. 한국 맥락의 합성 페르소나 데이터를 불러옵니다.
-3. 연령, 성별, 지역, 직업 조건으로 페르소나를 필터링할 수 있습니다.
-4. seed 기반 샘플링으로 평가할 페르소나 패널을 구성합니다.
-5. 각 페르소나 관점에서 LLM이 제품 컨셉을 평가합니다.
-6. 결과는 정해진 JSON 스키마로 검증됩니다.
-7. 결과를 집계해 Markdown 또는 CSV 리포트로 확인할 수 있습니다.
+기본 페르소나 데이터셋은 [NVIDIA Nemotron-Personas-Korea](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)입니다. 실제 인물 데이터가 아니라 한국 맥락을 반영한 합성 페르소나 데이터셋입니다.
+
+소득과 자산은 NVIDIA 데이터셋에 있는 개별 페르소나 속성으로 추정하거나 보강하지 않습니다. 리포트 작성 시 참고하는 소득, 자산, 의류·신발 지출 값은 [통계청(KOSTAT)](https://kostat.go.kr/)과 [국가통계포털(KOSIS)](https://kosis.kr/index)의 공개 통계를 기반으로 한 `data/public/kosis_household_context.csv` 스냅샷에서 가져옵니다.
+
+KOSIS API key와 `statisticsData` URL을 입력하면 실행 시 해당 URL의 응답을 우선 참고합니다. API 갱신에 실패하거나 지원 항목을 찾지 못하면 저장소에 포함된 공개 통계 스냅샷으로 자동 fallback합니다.
+
+이 통계는 가구 단위 집계값입니다. 개별 합성 페르소나의 실제 소득, 자산, 구매력을 뜻하지 않습니다.
+
+## 빠른 실행
+
+필요 조건:
+
+- Git
+- Python 3.11 이상
+- `uv`
+- 사용할 LLM provider API key
+- 필요 시 Hugging Face token
+- 선택 사항: KOSIS API key
+
+```bash
+git clone https://github.com/woooya129-ai/k-fashion-persona.git
+cd k-fashion-persona
+uv sync --all-extras --dev
+uv run streamlit run src/app.py
+```
+
+브라우저에서 엽니다.
+
+```text
+http://localhost:8501
+```
+
+정적 문서 버튼까지 로컬에서 열고 싶으면 다른 터미널에서 실행합니다.
+
+```bash
+uv run python -m http.server 8510
+```
+
+자세한 설치와 실행 방법은 [docs/INSTALL.md](docs/INSTALL.md)를 참고하세요.
+
+## API Key 설정
+
+가장 쉬운 방식은 앱 화면의 password 입력칸에 key를 붙여넣는 것입니다. 입력값은 화면에 그대로 노출하지 않고 저장소에도 저장하지 않습니다.
+
+반복 실행이 필요하면 저장소 밖에 환경 파일을 둡니다.
+
+### macOS / Linux
+
+```bash
+mkdir -p ~/secrets/k-fashion
+cp .env.example ~/secrets/k-fashion/.env
+```
+
+### Windows PowerShell
+
+```powershell
+New-Item -ItemType Directory -Force "$HOME\secrets\k-fashion"
+Copy-Item .env.example "$HOME\secrets\k-fashion\.env"
+```
+
+환경 파일 예시:
+
+```env
+OPENAI_API_KEY=
+ANTHROPIC_API_KEY=
+GOOGLE_API_KEY=
+HF_TOKEN=
+KOSIS_API_KEY=
+KOSIS_STATISTICS_DATA_URL=
+```
+
+`GOOGLE_API_KEY`는 Google AI Studio의 Gemini API key 기준입니다. Vertex AI key가 아닙니다.
+
+저장소 root에 실제 `.env` 파일을 두거나 commit하지 마세요.
+
+## 사용 방법
+
+1. Streamlit 앱을 실행합니다.
+2. LLM provider와 model을 선택합니다.
+3. provider API key를 입력합니다.
+4. 필요하면 `HF TOKEN`을 입력합니다.
+5. KOSIS 기준 계층을 고릅니다.
+6. 선택 사항으로 `KOSIS API KEY`와 `KOSIS statisticsData URL`을 입력하고 API 갱신을 켭니다.
+7. 제품 카드를 입력합니다.
+8. sample size, seed, 필터를 조정합니다.
+9. 예상 비용과 시간을 확인합니다.
+10. `ENTER`를 눌러 실행합니다.
+11. 결과 리포트를 Markdown 또는 CSV로 내려받습니다.
+
+제품 카드 입력 항목:
+
+- 카테고리
+- 가격
+- 핏 / 실루엣
+- 소재
+- 컬러
+- 시즌
+- 착용 상황
+- 스타일 톤
+- 타깃 가설
+- 브랜드 메시지 / 제품 설명
+
+로컬 CSV 또는 Parquet 파일을 사용할 경우 `data/` 하위에 두어야 합니다. 권장 위치는 `data/raw/`입니다.
 
 ## 리포트 예시
 
-아래는 프로그램 실행 후 다운로드할 수 있는 Markdown 리포트의 축약 예시입니다. 수치는 예시용 합성 값이며, 실제 결과는 입력한 제품 컨셉, 페르소나 필터, provider/model, sampling seed에 따라 달라집니다.
+아래는 프로그램 실행 후 다운로드할 수 있는 Markdown 리포트의 축약 예시입니다. 수치는 예시용이며 실제 결과는 입력 컨셉, 페르소나 필터, provider/model, sampling seed, KOSIS 기준 계층에 따라 달라집니다.
 
 예시 입력 컨셉:
 
@@ -86,6 +181,23 @@ NVIDIA Nemotron-Personas-Korea는 한국 맥락을 반영한 합성 페르소나
 | 평균 관심도 | 6.4 / 10 |
 | 가격 부담도 high 이상 | 13명 / 32.5% |
 | 파싱 실패/제외 | 3명 |
+
+## KOSIS 참고 통계
+
+- 기준 계층: 전국 전체
+- 참고 기간: 2025_Q4, 2025, 2024
+- 가격 기준값: 2,136,000원 (연간 환산 의류·신발 지출)
+- 제품 가격 / 기준값: 0.09배 (medium)
+
+| 항목 | 값 | 기간 | 출처 |
+|---|---:|---|---|
+| 연간 환산 의류·신발 지출 | 2,136,000원 | 2025_Q4 | 2025년 4/4분기 가계동향조사 결과 |
+| 월평균 의류·신발 지출 | 178,000원 | 2025_Q4 | 2025년 4/4분기 가계동향조사 결과 |
+| 월평균 가구소득 | 5,422,000원 | 2025_Q4 | 2025년 4/4분기 가계동향조사 결과 |
+| 평균 가구자산 | 566,780,000원 | 2025 | 2025년 가계금융복지조사 결과 |
+| 평균 가구순자산 | 471,440,000원 | 2025 | 2025년 가계금융복지조사 결과 |
+
+> 위 값은 KOSIS/KOSTAT 가구 단위 집계 통계이며, 개별 페르소나의 실제 소득·자산·구매력을 뜻하지 않습니다.
 
 ## 결과 품질
 
@@ -130,39 +242,14 @@ NVIDIA Nemotron-Personas-Korea는 한국 맥락을 반영한 합성 페르소나
 | 구매 망설임 | 2 | 비슷한 대체품이 많음 |
 | 스타일 부담 | 1 | 트렌치 디자인이 다소 평범함 |
 
-> 분류 대상 concern 총 19건 중 미분류 0건 (키워드 매칭 안 됨, 수정 제안에서는 제외).
-
-## 가격 부담 해석
-
-- 가격 부담도 high 이상: 13명 / 32.5%
-- main_concerns 가격 관련 신호: 6건
-- 대표 concern: 가격이 부담됨, 예산 대비 높음
-
-> 합성 패널 응답 기준의 가격 신호 분포일 뿐, 실제 가격 수용성이나 실제 결제 결정의 근거가 아닙니다.
-
-## 스타일/코디 장벽
-
-- 핏 리스크: 4건 — 세미오버핏이 부해 보일 수 있음
-- 소재/관리 부담: 3건 — 구김과 세탁 관리가 걱정됨
-- 코디 난이도: 2건 — 라이트 카키 코디가 제한적일 수 있음
-- 착용 상황 불일치: 1건 — 격식 있는 출근복으로는 애매함
-- 스타일 부담: 1건 — 트렌치 디자인이 다소 평범함
-
-## 구매 망설임
-
-- 구매 망설임 신호: 2건
-- 대표 concern: 비슷한 대체품이 많음
-
 ## 수정 제안 후보 (deterministic rule, LLM 호출 없음)
 
 1. **가격 부담** (신호 6건)
-   - 소재/디테일/구성 대비 가격 설명을 강화하거나, 보다 낮은 엔트리 가격 옵션을 함께 제시하는 방향이 후보입니다.
+   - 소재/디테일/구성 대비 가격 설명을 강화하거나, 더 낮은 엔트리 가격 옵션을 함께 제시하는 방향이 후보입니다.
 2. **핏 리스크** (신호 4건)
    - 사이즈 가이드, 착용 컷, 체형별 안내를 보강하는 방향이 후보입니다.
 3. **소재/관리 부담** (신호 3건)
    - 세탁/관리 난이도 안내를 보강하거나 대체 소재 검토를 함께 표시하는 방향이 후보입니다.
-
-> 위 제안은 합성 패널 응답을 키워드 규칙으로 분류한 결과를 기반으로 한 후보 방향이며, 실제 소비자 의견을 대체하거나 실제 매출/판매 결과를 보장하지 않습니다.
 
 ## 대표 페르소나 반응 (추상화 라벨, 원문 비포함)
 
@@ -176,11 +263,11 @@ NVIDIA Nemotron-Personas-Korea는 한국 맥락을 반영한 합성 페르소나
 
 본 도구는 합성 페르소나와 LLM 기반의 사전 가설 분석 도구입니다.
 실제 소비자 조사, 매출 예측, 법률 자문, 최종 사업 판단을 대체하지 않습니다.
-Data source (only external dataset): NVIDIA Nemotron-Personas-Korea, CC BY 4.0.
+Persona dataset: NVIDIA Nemotron-Personas-Korea, CC BY 4.0.
 Dataset URL: https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea
 CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
 k-fashion-persona.
-Price context uses Statistics Korea (KOSTAT) / KOSIS public statistics for annual household clothing and footwear spending; it does not infer income or assets.
+Public statistics context uses Statistics Korea (KOSTAT) / KOSIS household clothing-footwear spending, income, and asset statistics; it does not infer individual income or assets.
 Built with Codex and Claude Code.
 Contact: woooya129 [at] gmail [dot] com
 ```
@@ -190,90 +277,15 @@ CSV 리포트는 같은 내용을 `section,key,value` 컬럼으로 평면화합�
 ```csv
 section,key,value
 반응분포,합성 패널 40명 기준 - 긍정,18명 / 45.0%
-반응분포,평균 관심도,6.4 / 10
+KOSIS참고통계,기준 계층,전국 전체
+KOSIS참고통계,가격 기준값,"2,136,000원"
+KOSIS참고통계_항목,월평균 가구소득,"5,422,000원 | 2025_Q4 | 2025년 4/4분기 가계동향조사 결과"
 패션위험신호,가격 부담,6건
-수정제안,rank1_price_burden,가격 부담 (신호 6건): 소재/디테일/구성 대비 가격 설명을 강화하거나, 보다 낮은 엔트리 가격 옵션을 함께 제시하는 방향이 후보입니다.
+수정제안,rank1_price_burden,가격 부담 (신호 6건): 소재/디테일/구성 대비 가격 설명을 강화하거나 더 낮은 엔트리 가격 옵션을 함께 제시하는 방향이 후보입니다.
 대표페르소나반응,rank1,28세 / 서울 / 사무직 | positive | 관심도 8 | 출근복과 주말 외출복으로 모두 활용 가능
 ```
 
-## 사용하는 데이터
-
-기본 데이터셋은 [NVIDIA Nemotron-Personas-Korea](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)입니다.
-
-이 데이터셋은 한국 맥락을 반영한 합성 페르소나 데이터셋입니다. 실제 인물 데이터가 아니며, 실제 소비자의 구매 행동을 직접 나타내지 않습니다.
-
-소득과 자산은 개별 페르소나 속성으로 직접 보강하거나 추정하지 않습니다. 가격 부담도는 [통계청(KOSTAT)](https://kostat.go.kr/) 및 [국가통계포털(KOSIS)](https://kosis.kr/index)의 공개 통계 중 연간 가구 평균 의류·신발 지출 기준값을 참고해 맥락화합니다.
-
-로컬 CSV 또는 Parquet 파일을 사용할 경우 `data/` 하위에 두어야 합니다. 권장 위치는 `data/raw/`입니다.
-
-## 실행 방식
-
-이 앱은 hosted 서비스가 아니라 local-first 방식으로 실행됩니다. 사용자는 자신의 컴퓨터에서 앱을 실행하고, 자신이 보유한 LLM provider API key를 입력해 사용합니다.
-
-기본 실행 방식은 Streamlit 앱입니다.
-
-필요 조건:
-
-- Python 3.11 이상
-- uv
-- Streamlit
-- 사용할 LLM provider의 API key
-- 필요 시 Hugging Face 접근 권한
-
-실행 예시:
-
-```bash
-git clone https://github.com/woooya129-ai/k-fashion-persona.git
-cd k-fashion-persona
-uv sync --all-extras --dev
-uv run streamlit run src/app.py
-```
-
-브라우저에서 `http://localhost:8501`을 엽니다.
-
-자세한 설치와 실행 방법은 [INSTALL.md](INSTALL.md)를 참고하세요.
-
-## API key와 데이터 보관
-
-API key는 저장소에 넣지 않는 것이 원칙입니다. 기본 방식은 Streamlit 화면의 password 입력칸에 API key를 직접 입력하는 것입니다.
-
-API key, Hugging Face token, cache, outputs, raw data는 공개 저장소에 포함하지 않습니다.
-
-실행 메타데이터는 로컬 SQLite DB에 저장됩니다.
-
-기본 위치:
-
-```text
-cache/screener.db
-```
-
-저장되는 정보의 예:
-
-- dataset source
-- dataset split
-- dataset revision
-- 후보 페르소나 수
-- 최종 샘플 수
-- sampling seed
-- sampling strategy
-- filter summary
-- provider
-- model
-- prompt version
-- schema version
-- concept hash
-- price context hash
-
-별도 컬럼으로 저장하지 않는 정보:
-
-- raw API key
-- Hugging Face token
-- raw provider response
-- raw concept text
-
-## 결과 해석 방법
-
-결과는 합성 페르소나 기반 가설입니다.
+## 결과 해석
 
 적절한 활용:
 
@@ -292,17 +304,6 @@ cache/screener.db
 - 최종 출시 여부의 단독 판단
 - 발주량 또는 생산량 결정의 단독 근거
 
-## 장점
-
-- 한국 맥락의 합성 페르소나를 활용합니다.
-- 패션 제품 카드 형식으로 입력할 수 있습니다.
-- 로컬에서 실행할 수 있습니다.
-- API key와 원본 데이터를 공개 저장소에 넣지 않는 구조입니다.
-- seed 기반 샘플링으로 실행 재현성을 높입니다.
-- LLM 결과를 정해진 스키마로 검증합니다.
-- 가격, 핏, 소재, 코디, 착용 상황, 스타일 부담 같은 패션 리스크를 정리합니다.
-- Markdown과 CSV 리포트를 생성할 수 있습니다.
-
 ## 한계
 
 - 실제 소비자 데이터 기반 예측 모델이 아닙니다.
@@ -310,43 +311,20 @@ cache/screener.db
 - 데이터셋은 패션 구매 전용 데이터가 아닙니다.
 - 이미지, 룩북, 착용 사진, 체형 정보는 기본 평가에 포함되지 않습니다.
 - 브랜드 충성도, 구매 이력, 반품 이력, 사이즈 선호 같은 실제 커머스 데이터는 포함되지 않습니다.
-- LLM 응답은 그럴듯할 수 있지만, 실제 시장 검증을 대체하지 않습니다.
+- KOSIS/KOSTAT 값은 가구 단위 집계 통계이며 개별 페르소나의 실제 경제 상태가 아닙니다.
 - 최종 판단은 실제 설문, 판매 데이터, 전문가 검토와 함께 해야 합니다.
-
-## 추천 사용 시나리오
-
-적합한 사용자:
-
-- 패션 브랜드 상품기획자
-- MD
-- 마케터
-- UX 리서처
-- D2C 브랜드 운영자
-- 패션 AI 서비스 기획자
-- 패션 컨셉 테스트를 빠르게 하고 싶은 개발팀
-
-적합한 상황:
-
-- 출시 전 제품 컨셉을 빠르게 점검하고 싶을 때
-- 여러 타깃 가설을 비교하고 싶을 때
-- 제품 설명 문구의 약점을 찾고 싶을 때
-- 가격 부담 또는 소재/핏 관련 리스크를 미리 보고 싶을 때
-- 본조사 전에 질문 방향을 정리하고 싶을 때
 
 ## 라이선스와 출처
 
-코드 라이선스:
-
-- GNU AGPL-3.0-only
-
-기본 데이터셋:
-
-- NVIDIA Nemotron-Personas-Korea
-
-데이터셋 라이선스:
-
-- CC BY 4.0 attribution 대상
+- 코드 라이선스: GNU AGPL-3.0-only
+- 기본 페르소나 데이터셋: NVIDIA Nemotron-Personas-Korea
+- 데이터셋 라이선스: CC BY 4.0 attribution 대상
+- 통계 컨텍스트: KOSTAT / KOSIS 공개 통계
 
 상업적 서비스나 폐쇄형 제품에 도입하려면 AGPL-3.0-only 라이선스 조건을 반드시 검토해야 합니다.
 
 Codex와 Claude Code를 함께 사용해 만들었습니다.
+
+## Contact
+
+woooya129 [at] gmail [dot] com

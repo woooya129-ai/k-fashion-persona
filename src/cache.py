@@ -67,6 +67,7 @@ def compute_price_context_hash(
     period: str,
     denominator_krw: int,
     price_context_version: str,
+    context_digest: str | None = None,
 ) -> str:
     """lock-in §5.3.1 price_context_hash."""
     payload = {
@@ -75,6 +76,8 @@ def compute_price_context_hash(
         "denominator_krw": int(denominator_krw),
         "price_context_version": price_context_version,
     }
+    if context_digest:
+        payload["context_digest"] = context_digest
     return _sha256_hex(_serialize_canonical(payload))
 
 

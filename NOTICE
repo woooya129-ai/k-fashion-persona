@@ -1,4 +1,4 @@
-K-Fashion Persona Screener
+k-fashion-persona
 Copyright (c) 2026 woooya129-ai
 
 This project was created and is maintained by woooya129-ai.
@@ -22,6 +22,6 @@ official website, or an endorsed distribution unless written permission is
 granted by the project owner.
 
 Third-party datasets, libraries, and materials remain under their respective
-licenses. See THIRD_PARTY_NOTICES.md.
+licenses. See docs/THIRD_PARTY_NOTICES.md.
 
 No warranty is provided. See LICENSE for details.

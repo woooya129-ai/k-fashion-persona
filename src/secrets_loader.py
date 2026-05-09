@@ -28,6 +28,7 @@ OPENAI_KEY_VAR = "OPENAI_API_KEY"  # nosec B105
 ANTHROPIC_KEY_VAR = "ANTHROPIC_API_KEY"  # nosec B105
 GOOGLE_KEY_VAR = "GOOGLE_API_KEY"  # nosec B105
 HF_TOKEN_VAR = "HF_TOKEN"  # nosec B105
+KOSIS_API_KEY_VAR = "KOSIS_API_KEY"  # nosec B105
 
 
 @dataclass(frozen=True)
@@ -40,6 +41,7 @@ class LoadedSecretsStatus:
     env_path: Path
     env_path_exists: bool
     google_present: bool = False
+    kosis_api_key_present: bool = False
 
 
 def load_secrets_from_env_path(env_path: Path = SECRETS_ENV_PATH) -> LoadedSecretsStatus:
@@ -61,6 +63,7 @@ def load_secrets_from_env_path(env_path: Path = SECRETS_ENV_PATH) -> LoadedSecre
         env_path=env_path,
         env_path_exists=exists,
         google_present=bool(os.environ.get(GOOGLE_KEY_VAR)),
+        kosis_api_key_present=bool(os.environ.get(KOSIS_API_KEY_VAR)),
     )
 
 
@@ -80,6 +83,11 @@ def get_provider_key(provider: str) -> str | None:
 
 def get_hf_token() -> str | None:
     val = os.environ.get(HF_TOKEN_VAR)
+    return val if val else None
+
+
+def get_kosis_api_key() -> str | None:
+    val = os.environ.get(KOSIS_API_KEY_VAR)
     return val if val else None
 
 

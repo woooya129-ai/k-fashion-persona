@@ -46,6 +46,25 @@ def full_report() -> AggregateReport:
     return aggregate(MOCK_RESULTS, MOCK_PERSONA_ATTRIBUTES, _DEFAULT_QUALITY)
 
 
+@pytest.fixture()
+def sample_price_context() -> dict:
+    return {
+        "reference_segment_label": "전국 전체",
+        "period": "2025_Q4, 2025",
+        "denominator_krw": 2_136_000,
+        "price_burden_ratio": 159_000 / 2_136_000,
+        "price_burden_label": "medium",
+        "metric_rows": [
+            {
+                "label": "월평균 가구소득",
+                "value_krw": 5_422_000,
+                "period": "2025_Q4",
+                "source_name": "2025년 4/4분기 가계동향조사 결과",
+            }
+        ],
+    }
+
+
 # ---------------------------------------------------------------------------
 # required_footer_text
 # ---------------------------------------------------------------------------
@@ -63,14 +82,15 @@ class TestRequiredFooterText:
 
     def test_data_source_line(self):
         footer = required_footer_text()
-        expected = "Data source (only external dataset): NVIDIA Nemotron-Personas-Korea, CC BY 4.0."
+        expected = "Persona dataset: NVIDIA Nemotron-Personas-Korea, CC BY 4.0."
         assert expected in footer
         assert "https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea" in footer
 
     def test_attribution_and_obfuscated_contact_line(self):
         footer = required_footer_text()
         assert "k-fashion-persona." in footer
-        assert "it does not infer income or assets." in footer
+        assert "income, and asset statistics" in footer
+        assert "it does not infer individual income or assets." in footer
         assert "Built with Codex and Claude Code." in footer
         assert "Contact: woooya129 [at] gmail [dot] com" in footer
         assert "woooya129@gmail.com" not in footer
@@ -145,7 +165,7 @@ class TestRenderMarkdown:
 
     def test_data_source_line_present(self, full_report):
         md = render_markdown(full_report)
-        expected = "Data source (only external dataset): NVIDIA Nemotron-Personas-Korea, CC BY 4.0."
+        expected = "Persona dataset: NVIDIA Nemotron-Personas-Korea, CC BY 4.0."
         assert expected in md
 
     def test_does_not_raise_safe_phrasing(self, full_report):
@@ -179,6 +199,12 @@ class TestRenderMarkdown:
         md = render_markdown(full_report)
         assert isinstance(md, str)
         assert len(md) > 100
+
+    def test_kosis_price_context_section_present(self, full_report, sample_price_context):
+        md = render_markdown(full_report, price_context=sample_price_context)
+        assert "## KOSIS 참고 통계" in md
+        assert "월평균 가구소득" in md
+        assert "개별 페르소나의 실제 소득·자산·구매력을 뜻하지 않습니다." in md
 
 
 # ---------------------------------------------------------------------------
@@ -227,6 +253,12 @@ class TestRenderCsv:
     def test_csv_contains_sentiment_data(self, full_report):
         csv_text = render_csv(full_report)
         assert "반응분포" in csv_text
+
+    def test_csv_contains_kosis_price_context(self, full_report, sample_price_context):
+        csv_text = render_csv(full_report, price_context=sample_price_context)
+        assert "KOSIS참고통계" in csv_text
+        assert "월평균 가구소득" in csv_text
+        assert "5,422,000원" in csv_text
 
     def test_forbidden_phrase_in_reasons_raises(self):
         # 금지 표현이 EvaluationResult.main_reasons 를 통해 CSV 셀에 들어오면

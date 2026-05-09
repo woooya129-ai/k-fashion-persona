@@ -29,11 +29,17 @@ exact file path, transformation method, and change statement before release.
 ## Statistics Korea / KOSIS
 
 - Provider: Statistics Korea (KOSTAT), via KOSIS public statistics
-- Use in this project: price-burden context based on annual household clothing
-  and footwear spending
+- Use in this project: report and prompt context based on household clothing
+  and footwear spending, household income, disposable income, assets, debt, and
+  net assets
 - Not used for: direct inference of individual persona income, assets, or real
   purchasing power
-- Data bundled in this repository: No
+- Data bundled in this repository: Yes, as `data/public/kosis_household_context.csv`
+- Source pages used in the committed snapshot:
+  - 2025 Q4 household income and expenditure public briefing:
+    https://www.korea.kr/briefing/policyBriefingView.do?newsId=156746265
+  - 2025 household finance and welfare public briefing:
+    https://www.korea.kr/news/policyNewsView.do?newsId=156733201
 
 ## Direct Python Dependencies
 

@@ -16,6 +16,7 @@ import html
 import re
 from io import StringIO
 from pathlib import Path
+from typing import Any
 
 from src.aggregator import (
     FASHION_RISK_CATEGORY_KEYS,
@@ -61,11 +62,13 @@ def required_footer_text() -> str:
     return (
         "본 도구는 합성 페르소나와 LLM 기반의 사전 가설 분석 도구입니다.\n"
         "실제 소비자 조사, 매출 예측, 법률 자문, 최종 사업 판단을 대체하지 않습니다.\n"
-        "Data source (only external dataset): NVIDIA Nemotron-Personas-Korea, CC BY 4.0.\n"
+        "Persona dataset: NVIDIA Nemotron-Personas-Korea, CC BY 4.0.\n"
         "Dataset URL: https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea\n"
         "CC BY 4.0: https://creativecommons.org/licenses/by/4.0/\n"
         "k-fashion-persona.\n"
-        "Price context uses Statistics Korea (KOSTAT) / KOSIS public statistics for annual household clothing and footwear spending; it does not infer income or assets.\n"
+        "Public statistics context uses Statistics Korea (KOSTAT) / KOSIS household "
+        "clothing-footwear spending, income, and asset statistics; it does not infer "
+        "individual income or assets.\n"
         "Built with Codex and Claude Code.\n"
         f"Contact: {CONTACT_DISPLAY}"
     )
@@ -307,8 +310,51 @@ def _csv_fashion_rows(writer_row, report: AggregateReport) -> None:
 # Markdown render
 # ---------------------------------------------------------------------------
 
+def _format_krw(value: object) -> str:
+    try:
+        return f"{int(value):,}원"
+    except (TypeError, ValueError):
+        return str(value)
 
-def render_markdown(report: AggregateReport) -> str:
+
+def _append_price_context_section(lines: list[str], price_context: dict[str, Any] | None) -> None:
+    if not price_context:
+        return
+    lines.append("## KOSIS 참고 통계")
+    lines.append("")
+    lines.append(
+        f"- 기준 계층: {price_context.get('reference_segment_label', '전국 전체')}"
+    )
+    lines.append(f"- 참고 기간: {price_context.get('period', '')}")
+    lines.append(
+        f"- 가격 기준값: {_format_krw(price_context.get('denominator_krw'))} "
+        f"(연간 환산 의류·신발 지출)"
+    )
+    lines.append(
+        f"- 제품 가격 / 기준값: {price_context.get('price_burden_ratio', 0):.2f}배 "
+        f"({price_context.get('price_burden_label', 'unknown')})"
+    )
+    lines.append("")
+    rows = price_context.get("metric_rows", [])
+    if rows:
+        lines.append("| 항목 | 값 | 기간 | 출처 |")
+        lines.append("|---|---:|---|---|")
+        for row in rows[:8]:
+            lines.append(
+                f"| {escape_markdown_table_cell(row.get('label', row.get('metric', '')))} | "
+                f"{escape_markdown_table_cell(_format_krw(row.get('value_krw')))} | "
+                f"{escape_markdown_table_cell(row.get('period', ''))} | "
+                f"{escape_markdown_table_cell(row.get('source_name', ''))} |"
+            )
+        lines.append("")
+    lines.append(
+        "> 위 값은 KOSIS/KOSTAT 가구 단위 집계 통계이며, "
+        "개별 페르소나의 실제 소득·자산·구매력을 뜻하지 않습니다."
+    )
+    lines.append("")
+
+
+def render_markdown(report: AggregateReport, price_context: dict[str, Any] | None = None) -> str:
     """PM v3 §17.1 메인 지표 + §18.2 Main Results 섹션.
 
     모든 표현은 '합성 패널 N명 기준'으로 시작.
@@ -344,6 +390,8 @@ def render_markdown(report: AggregateReport) -> str:
     )
     lines.append(f"| 파싱 실패/제외 | {q.parse_failed + q.api_failed}명 |")
     lines.append("")
+
+    _append_price_context_section(lines, price_context)
 
     # Quality
     lines.append("## 결과 품질")
@@ -428,7 +476,7 @@ def render_markdown(report: AggregateReport) -> str:
 # ---------------------------------------------------------------------------
 
 
-def render_csv(report: AggregateReport) -> str:
+def render_csv(report: AggregateReport, price_context: dict[str, Any] | None = None) -> str:
     """평면화된 표: section, key, value 컬럼.
 
     formula injection 방어: 모든 셀에 대해 첫 글자가 = / + / - / @ / \\t / \\r 면 ' prefix.
@@ -464,6 +512,22 @@ def render_csv(report: AggregateReport) -> str:
         "가격부담도 high 이상",
         f"{pb.high_or_above_count}명 / {pb.high_or_above_pct}%",
     )
+
+    if price_context:
+        _row("KOSIS참고통계", "기준 계층", price_context.get("reference_segment_label", "전국 전체"))
+        _row("KOSIS참고통계", "참고 기간", price_context.get("period", ""))
+        _row("KOSIS참고통계", "가격 기준값", _format_krw(price_context.get("denominator_krw")))
+        _row("KOSIS참고통계", "가격 기준 배수", price_context.get("price_burden_ratio", ""))
+        _row("KOSIS참고통계", "가격 부담 라벨", price_context.get("price_burden_label", ""))
+        for row in price_context.get("metric_rows", [])[:8]:
+            _row(
+                "KOSIS참고통계_항목",
+                str(row.get("label", row.get("metric", ""))),
+                (
+                    f"{_format_krw(row.get('value_krw'))} | {row.get('period', '')} | "
+                    f"{row.get('source_name', '')}"
+                ),
+            )
 
     # Quality
     _row("결과품질", "성공", q.success)

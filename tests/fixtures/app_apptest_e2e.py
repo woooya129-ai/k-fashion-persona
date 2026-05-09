@@ -59,6 +59,7 @@ def _fake_secrets_status(db_path: Path) -> secrets_loader.LoadedSecretsStatus:
         env_path=db_path.parent / "apptest-disabled.env",
         env_path_exists=False,
         google_present=False,
+        kosis_api_key_present=False,
     )
 
 
@@ -122,6 +123,7 @@ def install_apptest_e2e_patches(monkeypatch: pytest.MonkeyPatch, db_path: Path) 
     monkeypatch.delenv(secrets_loader.OPENAI_KEY_VAR, raising=False)
     monkeypatch.delenv(secrets_loader.ANTHROPIC_KEY_VAR, raising=False)
     monkeypatch.delenv(secrets_loader.GOOGLE_KEY_VAR, raising=False)
+    monkeypatch.delenv(secrets_loader.KOSIS_API_KEY_VAR, raising=False)
     monkeypatch.setitem(sys.modules, "datasets", _fake_datasets_module())
     monkeypatch.setitem(sys.modules, "huggingface_hub", _fake_huggingface_hub_module())
     monkeypatch.setattr(app, "DB_PATH", db_path)
@@ -151,4 +153,6 @@ def install_apptest_e2e_patches(monkeypatch: pytest.MonkeyPatch, db_path: Path) 
     )
     monkeypatch.setattr(app, "get_provider_key", lambda _provider: None)
     monkeypatch.setattr(secrets_loader, "get_provider_key", lambda _provider: None)
+    monkeypatch.setattr(app, "get_kosis_api_key", lambda: None)
+    monkeypatch.setattr(secrets_loader, "get_kosis_api_key", lambda: None)
     monkeypatch.setattr(worker, "start_worker_thread", _sync_start_worker_thread)

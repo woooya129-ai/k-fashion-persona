@@ -108,6 +108,23 @@ class TestComputePriceContextHash:
         h2 = compute_price_context_hash("kostat", "2025_annual", 141_000, "v2")
         assert h1 != h2
 
+    def test_different_context_digest(self):
+        h1 = compute_price_context_hash(
+            "kosis",
+            "2025_Q4",
+            2_136_000,
+            "kosis_hybrid_2026_v1",
+            context_digest="snapshot-a",
+        )
+        h2 = compute_price_context_hash(
+            "kosis",
+            "2025_Q4",
+            2_136_000,
+            "kosis_hybrid_2026_v1",
+            context_digest="snapshot-b",
+        )
+        assert h1 != h2
+
 
 class TestComputeCacheKey:
     BASE_ARGS = {

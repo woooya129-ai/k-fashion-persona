@@ -176,7 +176,7 @@ PRODUCT_CARD_FIELD_LABELS_KR: dict[str, str] = {
     "description": "브랜드 메시지/제품 설명",
 }
 
-APP_VERSION = "0.2.0"
+APP_VERSION = "0.4.0"
 DEFAULT_PRICE_CONTEXT_VERSION = "kosis_hybrid_2026_v1"
 DEFAULT_TEMPERATURE = 0.3
 MAX_SAMPLE_SIZE = 1000
@@ -280,7 +280,7 @@ UI_COPY: dict[str, dict[str, str]] = {
             "패션 컨셉을 AI 페르소나 패널을 통해 전문 설문이나 "
             "본조사 전 반응의 흐름을 빠르게 확인합니다."
         ),
-        "hero_eyebrow": "로컬 퍼블릭 베타 · v0.2.0",
+        "hero_eyebrow": "로컬 퍼블릭 베타 · v0.4.0",
         "hero_pill_1": "로컬 실행",
         "hero_pill_2": "원문 저장 없음",
         "hero_pill_3": "리포트 내보내기",
@@ -536,7 +536,7 @@ UI_COPY: dict[str, dict[str, str]] = {
             "Show a fashion concept to an AI persona panel and quickly check reaction flow "
             "before expert surveys or main research."
         ),
-        "hero_eyebrow": "Local public beta · v0.2.0",
+        "hero_eyebrow": "Local public beta · v0.4.0",
         "hero_pill_1": "Local run",
         "hero_pill_2": "No raw concept storage",
         "hero_pill_3": "Report export",

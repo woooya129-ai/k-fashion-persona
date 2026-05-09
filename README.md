@@ -4,7 +4,7 @@
 
 ## K-fashion 컨셉을 AI 페르소나로 먼저 점검
 
-[![Version](https://img.shields.io/badge/version-0.2.0-0F766E)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.4.0-0F766E)](pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
 [![Twin Project](https://img.shields.io/badge/GitHub-us--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/us-fashion-persona)

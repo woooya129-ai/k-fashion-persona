@@ -18,6 +18,15 @@ k-fashion-persona는 패션 제품 컨셉을 실제 출시하거나 본조사를
 
 미국 패션 컨셉용 쌍둥이 프로젝트는 [us-fashion-persona](https://github.com/woooya129-ai/us-fashion-persona)입니다.
 
+## HF Space 라이선스 고지
+
+- 이 HF Space의 코드 라이선스는 **GNU AGPL-3.0-only**입니다.
+- HF Space가 `protected` 상태여도 라이선스가 없어지는 것은 아닙니다. `protected`는 Hugging Face Hub에서 소스 표시와 clone을 제한하는 배포 설정입니다.
+- 실행 앱 접근 권한은 소스 코드 사용권 이전, 독점 사용권, 상업적 재라이선스 허가를 의미하지 않습니다.
+- 이 코드를 수정해 네트워크 서비스로 제공하는 경우 AGPL-3.0-only의 소스 제공 의무를 검토해야 합니다.
+- 기본 페르소나 데이터셋인 NVIDIA Nemotron-Personas-Korea는 **CC BY 4.0 attribution** 대상입니다.
+- 전체 라이선스와 고지는 [LICENSE](LICENSE), [NOTICE](NOTICE), [THIRD_PARTY_NOTICES](docs/THIRD_PARTY_NOTICES.md)를 기준으로 합니다.
+
 제품 카드에 카테고리, 가격, 핏, 소재, 컬러, 시즌, 착용 상황, 스타일 톤, 브랜드 메시지, 타깃 가설을 입력하면 여러 합성 페르소나가 해당 컨셉을 어떻게 받아들일 수 있는지 확인할 수 있습니다.
 
 이 도구는 실제 소비자 반응, 구매율, 매출, 시장 점유율을 예측하는 서비스가 아닙니다. 본조사 전에 관심 이유, 망설임, 가격 부담, 소재/핏/코디 리스크 같은 초기 신호를 정리하는 보조 도구입니다.

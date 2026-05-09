@@ -16,6 +16,15 @@ k-fashion-persona is a local-first Streamlit tool for checking Korean fashion pr
 
 The twin project for US fashion concepts is [us-fashion-persona](https://github.com/woooya129-ai/us-fashion-persona).
 
+## HF Space License Notice
+
+- The code in this HF Space is licensed under **GNU AGPL-3.0-only**.
+- `Protected` HF Space visibility does not remove or weaken the license. It only limits source display and cloning on Hugging Face Hub.
+- Access to the running app does not grant source-code transfer, exclusive rights, or commercial relicensing permission.
+- If you modify this code and provide it as a network service, review the source-offer obligations under AGPL-3.0-only.
+- The default persona dataset, NVIDIA Nemotron-Personas-Korea, is subject to **CC BY 4.0 attribution**.
+- The authoritative license and notices are [LICENSE](LICENSE), [NOTICE](NOTICE), and [THIRD_PARTY_NOTICES](docs/THIRD_PARTY_NOTICES.md).
+
 Enter a product card with category, price, fit, material, color, season, wearing context, style tone, brand message, and target hypothesis. The app scans interest reasons, hesitation points, price burden, and fashion risk signals.
 
 This is not a real consumer prediction, purchase-rate prediction, sales prediction, or market-share prediction service.

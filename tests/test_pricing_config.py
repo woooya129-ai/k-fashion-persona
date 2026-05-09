@@ -118,13 +118,14 @@ class TestProductionConfigShape:
         production_path = Path(__file__).parent.parent / "config" / "pricing_config.yaml"
         config = load_pricing_config(production_path)
         assert len(config) >= 1
-        assert "gpt-5.5" in config
-        assert "gpt-5.5-pro" in config
-        assert "gpt-5.4-mini" in config
-        assert "gpt-5.3-chat-latest" in config
-        assert "claude-opus-4-6" in config
-        assert "claude-sonnet-4-5" in config
+        assert "gpt-5.2" in config
+        assert "gpt-5.2-pro" in config
+        assert "gpt-5-mini" in config
+        assert "gpt-5-nano" in config
+        assert "claude-opus-4-7" in config
+        assert "claude-sonnet-4-6" in config
         assert "claude-haiku-4-5" in config
+        assert "gemini-2.5-flash-lite" in config
         for _model_name, pricing in config.items():
             assert isinstance(pricing, ModelPricing)
             assert pricing.input_per_million_usd >= 0

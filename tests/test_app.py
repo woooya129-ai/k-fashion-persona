@@ -808,7 +808,7 @@ def test_app_default_prompt_template_is_v0_3() -> None:
 
 def test_model_options_sort_claude_family_order() -> None:
     pricing_config = {
-        "gpt-5.4-mini": object(),
+        "gpt-5-mini": object(),
         "claude-opus-4-6": object(),
         "claude-haiku-4-5": object(),
         "claude-sonnet-4-5": object(),

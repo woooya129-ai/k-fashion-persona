@@ -44,7 +44,9 @@ from src.cache import (
     normalize_concept_text,
 )
 from src.cost_estimator import (
+    CostEstimate,
     DEFAULT_CONCURRENCY,
+    TokenEstimate,
     count_tokens_approx,
     estimate_cost,
     estimate_tokens,
@@ -179,6 +181,13 @@ DEFAULT_PRICE_CONTEXT_VERSION = "kosis_hybrid_2026_v1"
 DEFAULT_TEMPERATURE = 0.3
 MAX_SAMPLE_SIZE = 1000
 TERMINAL_STATUSES = {"completed", "failed", "cancelled"}
+ESTIMATE_SYSTEM_PROMPT_TOKENS = 400
+ESTIMATE_PERSONA_TOKENS = 350
+ESTIMATE_SIDEBAR_CONCEPT_TOKENS = 160
+ESTIMATE_ECONOMIC_CONTEXT_TOKENS = 180
+ESTIMATE_SCHEMA_INSTRUCTION_TOKENS = 120
+ESTIMATE_OUTPUT_TOKENS_PER_PERSONA = 325
+MAX_OUTPUT_TOKENS_PER_PERSONA = 600
 RUN_MODE_PRESETS: dict[str, dict[str, Any]] = {
     "quick": {"sample_size": 10, "temperature": 0.2},
     "balanced": {"sample_size": 30, "temperature": 0.3},
@@ -222,16 +231,14 @@ OCCUPATION_KEYWORD_OPTIONS: tuple[str, ...] = (
     "예술",
 )
 BEGINNER_MODEL_PRIORITY: tuple[str, ...] = (
-    "gpt-5.4-mini",
-    "gpt-5.4-nano",
-    "gpt-5.5",
-    "gpt-5.4",
-    "gpt-5.3-chat-latest",
     "gpt-4o-mini",
+    "gpt-5-mini",
+    "gpt-5-nano",
+    "gemini-2.5-flash-lite",
     "claude-haiku-4-5",
     "claude-sonnet-4-6",
     "claude-sonnet-4-5",
-    "gemini-flash",
+    "gpt-5.2",
     "gpt-4o",
 )
 
@@ -332,10 +339,33 @@ UI_COPY: dict[str, dict[str, str]] = {
         "mode_deep_help": "60명 패널. 더 넓게 확인.",
         "mode_max_help": "1000명 패널. 비용 상한선까지 확인.",
         "simple_summary": "{mode} · 합성 패널 {sample_size}명 · temperature {temperature}",
-        "estimated_price_label": "Estimate",
-        "token_price_basis": "{sample_size} personas",  # nosec B105
-        "total_cost_label": "Final total",
-        "total_cost_basis": "Input + output",
+        "estimated_price_label": "실행 추정",
+        "token_price_basis": "{sample_size}명 기준",  # nosec B105
+        "total_cost_label": "실행 1회 추정",
+        "total_cost_basis": "input + output",
+        "provider_label": "Provider",
+        "model_label": "Model",
+        "rate_unit_label": "단가 기준",
+        "per_million_tokens": "USD / 1M tokens",
+        "input_rate_label": "Input 단가",
+        "output_rate_label": "Output 단가",
+        "estimate_basis_label": "추정 기준",
+        "sidebar_estimate_basis": "{sample_size}명 · 짧은 제품 카드 가정",
+        "run_tokens_label": "이번 실행 토큰",
+        "run_cost_label": "이번 실행 추정",
+        "cost_input_label": "입력 비용",
+        "cost_output_label": "출력 비용",
+        "cost_max_output_label": "출력 추정/상한",
+        "cost_unit_note": (
+            "1M token 단가는 과금 단위이고, 이번 실행은 그중 일부만 쓴다. "
+            "실제 과금은 tokenizer, 출력 길이, 재시도에 따라 달라진다."
+        ),
+        "model_compare_header": "모델별 비용 비교",
+        "model_compare_caption": "현재 제품 카드 길이와 샘플 수 기준의 실행 1회 추정치야.",
+        "cost_table_model": "Model",
+        "cost_table_provider": "Provider",
+        "cost_table_rate": "Input/Output 단가",
+        "cost_table_estimate": "실행 추정",
         "advanced_header": "Advanced",
         "advanced_caption": "모델, 데이터, 샘플링, 필터를 직접 조정한다.",
         "advanced_enable": "세부 설정 직접 조정",
@@ -569,10 +599,35 @@ UI_COPY: dict[str, dict[str, str]] = {
         "mode_deep_help": "60-person panel for broader signal.",
         "mode_max_help": "1000-person panel. Uses the full cost guardrail.",
         "simple_summary": "{mode} · {sample_size} synthetic personas · temperature {temperature}",
-        "estimated_price_label": "Estimate",
+        "estimated_price_label": "Run estimate",
         "token_price_basis": "{sample_size} personas",  # nosec B105
-        "total_cost_label": "Final total",
-        "total_cost_basis": "Input + output",
+        "total_cost_label": "One-run estimate",
+        "total_cost_basis": "input + output",
+        "provider_label": "Provider",
+        "model_label": "Model",
+        "rate_unit_label": "Rate unit",
+        "per_million_tokens": "USD / 1M tokens",
+        "input_rate_label": "Input rate",
+        "output_rate_label": "Output rate",
+        "estimate_basis_label": "Estimate basis",
+        "sidebar_estimate_basis": "{sample_size} personas · short product card",
+        "run_tokens_label": "Run tokens",
+        "run_cost_label": "Run estimate",
+        "cost_input_label": "Input cost",
+        "cost_output_label": "Output cost",
+        "cost_max_output_label": "Output estimate / cap",
+        "cost_unit_note": (
+            "The 1M-token price is the billing rate unit; this run uses only a portion of it. "
+            "Actual billing can vary by tokenizer, output length, and retries."
+        ),
+        "model_compare_header": "Model Cost Comparison",
+        "model_compare_caption": (
+            "Estimated one-run cost for the current product-card length and sample size."
+        ),
+        "cost_table_model": "Model",
+        "cost_table_provider": "Provider",
+        "cost_table_rate": "Input/output rate",
+        "cost_table_estimate": "Run estimate",
         "advanced_header": "Advanced",
         "advanced_caption": "Directly control model, data source, sampling, and filters.",
         "advanced_enable": "Customize advanced settings",
@@ -2841,6 +2896,42 @@ button[data-testid="stBaseButton-header"][kind="header"],
   word-break: break-word;
 }}
 
+.kfps-cost-table {{
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.35;
+}}
+
+.kfps-cost-table-wrap {{
+  width: 100%;
+  overflow-x: auto;
+}}
+
+.kfps-cost-table th,
+.kfps-cost-table td {{
+  padding: 8px 9px;
+  border-bottom: 1px solid var(--kfps-hairline);
+  text-align: right;
+  vertical-align: top;
+}}
+
+.kfps-cost-table th:first-child,
+.kfps-cost-table td:first-child {{
+  text-align: left;
+}}
+
+.kfps-cost-table th {{
+  color: var(--kfps-muted);
+  font-weight: 800;
+}}
+
+.kfps-cost-table td {{
+  color: var(--kfps-ink);
+  font-weight: 700;
+}}
+
 .kfps-flow-card h3 {{
   margin: 0 0 7px;
   color: var(--kfps-ink);
@@ -4160,24 +4251,61 @@ def render_input_section_heading(title: str) -> None:
     )
 
 
-def _estimate_sidebar_cost(sample_size: int, pricing: ModelPricing) -> tuple[float, float]:
-    token_est = estimate_tokens(
-        system_prompt_tokens=400,
-        persona_tokens=350,
-        concept_tokens=0,
-        economic_context_tokens=80,
-        schema_instruction_tokens=120,
-        expected_output_tokens_per_persona=325,
-        new_call_count=sample_size,
+def _estimate_run_tokens(sample_size: int, concept_tokens: int) -> TokenEstimate:
+    return estimate_tokens(
+        system_prompt_tokens=ESTIMATE_SYSTEM_PROMPT_TOKENS,
+        persona_tokens=ESTIMATE_PERSONA_TOKENS,
+        concept_tokens=max(0, int(concept_tokens)),
+        economic_context_tokens=ESTIMATE_ECONOMIC_CONTEXT_TOKENS,
+        schema_instruction_tokens=ESTIMATE_SCHEMA_INSTRUCTION_TOKENS,
+        expected_output_tokens_per_persona=ESTIMATE_OUTPUT_TOKENS_PER_PERSONA,
+        new_call_count=max(0, int(sample_size)),
         cached_count=0,
     )
-    cost_est = estimate_cost(
+
+
+def _estimate_model_cost(token_est: TokenEstimate, pricing: ModelPricing) -> CostEstimate:
+    return estimate_cost(
         token_est,
         pricing.input_per_million_usd,
         pricing.output_per_million_usd,
         concurrency=DEFAULT_CONCURRENCY,
     )
-    return cost_est.estimated_cost_usd_low, cost_est.estimated_cost_usd_high
+
+
+def _estimate_sidebar_cost(
+    sample_size: int, pricing: ModelPricing
+) -> tuple[TokenEstimate, CostEstimate]:
+    token_est = _estimate_run_tokens(sample_size, ESTIMATE_SIDEBAR_CONCEPT_TOKENS)
+    cost_est = _estimate_model_cost(token_est, pricing)
+    return token_est, cost_est
+
+
+def _format_tokens(tokens: int) -> str:
+    if tokens >= 1_000:
+        return f"{tokens / 1_000:.1f}K"
+    return str(tokens)
+
+
+def _format_usd(value: float) -> str:
+    if value < 0.01:
+        return f"${value:.4f}"
+    return f"${value:.2f}"
+
+
+def _format_cost_range(cost_est: CostEstimate) -> str:
+    return (
+        f"{_format_usd(cost_est.estimated_cost_usd_low)} - "
+        f"{_format_usd(cost_est.estimated_cost_usd_high)}"
+    )
+
+
+def _input_cost_usd(token_est: TokenEstimate, pricing: ModelPricing) -> float:
+    return token_est.estimated_input_tokens_total / 1_000_000 * pricing.input_per_million_usd
+
+
+def _output_cost_usd(token_est: TokenEstimate, pricing: ModelPricing) -> float:
+    return token_est.estimated_output_tokens_total / 1_000_000 * pricing.output_per_million_usd
 
 
 def render_model_metadata(
@@ -4188,21 +4316,28 @@ def render_model_metadata(
     lang: str = "KR",
 ) -> None:
     rows: list[tuple[str, str]] = [
-        ("Provider", pricing.provider),
-        ("Model", model_name),
-        ("Input", f"${pricing.input_per_million_usd:.2f}/1M"),
-        ("Output", f"${pricing.output_per_million_usd:.2f}/1M"),
+        (ui_text(lang, "provider_label"), pricing.provider),
+        (ui_text(lang, "model_label"), model_name),
+        (ui_text(lang, "rate_unit_label"), ui_text(lang, "per_million_tokens")),
+        (ui_text(lang, "input_rate_label"), _format_usd(pricing.input_per_million_usd)),
+        (ui_text(lang, "output_rate_label"), _format_usd(pricing.output_per_million_usd)),
     ]
     if sample_size is not None:
-        low, high = _estimate_sidebar_cost(sample_size, pricing)
+        token_est, cost_est = _estimate_sidebar_cost(sample_size, pricing)
         rows.extend(
             [
                 (
-                    ui_text(lang, "estimated_price_label"),
-                    ui_text(lang, "token_price_basis").format(sample_size=sample_size),
+                    ui_text(lang, "estimate_basis_label"),
+                    ui_text(lang, "sidebar_estimate_basis").format(sample_size=sample_size),
                 ),
-                (ui_text(lang, "total_cost_basis"), "included"),
-                (ui_text(lang, "total_cost_label"), f"${low:.4f} - ${high:.4f}"),
+                (
+                    ui_text(lang, "run_tokens_label"),
+                    (
+                        f"{_format_tokens(token_est.estimated_input_tokens_total)} input / "
+                        f"{_format_tokens(token_est.estimated_output_tokens_total)} output"
+                    ),
+                ),
+                (ui_text(lang, "total_cost_label"), _format_cost_range(cost_est)),
             ]
         )
     row_html = "".join(
@@ -4910,36 +5045,18 @@ def make_cost_state(
     if not concept.get("description"):
         return {"ready": False}
 
-    persona_avg_tokens = 350
-    system_prompt_tokens = 400
-    economic_context_tokens = 180
-    schema_instruction_tokens = 120
-    expected_output_tokens_per_persona = 325
     cached_count = 0
     new_call_count = sample["sample_size"] - cached_count
 
     concept_tokens = count_tokens_approx(concept["concept_text"])
-    token_est = estimate_tokens(
-        system_prompt_tokens=system_prompt_tokens,
-        persona_tokens=persona_avg_tokens,
-        concept_tokens=concept_tokens,
-        economic_context_tokens=economic_context_tokens,
-        schema_instruction_tokens=schema_instruction_tokens,
-        expected_output_tokens_per_persona=expected_output_tokens_per_persona,
-        new_call_count=new_call_count,
-        cached_count=cached_count,
-    )
-    cost_est = estimate_cost(
-        token_est,
-        model["pricing"].input_per_million_usd,
-        model["pricing"].output_per_million_usd,
-        concurrency=DEFAULT_CONCURRENCY,
-    )
+    token_est = _estimate_run_tokens(new_call_count, concept_tokens)
+    cost_est = _estimate_model_cost(token_est, model["pricing"])
     return {
         "ready": True,
         "new_call_count": new_call_count,
         "token_estimate": token_est,
         "cost_estimate": cost_est,
+        "pricing": model["pricing"],
     }
 
 
@@ -4950,17 +5067,94 @@ def render_cost_estimate(cost_state: dict[str, Any], lang: str) -> None:
         return
 
     cost_est = cost_state["cost_estimate"]
+    token_est = cost_state["token_estimate"]
+    pricing = cost_state["pricing"]
     c1, c2, c3 = st.columns(3)
     c1.metric(ui_text(lang, "new_calls"), f"{cost_state['new_call_count']}명")
-    c2.metric(
-        ui_text(lang, "estimated_cost"),
-        f"${cost_est.estimated_cost_usd_low:.4f} - ${cost_est.estimated_cost_usd_high:.4f}",
-    )
+    c2.metric(ui_text(lang, "estimated_cost"), _format_cost_range(cost_est))
     c3.metric(
         ui_text(lang, "estimated_time"),
         f"{cost_est.estimated_time_min_low:.1f} - {cost_est.estimated_time_min_high:.1f}분",
     )
+    output_cap_value = (
+        f"{ESTIMATE_OUTPUT_TOKENS_PER_PERSONA} / "
+        f"{MAX_OUTPUT_TOKENS_PER_PERSONA} tokens per persona"
+    )
+    breakdown_rows = [
+        (ui_text(lang, "rate_unit_label"), ui_text(lang, "per_million_tokens")),
+        (
+            ui_text(lang, "run_tokens_label"),
+            (
+                f"{_format_tokens(token_est.estimated_input_tokens_total)} input / "
+                f"{_format_tokens(token_est.estimated_output_tokens_total)} output"
+            ),
+        ),
+        (ui_text(lang, "cost_input_label"), _format_usd(_input_cost_usd(token_est, pricing))),
+        (ui_text(lang, "cost_output_label"), _format_usd(_output_cost_usd(token_est, pricing))),
+        (
+            ui_text(lang, "cost_max_output_label"),
+            output_cap_value,
+        ),
+    ]
+    row_html = "".join(
+        '<div class="kfps-model-meta-row">'
+        f'<span class="kfps-model-meta-label">{html.escape(label)}</span>'
+        f'<span class="kfps-model-meta-value">{html.escape(value)}</span>'
+        "</div>"
+        for label, value in breakdown_rows
+    )
+    st.html(f'<div class="kfps-model-meta">{row_html}</div>')
     st.caption(ui_text(lang, "cost_caption"))
+    st.caption(ui_text(lang, "cost_unit_note"))
+
+
+def render_model_cost_comparison(
+    pricing_config: dict[str, ModelPricing],
+    token_est: TokenEstimate,
+    lang: str,
+) -> None:
+    st.subheader(ui_text(lang, "model_compare_header"))
+    st.caption(ui_text(lang, "model_compare_caption"))
+
+    rows: list[tuple[float, str, str, str, str]] = []
+    for alias, pricing in pricing_config.items():
+        cost_est = _estimate_model_cost(token_est, pricing)
+        rows.append(
+            (
+                cost_est.estimated_cost_usd_low,
+                alias,
+                pricing.provider,
+                (
+                    f"{_format_usd(pricing.input_per_million_usd)} / "
+                    f"{_format_usd(pricing.output_per_million_usd)}"
+                ),
+                _format_cost_range(cost_est),
+            )
+        )
+    rows.sort(key=lambda row: (row[0], row[1]))
+
+    header_cells = (
+        ui_text(lang, "cost_table_model"),
+        ui_text(lang, "cost_table_provider"),
+        ui_text(lang, "cost_table_rate"),
+        ui_text(lang, "cost_table_estimate"),
+    )
+    header_html = "".join(f"<th>{html.escape(cell)}</th>" for cell in header_cells)
+    body_html = "".join(
+        "<tr>"
+        f"<td>{html.escape(alias)}</td>"
+        f"<td>{html.escape(provider)}</td>"
+        f"<td>{html.escape(rate)}</td>"
+        f"<td>{html.escape(estimate)}</td>"
+        "</tr>"
+        for _low, alias, provider, rate, estimate in rows
+    )
+    st.html(
+        '<div class="kfps-cost-table-wrap"><table class="kfps-cost-table">'
+        f"<thead><tr>{header_html}</tr></thead>"
+        f"<tbody>{body_html}</tbody>"
+        "</table></div>"
+    )
 
 
 def _normalize_card_field(value: Any) -> str:
@@ -5073,11 +5267,14 @@ def render_detailed_run_context(
     cost_state: dict[str, Any],
     hashes: dict[str, str],
     lang: str,
+    pricing_config: dict[str, ModelPricing] | None = None,
 ) -> None:
     with st.expander(ui_text(lang, "details_header"), expanded=False):
         st.caption(ui_text(lang, "details_summary"))
         render_price_context(price_context, lang)
         render_cost_estimate(cost_state, lang)
+        if pricing_config and cost_state.get("ready"):
+            render_model_cost_comparison(pricing_config, cost_state["token_estimate"], lang)
         render_hashes(hashes, lang)
 
 
@@ -5997,7 +6194,7 @@ def main() -> None:
         _render_job_panel_impl(lang)
     else:
         render_job_panel_fragment(lang)
-    render_detailed_run_context(price_context, cost_state, hashes, lang)
+    render_detailed_run_context(price_context, cost_state, hashes, lang, pricing_config)
     render_footer(lang)
 
 

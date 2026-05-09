@@ -195,10 +195,11 @@ def load_huggingface_dataset(
     split: str = DEFAULT_SPLIT,
     streaming: bool = True,
     revision: str | None = None,
+    token: str | None = None,
 ) -> tuple[LoadedDataset, Iterator[dict[str, Any]]]:
     """HF dataset 로드.
 
-    HF_TOKEN 은 환경변수에서 자동 로드 (huggingface_hub 표준).
+    HF token 은 `token` 인자를 우선 사용하고, 없으면 환경변수에서 자동 로드.
     gated / private / 401 / 403 → DatasetAccessError (사용자 안내 메시지로 변환,
     provider raw error 본문은 노출하지 않음 — I1 해소).
     streaming=True: 메모리 절약 + iterator 반환 (Phase 3 worker 에서 처리).
@@ -226,14 +227,15 @@ def load_huggingface_dataset(
             error_type="network",
         ) from exc
 
-    token = os.environ.get(HF_TOKEN_VAR) or None  # 명시적 None (datasets 권장)
+    hf_token = (token if token is not None else os.environ.get(HF_TOKEN_VAR)) or None
+    hf_token = hf_token.strip() if hf_token else None  # 명시적 None (datasets 권장)
 
     try:
         ds = load_dataset(
             dataset_id,
             split=split,
             streaming=streaming,
-            token=token,
+            token=hf_token,
             revision=revision,
         )
     except Exception as exc:

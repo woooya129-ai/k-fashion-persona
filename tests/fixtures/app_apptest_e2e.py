@@ -63,8 +63,14 @@ def _fake_secrets_status(db_path: Path) -> secrets_loader.LoadedSecretsStatus:
     )
 
 
-def fake_load_and_sample(dataset: dict[str, Any], sample: dict[str, Any]):
+def fake_load_and_sample(
+    dataset: dict[str, Any],
+    sample: dict[str, Any],
+    *,
+    hf_token: str | None = None,
+):
     """Return two synthetic personas aligned with MOCK_RESULTS + MOCK_PERSONA_ATTRIBUTES."""
+    _ = hf_token
     r1 = deepcopy(MOCK_PERSONA_1)
     r1["uuid"] = "p001"
     r2 = deepcopy(MOCK_PERSONA_2)

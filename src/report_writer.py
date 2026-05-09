@@ -310,6 +310,7 @@ def _csv_fashion_rows(writer_row, report: AggregateReport) -> None:
 # Markdown render
 # ---------------------------------------------------------------------------
 
+
 def _format_krw(value: object) -> str:
     try:
         return f"{int(value):,}원"
@@ -322,9 +323,7 @@ def _append_price_context_section(lines: list[str], price_context: dict[str, Any
         return
     lines.append("## KOSIS 참고 통계")
     lines.append("")
-    lines.append(
-        f"- 기준 계층: {price_context.get('reference_segment_label', '전국 전체')}"
-    )
+    lines.append(f"- 기준 계층: {price_context.get('reference_segment_label', '전국 전체')}")
     lines.append(f"- 참고 기간: {price_context.get('period', '')}")
     lines.append(
         f"- 가격 기준값: {_format_krw(price_context.get('denominator_krw'))} "
@@ -514,7 +513,9 @@ def render_csv(report: AggregateReport, price_context: dict[str, Any] | None = N
     )
 
     if price_context:
-        _row("KOSIS참고통계", "기준 계층", price_context.get("reference_segment_label", "전국 전체"))
+        _row(
+            "KOSIS참고통계", "기준 계층", price_context.get("reference_segment_label", "전국 전체")
+        )
         _row("KOSIS참고통계", "참고 기간", price_context.get("period", ""))
         _row("KOSIS참고통계", "가격 기준값", _format_krw(price_context.get("denominator_krw")))
         _row("KOSIS참고통계", "가격 기준 배수", price_context.get("price_burden_ratio", ""))

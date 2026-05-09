@@ -31,12 +31,13 @@ from typing import Literal
 from urllib.parse import urlparse
 
 import httpx
+from pydantic import ValidationError
 
 from src.result_parser import (
     EvaluationResult,
 )
 from src.result_parser import (
-    parse_evaluation_result as _validate_eval,
+    validate_evaluation_payload as _validate_eval,
 )
 
 logger = logging.getLogger(__name__)
@@ -617,7 +618,11 @@ def parse_evaluation_result(
 
     try:
         result: EvaluationResult = _validate_eval(parsed)
-    except Exception:
+    except ValidationError:
+        logger.warning(
+            "LLM response schema validation failed.",
+            extra={"reason": "schema_validation"},
+        )
         return "parse_failed", None, "스키마 검증 실패"
 
     return "success", result.model_dump(), None

@@ -26,6 +26,8 @@ DEFAULT_REFERENCE_SEGMENT_LABEL = "전국 전체"
 
 KOSIS_API_KEY_VAR = "KOSIS_API_KEY"  # nosec B105
 KOSIS_STATISTICS_URL_VAR = "KOSIS_STATISTICS_DATA_URL"  # nosec B105
+KOSIS_STATISTICS_DATA_PATH = "/openapi/statisticsData.do"
+_KOSIS_ALLOWED_HOSTS: frozenset[str] = frozenset({"kosis.kr"})
 
 KOSTAT_2025_ANNUAL_CLOTHING_FOOTWEAR_KRW: int = 2_136_000
 # Backward-compatible alias used by app/tests; value now reflects annualized
@@ -155,9 +157,11 @@ def _selected_metrics(metrics: list[KosisMetric], segment_id: str) -> tuple[list
     metric_order = list(REFERENCE_METRIC_LABELS)
     ordered = sorted(
         by_metric.values(),
-        key=lambda row: metric_order.index(row.metric)
-        if row.metric in REFERENCE_METRIC_LABELS
-        else len(metric_order),
+        key=lambda row: (
+            metric_order.index(row.metric)
+            if row.metric in REFERENCE_METRIC_LABELS
+            else len(metric_order)
+        ),
     )
     return ordered, options.get(selected_segment, DEFAULT_REFERENCE_SEGMENT_LABEL)
 
@@ -281,6 +285,24 @@ def _with_api_key(url: str, api_key: str) -> str:
     return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
 
 
+def validate_kosis_statistics_data_url(url: str) -> str:
+    """Validate a user-supplied KOSIS statisticsData URL before appending secrets.
+
+    If more KOSIS API paths are supported later, expand KOSIS_STATISTICS_DATA_PATH
+    to an explicit allowlist instead of relaxing the host-only check.
+    """
+    cleaned_url = url.strip()
+    parts = urlsplit(cleaned_url)
+    hostname = (parts.hostname or "").rstrip(".").lower()
+    if parts.scheme != "https":
+        raise ValueError("KOSIS statisticsData URL must use https.")
+    if hostname not in _KOSIS_ALLOWED_HOSTS:
+        raise ValueError(f"KOSIS statisticsData URL host is not allowed: {hostname or '<empty>'}")
+    if parts.path != KOSIS_STATISTICS_DATA_PATH:
+        raise ValueError("KOSIS statisticsData URL path is not allowed.")
+    return cleaned_url
+
+
 def fetch_kosis_api_metrics(
     api_key: str,
     statistics_data_url: str,
@@ -292,7 +314,8 @@ def fetch_kosis_api_metrics(
     """
     if not api_key.strip() or not statistics_data_url.strip():
         return []
-    request_url = _with_api_key(statistics_data_url.strip(), api_key.strip())
+    validated_url = validate_kosis_statistics_data_url(statistics_data_url)
+    request_url = _with_api_key(validated_url, api_key.strip())
     response = httpx.get(request_url, timeout=timeout)
     response.raise_for_status()
     data = response.json()
@@ -335,7 +358,9 @@ def build_price_context(
                     all_metrics.extend(api_metrics)
                     reference_segment_id = "api_selected"
                 else:
-                    warnings.append("KOSIS API 응답에서 지원하는 통계 항목을 찾지 못해 스냅샷을 사용합니다.")
+                    warnings.append(
+                        "KOSIS API 응답에서 지원하는 통계 항목을 찾지 못해 스냅샷을 사용합니다."
+                    )
 
     selected_rows, segment_label = _selected_metrics(all_metrics, reference_segment_id)
     annual_clothing = _metric_value(selected_rows, "annualized_clothing_footwear_spend_krw")

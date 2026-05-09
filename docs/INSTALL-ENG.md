@@ -64,7 +64,7 @@ Supported key inputs:
 - `HF TOKEN`: when Hugging Face access is needed
 - `KOSIS API KEY`: when you enable KOSIS API refresh
 
-KOSIS is optional when using the committed snapshot. `KOSIS API KEY` and `KOSIS statisticsData URL` are needed only when API refresh is enabled.
+KOSIS is optional when using the committed snapshot. `KOSIS API KEY` and `KOSIS statisticsData URL` are needed only when API refresh is enabled. For security, the refresh URL must use the `https://kosis.kr/openapi/statisticsData.do` path.
 
 ## 6. Environment File For Repeated Runs
 
@@ -139,6 +139,15 @@ data/raw/nemotron-personas-korea.parquet
 
 Paths outside `data/` are rejected for safety.
 
+Optional design assets can be placed at these repository-root-relative paths:
+
+```text
+design/hero-skyblue-fabric.png
+design/direction-bg.png
+```
+
+If the files are missing, the app uses built-in fallback backgrounds and logs that once.
+
 ## 9. KOSIS Statistics
 
 The repository includes a committed public-statistics snapshot.
@@ -159,7 +168,7 @@ The snapshot is used for report and prompt economic context.
 
 These values are KOSTAT/KOSIS household aggregate statistics. They do not mean an individual persona's real income, assets, or purchasing power.
 
-To use KOSIS API refresh, create a KOSIS `statisticsData` URL and paste it into the app's `KOSIS statisticsData URL` field.
+To use KOSIS API refresh, create a KOSIS `statisticsData` URL and paste it into the app's `KOSIS statisticsData URL` field. The allowed path is `https://kosis.kr/openapi/statisticsData.do`.
 
 ## 10. Run Tests
 
@@ -195,7 +204,7 @@ Check the UI field, external environment file, or OS environment variable for th
 
 ### KOSIS API refresh fails
 
-Check `KOSIS API KEY` and `KOSIS statisticsData URL`. On failure, the app uses the committed public-statistics snapshot.
+Check `KOSIS API KEY` and `KOSIS statisticsData URL`. The URL must use the `https://kosis.kr/openapi/statisticsData.do` path. On failure, the app uses the committed public-statistics snapshot.
 
 ### Hugging Face access errors
 

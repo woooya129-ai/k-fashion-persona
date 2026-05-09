@@ -5,6 +5,7 @@ validate_columns / validate_local_path / normalize_rows_to_personas 만 테스�
 load_huggingface_dataset / load_local_file 는 monkeypatch 기반 테스트.
 """
 
+import os
 import sys
 from pathlib import Path
 
@@ -451,6 +452,24 @@ class TestLoadHuggingfaceDataset:
         # 토큰 문자열이 user_message 또는 str(error) 에 포함되면 안 됨
         assert fake_token not in exc_info.value.user_message
         assert fake_token not in str(exc_info.value)
+
+    def test_explicit_hf_token_is_passed_without_env_mutation(self, monkeypatch):
+        from src.data_loader import load_huggingface_dataset
+
+        fake_token = "hf_EXPLICIT_TOKEN_FOR_TESTING_ONLY_AAABBB"
+        captured_kwargs = {}
+
+        def fake_load(*args, **kwargs):
+            captured_kwargs.update(kwargs)
+            return _make_fake_dataset(MOCK_HF_ROWS)
+
+        self._patch_load_dataset(monkeypatch, fake_load)
+        monkeypatch.delenv("HF_TOKEN", raising=False)
+
+        load_huggingface_dataset("nvidia/Nemotron-Personas-Korea", token=fake_token)
+
+        assert captured_kwargs["token"] == fake_token
+        assert os.environ.get("HF_TOKEN") is None
 
 
 # ---------------------------------------------------------------------------

@@ -37,6 +37,19 @@ PROMPT_TEMPLATE_PATH = (
 APP_PATH = str(Path(__file__).resolve().parent.parent / "src" / "app.py")
 APP_MODULE_SCRIPT = "import src.app as app\napp.main()\n"
 HF_UNAUTH_WARNING = "Warning: You are sending unauthenticated requests to the HF Hub"
+APP_SOURCE_PATHS = (
+    Path(__file__).resolve().parent.parent / "src" / "app.py",
+    Path(__file__).resolve().parent.parent / "src" / "app_config.py",
+    Path(__file__).resolve().parent.parent / "src" / "ui" / "assets.py",
+    Path(__file__).resolve().parent.parent / "src" / "ui" / "copy.py",
+    Path(__file__).resolve().parent.parent / "src" / "ui" / "dynamic_css.py",
+    Path(__file__).resolve().parent.parent / "src" / "ui" / "rendering.py",
+    Path(__file__).resolve().parent.parent / "src" / "ui" / "static_css.py",
+)
+
+
+def _read_app_sources() -> str:
+    return "\n".join(path.read_text(encoding="utf-8") for path in APP_SOURCE_PATHS)
 
 
 def _run_app() -> AppTest:
@@ -615,7 +628,7 @@ def test_app_source_has_no_unsafe_html_or_direct_asyncio_run() -> None:
 
 
 def test_app_source_uses_readable_comfort_tokens_with_targeted_hero_gradient() -> None:
-    source = (Path(__file__).resolve().parent.parent / "src" / "app.py").read_text(encoding="utf-8")
+    source = _read_app_sources()
     assert "Pretendard" in source
     assert "#3a3d42" in source
     assert "#f7f6f2" in source
@@ -693,7 +706,7 @@ def test_app_source_uses_readable_comfort_tokens_with_targeted_hero_gradient() -
     assert "KOREA_PROVINCE_OPTIONS" in source
     assert "OCCUPATION_KEYWORD_OPTIONS" in source
     assert "HF TOKEN" in source
-    assert "Final total" in source
+    assert "One-run estimate" in source
     assert "kfps-run-mode-note" in source
     assert "_sorted_model_options" in source
     assert "st.toggle" in source
@@ -721,7 +734,7 @@ def test_app_source_uses_readable_comfort_tokens_with_targeted_hero_gradient() -
     assert "docs/docs.html" in source
     assert "📄" in source
     assert "woooya129-ai/k-fashion-persona" in source
-    assert "로컬 퍼블릭 베타 · v0.2.0" in source
+    assert "로컬 퍼블릭 베타 · v0.5.0" in source
     assert "설명 ⇄ 도구" not in source
     assert "st.segmented_control" in source
 
@@ -799,6 +812,29 @@ def test_load_and_sample_hf_unfiltered_uses_seeded_reservoir_sampling(
     assert seed_42_a == seed_42_b
     assert seed_42_a != seed_999
     assert seed_42_a != ["stream-0", "stream-1", "stream-2"]
+
+
+def test_load_and_sample_hf_passes_explicit_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured_kwargs: dict[str, object] = {}
+
+    def fake_load_huggingface_dataset(**kwargs):
+        captured_kwargs.update(kwargs)
+        return LoadedDataset("huggingface:test", "fixture", -1), iter(ALL_MOCK_PERSONAS[:1])
+
+    monkeypatch.setattr(app, "load_huggingface_dataset", fake_load_huggingface_dataset)
+
+    app._load_and_sample(  # noqa: SLF001 - app orchestration helper.
+        {
+            "source": "huggingface",
+            "dataset_id": app.DEFAULT_HF_DATASET_ID,
+            "split": app.DEFAULT_SPLIT,
+            "revision": None,
+        },
+        {"sample_size": 1, "sampling_seed": 1, "filter": app.PersonaFilter()},
+        hf_token="hf_TEST_TOKEN",
+    )
+
+    assert captured_kwargs["token"] == "hf_TEST_TOKEN"
 
 
 def test_app_default_prompt_template_is_v0_3() -> None:

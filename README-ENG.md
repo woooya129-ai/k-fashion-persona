@@ -2,7 +2,7 @@
 
 ## Check K-fashion Concepts With AI Personas First
 
-[![Version](https://img.shields.io/badge/version-0.4.0-0F766E)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.5.0-0F766E)](pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
 [![Twin Project](https://img.shields.io/badge/GitHub-us--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/us-fashion-persona)
@@ -53,9 +53,15 @@ According to the official Hugging Face dataset page, the dataset contains 1M rec
 
 Income and asset values are not inferred as individual persona attributes from the NVIDIA dataset. The report context for income, assets, and household clothing-footwear spending comes from Statistics Korea (KOSTAT) / KOSIS public statistics stored in `data/public/kosis_household_context.csv`.
 
-If you enter a KOSIS API key and a `statisticsData` URL, the run attempts to use that API response first. If refresh fails or no supported metrics are found, it falls back to the committed public-statistics snapshot.
+If you enter a KOSIS API key and a `statisticsData` URL, the run attempts to use that API response first. If refresh fails or no supported metrics are found, it falls back to the committed public-statistics snapshot. For security, API refresh accepts only the `https://kosis.kr/openapi/statisticsData.do` path.
 
 These are household-level aggregate statistics. They do not represent a synthetic persona's real income, assets, or purchasing power.
+
+## Prompt Versions And Optional Assets
+
+The default prompt is `prompts/concept_eval_ko_v0_3.md`. `concept_eval_ko_v0_2` is kept for existing cache and regression-test compatibility. Both prompt versions use the `eval_v0_1` result schema.
+
+Optional first-screen background assets can be placed at `design/hero-skyblue-fabric.png` and `design/direction-bg.png`. If they are missing, the app falls back to built-in backgrounds and logs that once.
 
 ## Local Runtime And Recommended Specs
 
@@ -273,6 +279,14 @@ Inappropriate use:
 Review AGPL-3.0-only terms before using this in a commercial service or closed-source product.
 
 Built with Codex and Claude Code.
+
+## v0.5.0 Runtime Layout
+
+- `src/app.py`: Streamlit entry point and public compatibility wrappers for tests
+- `src/app_config.py`: shared app constants and run presets
+- `src/ui/`: UI copy, CSS, static assets, and rendering helpers
+- `src/orchestrator/`: data loading, persona payload construction, cache use, LLM evaluation, and report assembly
+- Existing tests that monkeypatch `src.app` keep the same public import path
 
 ## Contact
 

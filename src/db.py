@@ -92,8 +92,7 @@ ALL_DDL: list[str] = [DDL_JOBS, DDL_RUNS, DDL_LLM_CACHE, DDL_RUN_RESULTS]
 RUNS_MIGRATIONS: dict[str, str] = {
     "dataset_split": "ALTER TABLE runs ADD COLUMN dataset_split TEXT",
     "matched_count_before_sample": (
-        "ALTER TABLE runs ADD COLUMN matched_count_before_sample "
-        "INTEGER NOT NULL DEFAULT 0"
+        "ALTER TABLE runs ADD COLUMN matched_count_before_sample INTEGER NOT NULL DEFAULT 0"
     ),
     "sampling_strategy": (
         "ALTER TABLE runs ADD COLUMN sampling_strategy TEXT NOT NULL DEFAULT 'unknown'"

@@ -4,7 +4,7 @@
 
 ## K-fashion 컨셉을 AI 페르소나로 먼저 점검
 
-[![Version](https://img.shields.io/badge/version-0.4.0-0F766E)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.5.0-0F766E)](pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
 [![Twin Project](https://img.shields.io/badge/GitHub-us--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/us-fashion-persona)
@@ -55,9 +55,15 @@ Hugging Face 공식 데이터셋 기준으로 이 데이터셋은 100만 레코�
 
 소득과 자산은 NVIDIA 데이터셋에 있는 개별 페르소나 속성으로 추정하거나 보강하지 않습니다. 리포트 작성 시 참고하는 소득, 자산, 의류·신발 지출 값은 [통계청(KOSTAT)](https://kostat.go.kr/)과 [국가통계포털(KOSIS)](https://kosis.kr/index)의 공개 통계를 기반으로 한 `data/public/kosis_household_context.csv` 스냅샷에서 가져옵니다.
 
-KOSIS API key와 `statisticsData` URL을 입력하면 실행 시 해당 URL의 응답을 우선 참고합니다. API 갱신에 실패하거나 지원 항목을 찾지 못하면 저장소에 포함된 공개 통계 스냅샷으로 자동 fallback합니다.
+KOSIS API key와 `statisticsData` URL을 입력하면 실행 시 해당 URL의 응답을 우선 참고합니다. API 갱신에 실패하거나 지원 항목을 찾지 못하면 저장소에 포함된 공개 통계 스냅샷으로 자동 fallback합니다. 보안상 KOSIS 갱신 URL은 `https://kosis.kr/openapi/statisticsData.do` 경로만 허용합니다.
 
 이 통계는 가구 단위 집계값입니다. 개별 합성 페르소나의 실제 소득, 자산, 구매력을 뜻하지 않습니다.
+
+## 프롬프트 버전과 선택 자산
+
+기본 프롬프트는 `prompts/concept_eval_ko_v0_3.md`입니다. `concept_eval_ko_v0_2`는 기존 캐시와 회귀 테스트 호환을 위해 유지하며, 평가 결과 스키마는 둘 다 `eval_v0_1`을 사용합니다.
+
+첫 화면 배경용 선택 자산은 `design/hero-skyblue-fabric.png`, `design/direction-bg.png` 경로를 사용합니다. 파일이 없으면 앱은 기본 배경으로 fallback하고, 로그에 한 번만 알립니다.
 
 ## 로컬 실행 범위와 권장 사양
 
@@ -347,6 +353,14 @@ KOSIS참고통계_항목,월평균 가구소득,"5,422,000원 | 2025_Q4 | 2025�
 상업적 서비스나 폐쇄형 제품에 도입하려면 AGPL-3.0-only 라이선스 조건을 반드시 검토해야 합니다.
 
 Codex와 Claude Code를 함께 사용해 만들었습니다.
+
+## v0.5.0 런타임 구조
+
+- `src/app.py`: Streamlit 진입점과 테스트 호환용 공개 래퍼
+- `src/app_config.py`: 앱 공통 상수와 실행 프리셋
+- `src/ui/`: UI 문구, CSS, 정적 자산, 렌더링 함수
+- `src/orchestrator/`: 데이터 로딩, 페르소나 payload 생성, 캐시, LLM 평가, 리포트 조립
+- 기존 테스트가 `src.app`를 monkeypatch하는 경로는 유지
 
 ## Contact
 

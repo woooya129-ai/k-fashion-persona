@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from src.result_parser import EvaluationResult, parse_evaluation_result
+from src.result_parser import EvaluationResult, parse_evaluation_result, validate_evaluation_payload
 
 pytestmark = pytest.mark.no_network
 
@@ -25,6 +25,10 @@ class TestEvaluationResultValid:
         assert result.price_burden == "medium"
 
     def test_model_validate(self):
+        result = validate_evaluation_payload(VALID_DATA)
+        assert isinstance(result, EvaluationResult)
+
+    def test_parse_evaluation_result_alias(self):
         result = parse_evaluation_result(VALID_DATA)
         assert isinstance(result, EvaluationResult)
 

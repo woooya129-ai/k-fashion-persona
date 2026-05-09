@@ -36,6 +36,7 @@ __pycache__/
 *.pyc
 *.pyo
 .pytest_cache/
+.pytest_tmp/
 .mypy_cache/
 .ruff_cache/
 .coverage
@@ -43,6 +44,13 @@ htmlcov/
 .venv/
 venv/
 env/
+
+# Local-only Claude advisor notes
+claude-advisor/
+
+# Local assistant/editor state
+.claude/
+.obsidian/
 
 # Editor and temporary files
 .vscode/

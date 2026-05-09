@@ -64,7 +64,7 @@ uv run python -m http.server 8510
 - `HF TOKEN`: Hugging Face 접근이 필요할 때
 - `KOSIS API KEY`: KOSIS 통계자료 API 갱신을 사용할 때
 
-KOSIS는 기본 스냅샷만 사용할 경우 key가 없어도 됩니다. API 갱신을 켤 때만 `KOSIS API KEY`와 `KOSIS statisticsData URL`이 필요합니다.
+KOSIS는 기본 스냅샷만 사용할 경우 key가 없어도 됩니다. API 갱신을 켤 때만 `KOSIS API KEY`와 `KOSIS statisticsData URL`이 필요합니다. 갱신 URL은 보안상 `https://kosis.kr/openapi/statisticsData.do` 경로만 허용합니다.
 
 ## 6. 반복 실행용 환경 파일
 
@@ -139,6 +139,15 @@ data/raw/nemotron-personas-korea.parquet
 
 `data/` 바깥 경로는 보안상 거부됩니다.
 
+선택 디자인 자산을 쓰려면 다음 파일을 저장소 root 기준으로 둘 수 있습니다.
+
+```text
+design/hero-skyblue-fabric.png
+design/direction-bg.png
+```
+
+파일이 없으면 앱은 기본 배경으로 표시되고, 로그에 한 번만 알립니다.
+
 ## 9. KOSIS 통계
 
 저장소에는 공개 통계 스냅샷이 포함됩니다.
@@ -159,7 +168,7 @@ data/public/kosis_household_context.csv
 
 이 값들은 KOSTAT/KOSIS 가구 단위 집계 통계입니다. 개별 페르소나의 실제 소득, 자산, 구매력을 뜻하지 않습니다.
 
-KOSIS API 갱신을 쓰려면 KOSIS에서 `statisticsData` URL을 만든 뒤 앱의 `KOSIS statisticsData URL` 입력칸에 넣습니다.
+KOSIS API 갱신을 쓰려면 KOSIS에서 `statisticsData` URL을 만든 뒤 앱의 `KOSIS statisticsData URL` 입력칸에 넣습니다. 허용 경로는 `https://kosis.kr/openapi/statisticsData.do`입니다.
 
 ## 10. 테스트 실행
 
@@ -195,7 +204,7 @@ Streamlit 실행 명령이 아직 실행 중인지 확인하세요. 포트가 �
 
 ### KOSIS API 갱신이 실패함
 
-`KOSIS API KEY`와 `KOSIS statisticsData URL`을 확인하세요. 실패 시 앱은 저장소의 공개 통계 스냅샷을 사용합니다.
+`KOSIS API KEY`와 `KOSIS statisticsData URL`을 확인하세요. URL은 `https://kosis.kr/openapi/statisticsData.do` 경로여야 합니다. 실패 시 앱은 저장소의 공개 통계 스냅샷을 사용합니다.
 
 ### Hugging Face 접근 오류가 남
 

@@ -2,10 +2,12 @@ import pytest
 
 from src.economic_context import (
     build_price_context,
+    fetch_kosis_api_metrics,
     kosis_segment_options,
     parse_kosis_api_metrics,
     price_burden_label,
     price_burden_ratio,
+    validate_kosis_statistics_data_url,
 )
 
 pytestmark = pytest.mark.no_network
@@ -123,3 +125,42 @@ def test_parse_kosis_api_metrics_converts_unit_to_krw():
     assert parsed[0].metric == "monthly_household_income_krw"
     assert parsed[0].value_krw == 1_234_000
     assert parsed[0].period == "2025_Q4"
+
+
+def test_validate_kosis_statistics_data_url_accepts_official_url():
+    url = "https://kosis.kr/openapi/statisticsData.do?method=getList"
+
+    assert validate_kosis_statistics_data_url(url) == url
+
+
+@pytest.mark.parametrize(
+    "url,match",
+    [
+        ("http://kosis.kr/openapi/statisticsData.do", "https"),
+        ("https://example.com/openapi/statisticsData.do", "host"),
+        ("https://kosis.kr.evil.test/openapi/statisticsData.do", "host"),
+        ("https://kosis.kr/other/path", "path"),
+    ],
+)
+def test_validate_kosis_statistics_data_url_rejects_unsafe_urls(url, match):
+    with pytest.raises(ValueError, match=match):
+        validate_kosis_statistics_data_url(url)
+
+
+def test_fetch_kosis_api_metrics_validates_url_before_appending_api_key(monkeypatch):
+    called = False
+
+    def fake_get(*args, **kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError("httpx.get should not be called for invalid KOSIS URL")
+
+    monkeypatch.setattr("src.economic_context.httpx.get", fake_get)
+
+    with pytest.raises(ValueError, match="host"):
+        fetch_kosis_api_metrics(
+            "fake-kosis-api-key",
+            "https://example.com/openapi/statisticsData.do",
+        )
+
+    assert called is False

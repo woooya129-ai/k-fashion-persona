@@ -794,7 +794,7 @@ wheels = [
 ]
 
 [[package]]
-name = "k-fashion-persona-screener"
+name = "k-fashion-persona"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

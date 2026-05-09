@@ -4,7 +4,7 @@ prompt_version: `concept_eval_ko_v0_3`
 schema_version: `eval_v0_1`
 대상 언어: 한국어
 대상 출력: `EvaluationResult` (lock-in v1.2 §3.1, schema 호환)
-포지셔닝 기준: first public release positioning (local-first K-fashion synthetic persona reaction screener)
+포지셔닝 기준: first public release positioning (local-first K-fashion synthetic persona reaction tool)
 
 ---
 

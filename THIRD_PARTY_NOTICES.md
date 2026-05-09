@@ -1,7 +1,7 @@
 # Third-Party Notices
 
 This file lists third-party datasets, libraries, and materials referenced by
-K-Fashion Persona Screener. It is an attribution and notice file, not a license
+k-fashion-persona. It is an attribution and notice file, not a license
 override.
 
 ## NVIDIA Nemotron-Personas-Korea

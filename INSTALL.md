@@ -1,6 +1,6 @@
-# K-Fashion Persona Screener 설치 및 실행 가이드
+# k-fashion-persona 설치 및 실행 가이드
 
-이 문서는 K-Fashion Persona Screener를 로컬에서 설치하고 실행하는 방법을 설명합니다.
+이 문서는 k-fashion-persona를 로컬에서 설치하고 실행하는 방법을 설명합니다.
 
 이 앱은 hosted evaluation service가 아닙니다. 사용자의 컴퓨터에서 실행되는 local-first Streamlit 앱이며, 사용자가 직접 준비한 API key를 사용합니다.
 

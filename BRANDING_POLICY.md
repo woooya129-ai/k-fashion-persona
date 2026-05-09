@@ -10,7 +10,7 @@ license permissions from official project identity.
 
 ## Official Project Identity
 
-- Official project name: K-Fashion Persona Screener
+- Official project name: k-fashion-persona
 - Public repository: https://github.com/woooya129-ai/k-fashion-persona
 - Official website: https://kfashionpersona.co.kr
 - Maintainer/owner: woooya129-ai
@@ -41,13 +41,13 @@ Forks and modified versions should use a clearly distinguishable name.
 
 Recommended wording:
 
-- "Fork of K-Fashion Persona Screener"
-- "Based on K-Fashion Persona Screener"
+- "Fork of k-fashion-persona"
+- "Based on k-fashion-persona"
 
 Avoid wording such as:
 
-- "Official K-Fashion Persona Screener"
-- "K-Fashion Persona Screener Pro"
+- "Official k-fashion-persona"
+- "k-fashion-persona Pro"
 - "kfashionpersona.co.kr official mirror"
 
 unless written permission is granted by the owner.

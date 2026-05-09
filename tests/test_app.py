@@ -108,7 +108,7 @@ def _merge_ui_surface_text(at: AppTest) -> str:
 def _poll_until_terminal_report(at: AppTest, *, max_runs: int = 10) -> AppTest:
     """Worker + fragment may need several script reruns before job reaches terminal UI."""
     marker_avg = "평균 관심도"
-    marker_report = "# K-Fashion Persona Screener"
+    marker_report = "# k-fashion-persona"
     last_merged = ""
     for _ in range(max_runs):
         at.run(timeout=10)
@@ -617,7 +617,7 @@ def test_app_source_uses_readable_comfort_tokens_with_targeted_hero_gradient() -
     assert "ENG" in source
     assert "LIGHT" in source
     assert "DARK" in source
-    assert "K-Fashion Personas Screener" in source
+    assert "k-fashion-persona" in source
     assert "api_key_help" in source
     assert "hf_token_help" in source
     assert "kfps-secret-field-head" in source

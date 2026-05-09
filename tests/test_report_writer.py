@@ -69,7 +69,8 @@ class TestRequiredFooterText:
 
     def test_attribution_and_obfuscated_contact_line(self):
         footer = required_footer_text()
-        assert "K-Fashion Persona Screener." in footer
+        assert "k-fashion-persona." in footer
+        assert "Built with Codex and Claude Code." in footer
         assert "Contact: woooya129 [at] gmail [dot] com" in footer
         assert "woooya129@gmail.com" not in footer
 

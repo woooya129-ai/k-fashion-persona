@@ -11,7 +11,7 @@
 [![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-0F766E.svg)](LICENSE)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Woody%20Kim-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/woody-kim-ab2741403/)
 
-K-Fashion Persona Screener는 패션 제품 컨셉을 실제 출시하거나 본조사를 하기 전에 AI 합성 페르소나 관점으로 빠르게 점검하는 local-first 도구입니다.
+k-fashion-persona는 패션 제품 컨셉을 실제 출시하거나 본조사를 하기 전에 AI 합성 페르소나 관점으로 빠르게 점검하는 local-first 도구입니다.
 
 미국 패션 컨셉용 쌍둥이 프로젝트는 [us-fashion-persona](https://github.com/woooya129-ai/us-fashion-persona)입니다.
 
@@ -32,9 +32,9 @@ NVIDIA Nemotron-Personas-Korea는 한국 맥락을 반영한 합성 페르소나
 
 이 방식이 가능한 이유는 실제 구매를 예측하려는 것이 아니라, 제품 설명을 봤을 때 어떤 지점에서 관심이 생기고 어떤 지점에서 막히는지 early signal을 보는 용도이기 때문입니다. 최종 판단은 실제 설문, 판매 데이터, 전문가 검토와 함께 해야 합니다.
 
-![K-Fashion Persona Screener main screen](docs/assets/kfashionpersona-screenshot-01.webp)
+![k-fashion-persona main screen](docs/assets/kfashionpersona-screenshot-01.webp)
 
-![K-Fashion Persona Screener result screen](docs/assets/kfashionpersona-screenshot-02.webp)
+![k-fashion-persona result screen](docs/assets/kfashionpersona-screenshot-02.webp)
 
 ## 무엇을 확인할 수 있나요?
 
@@ -71,7 +71,7 @@ NVIDIA Nemotron-Personas-Korea는 한국 맥락을 반영한 합성 페르소나
 - 타깃 가설: 25세부터 39세까지의 직장인 여성
 
 ```markdown
-# K-Fashion Persona Screener — 합성 패널 분석 리포트
+# k-fashion-persona — 합성 패널 분석 리포트
 
 > **주의**: 방향성 참고용. 세그먼트 비교 부적합
 
@@ -178,7 +178,8 @@ NVIDIA Nemotron-Personas-Korea는 한국 맥락을 반영한 합성 페르소나
 Data source (only external dataset): NVIDIA Nemotron-Personas-Korea, CC BY 4.0.
 Dataset URL: https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea
 CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
-K-Fashion Persona.
+k-fashion-persona.
+Built with Codex and Claude Code.
 Contact: woooya129 [at] gmail [dot] com
 ```
 
@@ -346,4 +347,6 @@ cache/screener.db
 
 ## 한 문장 요약
 
-K-Fashion Persona Screener는 한국 패션 제품 컨셉을 실제 조사 전에 합성 페르소나 패널로 빠르게 점검해 관심 이유, 망설임, 패션 리스크 신호를 정리해 주는 local-first 사전 분석 도구입니다.
+k-fashion-persona는 한국 패션 제품 컨셉을 실제 조사 전에 합성 페르소나 패널로 빠르게 점검해 관심 이유, 망설임, 패션 리스크 신호를 정리해 주는 local-first 사전 분석 도구입니다.
+
+Codex와 Claude Code를 함께 사용해 만들었습니다.

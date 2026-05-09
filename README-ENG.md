@@ -27,9 +27,9 @@ NVIDIA Nemotron-Personas-Korea is a synthetic persona dataset with Korean contex
 
 This works as an early check because the goal is not to predict real buying behavior. The goal is to see which parts of the concept create interest and which parts may block the reaction. Final decisions should still use real surveys, sales data, and expert review.
 
-![K-Fashion Persona Screener main screen](docs/assets/kfashionpersona-screenshot-03.webp)
+![k-fashion-persona main screen](docs/assets/kfashionpersona-screenshot-03.webp)
 
-![K-Fashion Persona Screener result screen](docs/assets/kfashionpersona-screenshot-04.webp)
+![k-fashion-persona result screen](docs/assets/kfashionpersona-screenshot-04.webp)
 
 ## What You Can Check
 
@@ -51,3 +51,5 @@ This works as an early check because the goal is not to predict real buying beha
 - The DB does not store raw API keys, HF tokens, raw provider responses, or raw concept text in dedicated columns.
 - NVIDIA Nemotron-Personas-Korea is attributed under CC BY 4.0.
 - The public code license is GNU AGPL-3.0-only.
+
+Built with Codex and Claude Code.

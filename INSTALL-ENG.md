@@ -1,6 +1,6 @@
-# K-Fashion Persona Screener Installation Guide
+# k-fashion-persona Installation Guide
 
-This guide explains how to install and run K-Fashion Persona Screener locally.
+This guide explains how to install and run k-fashion-persona locally.
 
 This app is not a hosted evaluation service. It is a local-first Streamlit app that runs on your machine and uses API keys that you configure yourself.
 

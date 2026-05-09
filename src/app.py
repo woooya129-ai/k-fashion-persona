@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-"""Streamlit entry point for the local screener UI.
+"""Streamlit entry point for the local UI.
 
 The app is a thin orchestration layer. Core work stays in the existing
 modules: data loading, persona filtering, prompt construction, LLM calls,
@@ -234,17 +234,17 @@ SyncEvaluator = Callable[[dict], EvaluatorResult]
 
 UI_COPY: dict[str, dict[str, str]] = {
     "KR": {
-        "nav_brand": "K-Fashion",
+        "nav_brand": "k-fashion-persona",
         "nav_concept": "컨셉",
         "nav_panel": "패널",
         "nav_model": "모델",
         "nav_report": "리포트",
-        "subnav_title": "Persona Screener",
+        "subnav_title": "k-fashion-persona",
         "subnav_local": "로컬 실행",
         "subnav_keys": "키 비공개",
         "subnav_panel": "합성 패널",
         "subnav_run": "실행",
-        "hero_title": "K-Fashion Personas Screener",
+        "hero_title": "k-fashion-persona",
         "intro_badge": "NVIDIA 제작 · 한국 공공데이터 분포 기반",
         "intro_title": "한국형 합성 페르소나로 패션 컨셉을 먼저 검토한다",
         "intro_body": (
@@ -455,17 +455,17 @@ UI_COPY: dict[str, dict[str, str]] = {
         ),
     },
     "EN": {
-        "nav_brand": "K-Fashion",
+        "nav_brand": "k-fashion-persona",
         "nav_concept": "Concept",
         "nav_panel": "Panel",
         "nav_model": "Model",
         "nav_report": "Report",
-        "subnav_title": "Persona Screener",
+        "subnav_title": "k-fashion-persona",
         "subnav_local": "Local run",
         "subnav_keys": "Private keys",
         "subnav_panel": "Synthetic panel",
         "subnav_run": "Run",
-        "hero_title": "K-Fashion Personas Screener",
+        "hero_title": "k-fashion-persona",
         "intro_badge": "Built by NVIDIA · grounded in Korean public-data distributions",
         "intro_title": "Use Korean synthetic personas to pre-check a fashion concept",
         "intro_body": (
@@ -4483,7 +4483,7 @@ def render_concept_inputs(lang: str) -> dict[str, Any]:
     }
     canonical_text = build_canonical_product_card_text(raw_fields)
     return {
-        "project_name": project_name.strip() or "k-fashion-screener",
+        "project_name": project_name.strip() or "k-fashion-persona",
         "category": category.strip(),
         "product_price_krw": int(product_price_krw),
         "fit": fit.strip(),
@@ -4936,7 +4936,7 @@ def render_report_placeholder(lang: str) -> None:
         st.download_button(
             ui_text(lang, "report_export_button"),
             data="",
-            file_name="k-fashion-screener-report.md",
+            file_name="k-fashion-persona-report.md",
             mime="text/markdown",
             key="kfps_export_md_pending",
             type="primary",
@@ -5671,7 +5671,7 @@ def _render_job_panel_impl(lang: str) -> None:
         st.error(f"리포트 문구 검증 실패: {type(exc).__name__}")
         return
 
-    project_name = st.session_state.get("active_project_name", "k-fashion-screener")
+    project_name = st.session_state.get("active_project_name", "k-fashion-persona")
 
     st.html('<span class="kfps-result-anchor" data-kfps-anchor="report-markdown"></span>')
 
@@ -5769,7 +5769,7 @@ def render_footer(lang: str) -> None:
 
 
 def main() -> None:
-    st.set_page_config(page_title="K-Fashion Persona Screener", layout="wide")
+    st.set_page_config(page_title="k-fashion-persona", layout="wide")
     lang_seed, theme_seed = _current_ui_state()
     apply_design_system(theme_seed == "dark")
     lang, _dark_mode = render_top_bar(lang_seed, theme_seed)

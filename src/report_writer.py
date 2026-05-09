@@ -64,7 +64,8 @@ def required_footer_text() -> str:
         "Data source (only external dataset): NVIDIA Nemotron-Personas-Korea, CC BY 4.0.\n"
         "Dataset URL: https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea\n"
         "CC BY 4.0: https://creativecommons.org/licenses/by/4.0/\n"
-        "K-Fashion Persona Screener.\n"
+        "k-fashion-persona.\n"
+        "Built with Codex and Claude Code.\n"
         f"Contact: {CONTACT_DISPLAY}"
     )
 
@@ -320,7 +321,7 @@ def render_markdown(report: AggregateReport) -> str:
     lines: list[str] = []
 
     # Header
-    lines.append("# K-Fashion Persona Screener — 합성 패널 분석 리포트")
+    lines.append("# k-fashion-persona — 합성 패널 분석 리포트")
     lines.append("")
 
     # Sample warning

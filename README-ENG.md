@@ -2,13 +2,14 @@
 
 ## Check K-fashion Concepts With AI Personas First
 
-[![Version](https://img.shields.io/badge/version-0.5.2-0F766E)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.5.3-0F766E)](pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
 [![Twin Project](https://img.shields.io/badge/GitHub-us--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/us-fashion-persona)
 [![Docs](https://img.shields.io/badge/Docs-INSTALL--ENG-2563EB?logo=readthedocs&logoColor=white)](docs/INSTALL-ENG.md)
 [![Korean README](https://img.shields.io/badge/README-Korean-2563EB)](README.md)
 [![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-0F766E.svg)](LICENSE)
+[![Citation](https://img.shields.io/badge/citation-CFF-2563EB)](CITATION.cff)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Woody%20Kim-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/woody-kim-ab2741403/)
 
 k-fashion-persona is a local-first Streamlit tool for checking Korean fashion product concepts with synthetic AI personas before launch or formal research.
@@ -284,6 +285,16 @@ Review AGPL-3.0-only terms before using this in a commercial service or closed-s
 - Commercial license: closed-source commercial use, internal SaaS, redistributed products, or use cases that cannot adopt AGPL terms may be handled under a separate written commercial license or dual-license arrangement
 
 Contact: woooya129 [at] gmail [dot] com
+
+### Attribution And Methodology
+
+- Citation format: `CITATION.cff`
+- Methodology and rights positioning: `docs/METHODOLOGY_AND_RIGHTS.md`
+- This repository does not claim ownership of an abstract idea. It separates
+  public source code, documentation, prompts, report structure, branding, and
+  commercial adoption terms.
+- Closed-source products, internal SaaS, paid consulting workflows, and official
+  branding use should be handled through commercial-license discussion.
 
 Built with Codex and Claude Code.
 

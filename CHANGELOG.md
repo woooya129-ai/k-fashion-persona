@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.3 - 2026-05-10 (Attribution and rights positioning)
+
+- Added `CITATION.cff` to make project attribution explicit.
+- Added `docs/METHODOLOGY_AND_RIGHTS.md` to document the pre-screening workflow,
+  attribution expectations, commercial adoption boundary, and IP positioning.
+- Clarified README, commercial-license, and NOTICE references for citation,
+  methodology, branding, and commercial adoption.
+- Updated release labels to `0.5.3`.
+
 ## 0.5.2 - 2026-05-09 (CI validation)
 
 - Verified that `actions/checkout@v6` and `actions/setup-python@v6` are published GitHub Marketplace versions.

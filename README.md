@@ -4,13 +4,14 @@
 
 ## K-fashion 컨셉을 AI 페르소나로 먼저 점검
 
-[![Version](https://img.shields.io/badge/version-0.5.2-0F766E)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.5.3-0F766E)](pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
 [![Twin Project](https://img.shields.io/badge/GitHub-us--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/us-fashion-persona)
 [![Docs](https://img.shields.io/badge/Docs-INSTALL-2563EB?logo=readthedocs&logoColor=white)](docs/INSTALL.md)
 [![English README](https://img.shields.io/badge/README-English-2563EB)](README-ENG.md)
 [![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-0F766E.svg)](LICENSE)
+[![Citation](https://img.shields.io/badge/citation-CFF-2563EB)](CITATION.cff)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Woody%20Kim-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/woody-kim-ab2741403/)
 
 k-fashion-persona는 패션 제품 컨셉을 실제 출시하거나 본조사를 하기 전에 AI 합성 페르소나 관점으로 점검하는 local-first 도구입니다.
@@ -358,6 +359,13 @@ KOSIS참고통계_항목,월평균 가구소득,"5,422,000원 | 2025_Q4 | 2025�
 - Commercial license: 상업적 폐쇄 도입, 사내 SaaS, 재배포 제품, AGPL 조건 적용이 어려운 사용은 별도 상용 라이선스 또는 듀얼 라이선스 협의 가능
 
 문의: woooya129 [at] gmail [dot] com
+
+### 출처와 방법론 인용
+
+- 인용 형식: `CITATION.cff`
+- 방법론과 권리 포지셔닝: `docs/METHODOLOGY_AND_RIGHTS.md`
+- 이 저장소는 추상 아이디어 독점을 주장하지 않고, 공개 코드·문서·프롬프트·리포트 구조·브랜딩·상업 도입 계약의 경계를 명확히 둡니다.
+- 기업의 폐쇄형 제품, 사내 SaaS, 유료 컨설팅 워크플로, 공식 브랜딩 사용은 상용 라이선스 협의 대상입니다.
 
 Codex와 Claude Code를 함께 사용해 만들었습니다.
 

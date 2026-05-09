@@ -1,6 +1,6 @@
 [project]
 name = "k-fashion-persona"
-version = "0.5.2"
+version = "0.5.3"
 description = "Synthetic persona-based exploratory tool for Korean fashion concepts."
 requires-python = ">=3.11"
 license = { text = "AGPL-3.0-only" }

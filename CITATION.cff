@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software or its documented workflow, cite it as below."
+title: "k-fashion-persona: Synthetic Persona Pre-Screening for K-Fashion Concepts"
+version: 0.5.3
+date-released: 2026-05-10
+type: software
+authors:
+  - family-names: "Kim"
+    given-names: "Woody"
+repository-code: "https://github.com/woooya129-ai/k-fashion-persona"
+url: "https://kfashionpersona.co.kr"
+license: "AGPL-3.0-only"
+abstract: >-
+  k-fashion-persona is a local-first tool for pre-screening Korean fashion
+  product concepts with synthetic personas, structured product cards, public
+  Korean statistics context, LLM evaluation, validation, aggregation, and
+  Markdown/CSV reports.
+keywords:
+  - synthetic personas
+  - fashion concept testing
+  - K-fashion
+  - local-first
+  - Streamlit

@@ -5,6 +5,8 @@
 [![Version](https://img.shields.io/badge/version-0.5.3-0F766E)](pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
+[![HF Space](https://img.shields.io/badge/HF%20Space-k--fashion--persona-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/spaces/w00ya/k-fashion-persona)
+[![Live App](https://img.shields.io/badge/Live%20App-hf.space-0F766E)](https://w00ya-k-fashion-persona.hf.space)
 [![Twin Project](https://img.shields.io/badge/GitHub-us--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/us-fashion-persona)
 [![Docs](https://img.shields.io/badge/Docs-INSTALL--ENG-2563EB?logo=readthedocs&logoColor=white)](docs/INSTALL-ENG.md)
 [![Korean README](https://img.shields.io/badge/README-Korean-2563EB)](README.md)
@@ -22,6 +24,8 @@ The twin project for US fashion concepts is [us-fashion-persona](https://github.
 - `Protected` HF Space visibility does not remove or weaken the license. It only limits source display and cloning on Hugging Face Hub.
 - Access to the running app does not grant source-code transfer, exclusive rights, or commercial relicensing permission.
 - If you modify this code and provide it as a network service, review the source-offer obligations under AGPL-3.0-only.
+- The source repository is [woooya129-ai/k-fashion-persona](https://github.com/woooya129-ai/k-fashion-persona).
+- The running HF Space is [w00ya/k-fashion-persona](https://huggingface.co/spaces/w00ya/k-fashion-persona).
 - The default persona dataset, NVIDIA Nemotron-Personas-Korea, is subject to **CC BY 4.0 attribution**.
 - The authoritative license and notices are [LICENSE](LICENSE), [NOTICE](NOTICE), and [THIRD_PARTY_NOTICES](docs/THIRD_PARTY_NOTICES.md).
 

@@ -26,6 +26,8 @@ tags:
 [![Version](https://img.shields.io/badge/version-0.5.3-0F766E)](pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
+[![HF Space](https://img.shields.io/badge/HF%20Space-k--fashion--persona-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/spaces/w00ya/k-fashion-persona)
+[![Live App](https://img.shields.io/badge/Live%20App-hf.space-0F766E)](https://w00ya-k-fashion-persona.hf.space)
 [![Twin Project](https://img.shields.io/badge/GitHub-us--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/us-fashion-persona)
 [![Docs](https://img.shields.io/badge/Docs-INSTALL-2563EB?logo=readthedocs&logoColor=white)](docs/INSTALL.md)
 [![English README](https://img.shields.io/badge/README-English-2563EB)](README-ENG.md)
@@ -39,6 +41,8 @@ k-fashion-persona는 패션 제품 컨셉을 실제 출시하거나 본조사를
 
 ## HF Space 라이선스 고지
 
+- 원본 GitHub 저장소는 [woooya129-ai/k-fashion-persona](https://github.com/woooya129-ai/k-fashion-persona)입니다.
+- 실행 가능한 HF Space는 [w00ya/k-fashion-persona](https://huggingface.co/spaces/w00ya/k-fashion-persona)입니다.
 - 이 HF Space의 코드 라이선스는 **GNU AGPL-3.0-only**입니다.
 - HF Space가 `protected` 상태여도 라이선스가 없어지는 것은 아닙니다. `protected`는 Hugging Face Hub에서 소스 표시와 clone을 제한하는 배포 설정입니다.
 - 실행 앱 접근 권한은 소스 코드 사용권 이전, 독점 사용권, 상업적 재라이선스 허가를 의미하지 않습니다.

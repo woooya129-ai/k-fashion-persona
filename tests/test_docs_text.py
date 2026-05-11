@@ -57,6 +57,17 @@ def test_docs_state_config_based_endpoint_allowlist_risk():
     assert "allowed host set" in text
 
 
+def test_docs_link_github_and_hf_space_reciprocally():
+    text = _doc_text()
+    github_url = "https://github.com/woooya129-ai/k-fashion-persona"
+    hf_space_url = "https://huggingface.co/spaces/w00ya/k-fashion-persona"
+    live_app_url = "https://w00ya-k-fashion-persona.hf.space"
+
+    assert text.count(github_url) >= 2
+    assert text.count(hf_space_url) >= 2
+    assert text.count(live_app_url) >= 2
+
+
 def test_hf_space_frontmatter_is_configured():
     readme = _read("README.md")
     assert readme.startswith("---\n")

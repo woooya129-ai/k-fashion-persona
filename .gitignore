@@ -47,6 +47,7 @@ env/
 
 # Local-only Claude advisor notes
 claude-advisor/
+sandbox/
 
 # Local assistant/editor state
 .claude/

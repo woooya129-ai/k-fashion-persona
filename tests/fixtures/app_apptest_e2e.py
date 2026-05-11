@@ -93,7 +93,8 @@ def fake_make_llm_evaluator_async(
     model_name: str,
     api_key: str,
     temperature: float,
-    max_output_tokens: int = 600,
+    max_output_tokens: int = 1200,
+    **_kwargs: Any,
 ):
     by_pid = {"p001": MOCK_RESULTS[0], "p002": MOCK_RESULTS[1]}
 

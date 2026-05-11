@@ -7,7 +7,7 @@ This app is not a hosted service. It is a local Streamlit app that runs on your 
 - Git
 - Python 3.11 or newer
 - `uv`
-- An API key for OpenAI, Anthropic, or Gemini
+- An API key for your chosen AI provider
 - Hugging Face token if needed
 - Optional KOSIS API key
 
@@ -60,11 +60,13 @@ The easiest path is to paste keys into the password fields in the app UI.
 
 Supported key inputs:
 
-- LLM provider API key: OpenAI / Anthropic / Google Gemini
+- LLM provider API key: the provider for the selected model
 - `HF TOKEN`: when Hugging Face access is needed
 - `KOSIS API KEY`: when you enable KOSIS API refresh
 
 KOSIS is optional when using the committed snapshot. `KOSIS API KEY` and `KOSIS statisticsData URL` are needed only when API refresh is enabled. For security, the refresh URL must use the `https://kosis.kr/openapi/statisticsData.do` path.
+
+LLM API endpoints are limited to `api_base_url` hosts registered in `config/pricing_config.yaml`. Editing that YAML changes the allowed host set, so treat config changes as code-reviewed changes in shared environments.
 
 ## 6. Environment File For Repeated Runs
 
@@ -90,12 +92,16 @@ Environment file example:
 OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
 GOOGLE_API_KEY=
+GROQ_API_KEY=
+DEEPSEEK_API_KEY=
+QWEN_API_KEY=
 HF_TOKEN=
 KOSIS_API_KEY=
 KOSIS_STATISTICS_DATA_URL=
 ```
 
 `GOOGLE_API_KEY` is for the Gemini API key from Google AI Studio, not Vertex AI.
+OpenAI-compatible providers such as Groq, DeepSeek, and Qwen use the environment variable named by `api_key_env` in `pricing_config.yaml`.
 
 Do not place or commit a real `.env` file in the repository root.
 
@@ -186,7 +192,7 @@ uv run pip-audit
 uv run pre-commit run --all-files
 ```
 
-Tests do not make real calls to OpenAI, Anthropic, Gemini, or Hugging Face.
+Tests do not make real calls to LLM providers or Hugging Face.
 
 ## 11. Troubleshooting
 

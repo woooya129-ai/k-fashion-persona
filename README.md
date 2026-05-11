@@ -1,3 +1,24 @@
+---
+title: K-Fashion Persona
+emoji: 👗
+colorFrom: green
+colorTo: blue
+sdk: streamlit
+sdk_version: 1.57.0
+python_version: "3.11"
+app_file: src/app.py
+pinned: false
+license: agpl-3.0
+short_description: Local-first Korean fashion concept screening with AI personas.
+datasets:
+  - nvidia/Nemotron-Personas-Korea
+tags:
+  - streamlit
+  - fashion
+  - personas
+  - market-research
+---
+
 # k-fashion-persona
 
 ![AI 디지털 패션 패널 개요](docs/assets/k-fashion-persona-images.jpeg)
@@ -51,7 +72,7 @@ flowchart LR
 - 연령, 성별, 지역, 직업 필터
 - seed 기반 샘플링
 - LLM provider/model 선택
-- OpenAI, Anthropic, Gemini API key 화면 입력
+- 선택한 AI provider API key 화면 입력
 - Hugging Face token 입력 또는 외부 `.env` 사용
 - KOSIS 공개 통계 스냅샷 선택
 - 선택 시 KOSIS `statisticsData` API URL로 통계 갱신
@@ -77,7 +98,13 @@ KOSIS API key와 `statisticsData` URL을 입력하면 실행 시 해당 URL의 �
 
 ## 로컬 실행 범위와 권장 사양
 
-앱 UI, 데이터셋 필터링, 샘플링, 프롬프트 생성, SQLite 캐시, Markdown/CSV 리포트 생성은 사용자 PC에서 로컬로 실행됩니다. 다만 기본 Hugging Face 데이터셋을 처음 사용할 때는 Hugging Face Hub에서 데이터셋을 읽어오며, LLM 평가는 선택한 OpenAI, Anthropic, Gemini API 서버로 프롬프트를 전송합니다. KOSIS API 갱신을 켠 경우에만 KOSIS API에도 요청합니다.
+앱 UI, 데이터셋 필터링, 샘플링, 프롬프트 생성, SQLite 캐시, Markdown/CSV 리포트 생성은 사용자 PC에서 로컬로 실행됩니다. 기본 Hugging Face 데이터셋을 처음 사용할 때는 Hugging Face Hub에서 데이터셋을 읽어옵니다. LLM 평가는 사용자가 선택한 provider API 서버로 프롬프트를 전송합니다. KOSIS API 갱신을 켠 경우에만 KOSIS API에도 요청합니다.
+
+API key는 앱이 저장하지 않습니다. 화면 입력값은 현재 Streamlit 세션에서만 쓰고, 반복 실행용 key는 저장소 밖 환경 파일 또는 OS 환경변수에서 읽습니다.
+
+LLM API endpoint는 `config/pricing_config.yaml`에 등록된 `api_base_url` host만 허용합니다. 이 YAML을 직접 편집하면 허용 host도 바뀌므로, 배포본이나 공유 환경에서는 config 변경을 코드 리뷰 대상으로 봐야 합니다.
+
+실행 시작 시 job 생성 전에 첫 페르소나 1건을 preflight로 호출해 JSON 파싱과 schema 검증을 먼저 확인합니다. 이 호출은 사용자의 provider API key로 과금될 수 있지만, 성공 결과는 캐시에 저장해 같은 실행의 첫 결과로 재사용합니다.
 
 현재 버전은 로컬 LLM 또는 로컬 Vision 모델을 돌리지 않으므로 그래픽카드는 필요하지 않습니다.
 
@@ -154,12 +181,16 @@ Copy-Item .env.example "$HOME\secrets\k-fashion\.env"
 OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
 GOOGLE_API_KEY=
+GROQ_API_KEY=
+DEEPSEEK_API_KEY=
+QWEN_API_KEY=
 HF_TOKEN=
 KOSIS_API_KEY=
 KOSIS_STATISTICS_DATA_URL=
 ```
 
 `GOOGLE_API_KEY`는 Google AI Studio의 Gemini API key 기준입니다. Vertex AI key가 아닙니다.
+Groq, DeepSeek, Qwen 같은 OpenAI-compatible provider는 `pricing_config.yaml`의 `api_key_env`에 지정된 환경변수를 사용합니다.
 
 저장소 root에 실제 `.env` 파일을 두거나 commit하지 마세요.
 

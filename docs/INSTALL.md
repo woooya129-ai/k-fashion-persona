@@ -7,7 +7,7 @@
 - Git
 - Python 3.11 이상
 - `uv`
-- OpenAI, Anthropic, Gemini 중 사용할 provider API key
+- 사용할 AI provider API key
 - 필요 시 Hugging Face token
 - 선택 사항: KOSIS API key
 
@@ -60,11 +60,13 @@ uv run python -m http.server 8510
 
 입력 가능한 key:
 
-- LLM provider API key: OpenAI / Anthropic / Google Gemini
+- LLM provider API key: 선택한 모델의 provider
 - `HF TOKEN`: Hugging Face 접근이 필요할 때
 - `KOSIS API KEY`: KOSIS 통계자료 API 갱신을 사용할 때
 
 KOSIS는 기본 스냅샷만 사용할 경우 key가 없어도 됩니다. API 갱신을 켤 때만 `KOSIS API KEY`와 `KOSIS statisticsData URL`이 필요합니다. 갱신 URL은 보안상 `https://kosis.kr/openapi/statisticsData.do` 경로만 허용합니다.
+
+LLM API endpoint는 `config/pricing_config.yaml`에 등록된 `api_base_url` host만 허용합니다. 이 YAML을 직접 편집하면 허용 host도 바뀌므로 공유 환경에서는 config 변경을 코드 리뷰 대상으로 봐야 합니다.
 
 ## 6. 반복 실행용 환경 파일
 
@@ -90,12 +92,16 @@ Copy-Item .env.example "$HOME\secrets\k-fashion\.env"
 OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
 GOOGLE_API_KEY=
+GROQ_API_KEY=
+DEEPSEEK_API_KEY=
+QWEN_API_KEY=
 HF_TOKEN=
 KOSIS_API_KEY=
 KOSIS_STATISTICS_DATA_URL=
 ```
 
 `GOOGLE_API_KEY`는 Google AI Studio의 Gemini API key 기준입니다. Vertex AI key가 아닙니다.
+Groq, DeepSeek, Qwen 같은 OpenAI-compatible provider는 `pricing_config.yaml`의 `api_key_env`에 지정된 환경변수를 사용합니다.
 
 저장소 root에 실제 `.env` 파일을 두거나 commit하지 마세요.
 
@@ -186,7 +192,7 @@ uv run pip-audit
 uv run pre-commit run --all-files
 ```
 
-테스트는 실제 OpenAI, Anthropic, Gemini, Hugging Face API를 호출하지 않습니다.
+테스트는 실제 LLM provider, Hugging Face API를 호출하지 않습니다.
 
 ## 11. 문제 해결
 

@@ -10,10 +10,13 @@ import pytest
 
 from src.secrets_loader import (
     ANTHROPIC_KEY_VAR,
+    DEEPSEEK_KEY_VAR,
     GOOGLE_KEY_VAR,
+    GROQ_KEY_VAR,
     HF_TOKEN_VAR,
     KOSIS_API_KEY_VAR,
     OPENAI_KEY_VAR,
+    QWEN_KEY_VAR,
     LoadedSecretsStatus,
     get_hf_token,
     get_kosis_api_key,
@@ -32,6 +35,9 @@ def isolate_env(monkeypatch: pytest.MonkeyPatch):
         OPENAI_KEY_VAR,
         ANTHROPIC_KEY_VAR,
         GOOGLE_KEY_VAR,
+        GROQ_KEY_VAR,
+        DEEPSEEK_KEY_VAR,
+        QWEN_KEY_VAR,
         HF_TOKEN_VAR,
         KOSIS_API_KEY_VAR,
     ):
@@ -87,6 +93,10 @@ class TestGetProviderKey:
     def test_google_present(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv(GOOGLE_KEY_VAR, "fake-google")
         assert get_provider_key("google") == "fake-google"
+
+    def test_explicit_api_key_env_takes_precedence(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv(GROQ_KEY_VAR, "fake-groq")
+        assert get_provider_key("openai_compatible", api_key_env=GROQ_KEY_VAR) == "fake-groq"
 
     def test_missing_returns_none(self):
         assert get_provider_key("openai") is None

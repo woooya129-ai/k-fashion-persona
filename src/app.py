@@ -29,6 +29,7 @@ import streamlit as st
 from src.app_config import (
     DEFAULT_PRICE_CONTEXT_VERSION,
     KOREA_PROVINCE_OPTIONS,
+    MAX_OUTPUT_TOKENS_PER_PERSONA,
     MAX_SAMPLE_SIZE,
     OCCUPATION_KEYWORD_OPTIONS,
     PRODUCT_CARD_EMPTY_PLACEHOLDER,
@@ -58,6 +59,8 @@ from src.orchestrator import (
     build_run_report,
     load_result_rows,
     make_run_meta,
+    run_preflight_and_cache,
+    run_preflight_and_cache_async,
 )
 from src.orchestrator import (
     _load_and_sample as _orchestrator_load_and_sample,
@@ -87,6 +90,7 @@ from src.ui.rendering import (
     _format_tokens,
     _format_usd,
     _input_cost_usd,
+    _model_option_label,
     _model_sort_key,
     _model_version_sort,
     _normalize_card_field,
@@ -182,6 +186,7 @@ __all__ = (
     "DEFAULT_SPLIT",
     "KOREA_PROVINCE_OPTIONS",
     "MAX_SAMPLE_SIZE",
+    "MAX_OUTPUT_TOKENS_PER_PERSONA",
     "OCCUPATION_KEYWORD_OPTIONS",
     "PRODUCT_CARD_EMPTY_PLACEHOLDER",
     "PRODUCT_CARD_FIELD_ORDER",
@@ -202,6 +207,7 @@ __all__ = (
     "_persona_attributes",
     "_provider_from_str",
     "_sampling_strategy_for_dataset",
+    "_model_option_label",
     "_sorted_model_options",
     "build_canonical_product_card_text",
     "build_persona_opinion_rows",
@@ -224,6 +230,8 @@ __all__ = (
     "make_hashes",
     "make_llm_evaluator_async",
     "make_run_meta",
+    "run_preflight_and_cache",
+    "run_preflight_and_cache_async",
     "persona_opinions_csv",
     "required_footer_text",
     "start_worker_thread",
@@ -269,7 +277,12 @@ def make_llm_evaluator_async(
     model_name: str,
     api_key: str,
     temperature: float,
-    max_output_tokens: int = 600,
+    max_output_tokens: int = MAX_OUTPUT_TOKENS_PER_PERSONA,
+    api_base_url: str | None = None,
+    auth_header: str | None = None,
+    supports_json_object: bool = True,
+    supports_json_schema: bool = False,
+    supports_tool_use: bool = False,
 ):
     return _orchestrator_make_llm_evaluator_async(
         provider=provider,
@@ -277,6 +290,11 @@ def make_llm_evaluator_async(
         api_key=api_key,
         temperature=temperature,
         max_output_tokens=max_output_tokens,
+        api_base_url=api_base_url,
+        auth_header=auth_header,
+        supports_json_object=supports_json_object,
+        supports_json_schema=supports_json_schema,
+        supports_tool_use=supports_tool_use,
         call_with_retry_fn=call_with_retry,
     )
 
@@ -353,6 +371,21 @@ def start_screening(
         hashes,
         prompt_template_md,
     )
+    pricing = model.get("pricing")
+    llm_evaluator = make_llm_evaluator_async(
+        provider=_provider_from_str(model["provider"]),
+        model_name=model["model_name"],
+        api_key=api_key,
+        temperature=float(model["temperature"]),
+        max_output_tokens=MAX_OUTPUT_TOKENS_PER_PERSONA,
+        api_base_url=getattr(pricing, "api_base_url", None),
+        auth_header=getattr(pricing, "auth_header", None),
+        supports_json_object=bool(getattr(pricing, "supports_json_object", True)),
+        supports_json_schema=bool(getattr(pricing, "supports_json_schema", False)),
+        supports_tool_use=bool(getattr(pricing, "supports_tool_use", False)),
+    )
+    run_preflight_and_cache(DB_PATH, payloads[0], llm_evaluator)
+
     job_id = create_job(DB_PATH, total_count=len(payloads))
     run_id = str(uuid.uuid4())
     run_meta = make_run_meta(
@@ -366,12 +399,6 @@ def start_screening(
         matched_count_before_sample=sampled.matched_count_before_sample,
         sampling_strategy=_sampling_strategy_for_dataset(dataset),
         filter_summary_text=filter_summary(sample["filter"]),
-    )
-    llm_evaluator = make_llm_evaluator_async(
-        provider=_provider_from_str(model["provider"]),
-        model_name=model["model_name"],
-        api_key=api_key,
-        temperature=float(model["temperature"]),
     )
     evaluator = make_cached_evaluator_async(DB_PATH, payloads, llm_evaluator)
     worker_input = WorkerInput(
@@ -584,7 +611,11 @@ def main() -> None:
         st.warning(ui_text(lang, "injection_warning"))
 
     render_run_panel(lang)
-    api_key = _safe_provider_key(model["provider"], model["api_key"])
+    api_key = _safe_provider_key(
+        model["provider"],
+        model["api_key"],
+        getattr(model.get("pricing"), "api_key_env", None),
+    )
     confirmed = st.checkbox(
         ui_text(lang, "cost_confirm"),
         value=False,
@@ -638,7 +669,8 @@ def main() -> None:
         except DatasetAccessError as exc:
             st.error(exc.user_message)
         except (FileNotFoundError, ValueError) as exc:
-            st.error(f"실행 준비 실패: {type(exc).__name__}")
+            detail = str(exc) or type(exc).__name__
+            st.error(f"실행 준비 실패: {detail}")
         except Exception as exc:
             st.error(f"실행 시작 실패: {type(exc).__name__}")
 

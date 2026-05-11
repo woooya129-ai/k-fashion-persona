@@ -73,12 +73,18 @@ logger = logging.getLogger(__name__)
 ResultRow = dict[str, Any]
 
 
-def _safe_provider_key(provider: str, override_key: str) -> str | None:
+def _safe_provider_key(
+    provider: str,
+    override_key: str,
+    api_key_env: str | None = None,
+) -> str | None:
 
     if override_key.strip():
         return override_key.strip()
 
     try:
+        return secrets_loader.get_provider_key(provider, api_key_env=api_key_env)
+    except TypeError:
         return secrets_loader.get_provider_key(provider)
     except ValueError:
         return None
@@ -113,6 +119,29 @@ def _model_sort_key(alias: str) -> tuple[str, int, tuple[int, ...], str]:
         return ("claude", 99, _model_version_sort(lower), lower)
 
     return (lower, 0, _model_version_sort(lower), lower)
+
+
+def _provider_display_name(provider: str, api_key_env: str | None = None) -> str:
+    if provider == "openai_compatible" and api_key_env:
+        prefix = api_key_env.removesuffix("_API_KEY")
+        provider_names = {
+            "GROQ": "Groq",
+            "DEEPSEEK": "DeepSeek",
+            "QWEN": "Qwen",
+        }
+        return provider_names.get(prefix, prefix.replace("_", " ").title())
+    return {
+        "openai": "OpenAI",
+        "anthropic": "Anthropic",
+        "google": "Google",
+        "openai_compatible": "OpenAI-compatible",
+    }.get(provider, provider)
+
+
+def _model_option_label(alias: str, pricing_config: dict[str, ModelPricing]) -> str:
+    pricing = pricing_config[alias]
+    provider_label = _provider_display_name(pricing.provider, pricing.api_key_env)
+    return f"{provider_label} / {alias}"
 
 
 def _sorted_model_options(pricing_config: dict[str, ModelPricing]) -> list[str]:
@@ -372,7 +401,10 @@ def _estimate_run_tokens(sample_size: int, concept_tokens: int) -> TokenEstimate
     )
 
 
-def _estimate_model_cost(token_est: TokenEstimate, pricing: ModelPricing) -> CostEstimate:
+def _estimate_model_cost(token_est: TokenEstimate, pricing: ModelPricing) -> CostEstimate | None:
+
+    if pricing.input_per_million_usd is None or pricing.output_per_million_usd is None:
+        return None
 
     return estimate_cost(
         token_est,
@@ -384,7 +416,7 @@ def _estimate_model_cost(token_est: TokenEstimate, pricing: ModelPricing) -> Cos
 
 def _estimate_sidebar_cost(
     sample_size: int, pricing: ModelPricing
-) -> tuple[TokenEstimate, CostEstimate]:
+) -> tuple[TokenEstimate, CostEstimate | None]:
 
     token_est = _estimate_run_tokens(sample_size, ESTIMATE_SIDEBAR_CONCEPT_TOKENS)
 
@@ -409,6 +441,12 @@ def _format_usd(value: float) -> str:
     return f"${value:.2f}"
 
 
+def _format_price(value: float | None, lang: str) -> str:
+    if value is None:
+        return ui_text(lang, "price_unset")
+    return _format_usd(value)
+
+
 def _format_cost_range(cost_est: CostEstimate) -> str:
 
     return (
@@ -419,10 +457,16 @@ def _format_cost_range(cost_est: CostEstimate) -> str:
 
 def _input_cost_usd(token_est: TokenEstimate, pricing: ModelPricing) -> float:
 
+    if pricing.input_per_million_usd is None:
+        return 0.0
+
     return token_est.estimated_input_tokens_total / 1_000_000 * pricing.input_per_million_usd
 
 
 def _output_cost_usd(token_est: TokenEstimate, pricing: ModelPricing) -> float:
+
+    if pricing.output_per_million_usd is None:
+        return 0.0
 
     return token_est.estimated_output_tokens_total / 1_000_000 * pricing.output_per_million_usd
 
@@ -436,12 +480,30 @@ def render_model_metadata(
 ) -> None:
 
     rows: list[tuple[str, str]] = [
-        (ui_text(lang, "provider_label"), pricing.provider),
+        (
+            ui_text(lang, "provider_label"),
+            _provider_display_name(pricing.provider, pricing.api_key_env),
+        ),
         (ui_text(lang, "model_label"), model_name),
         (ui_text(lang, "rate_unit_label"), ui_text(lang, "per_million_tokens")),
-        (ui_text(lang, "input_rate_label"), _format_usd(pricing.input_per_million_usd)),
-        (ui_text(lang, "output_rate_label"), _format_usd(pricing.output_per_million_usd)),
+        (ui_text(lang, "input_rate_label"), _format_price(pricing.input_per_million_usd, lang)),
+        (ui_text(lang, "output_rate_label"), _format_price(pricing.output_per_million_usd, lang)),
+        (
+            ui_text(lang, "verification_label"),
+            ui_text(
+                lang,
+                (
+                    "verified_provider"
+                    if getattr(pricing, "verified", True)
+                    else "unverified_provider"
+                ),
+            ),
+        ),
     ]
+    if pricing.checked_at:
+        rows.append((ui_text(lang, "checked_at_label"), pricing.checked_at))
+    if pricing.source_url:
+        rows.append((ui_text(lang, "source_url_label"), pricing.source_url))
 
     if sample_size is not None:
         token_est, cost_est = _estimate_sidebar_cost(sample_size, pricing)
@@ -459,7 +521,10 @@ def render_model_metadata(
                         f"{_format_tokens(token_est.estimated_output_tokens_total)} output"
                     ),
                 ),
-                (ui_text(lang, "total_cost_label"), _format_cost_range(cost_est)),
+                (
+                    ui_text(lang, "total_cost_label"),
+                    _format_cost_range(cost_est) if cost_est else ui_text(lang, "price_unset"),
+                ),
             ]
         )
 
@@ -472,6 +537,8 @@ def render_model_metadata(
     )
 
     st.html(f'<div class="kfps-model-meta">{row_html}</div>')
+    if not getattr(pricing, "verified", True):
+        st.warning(ui_text(lang, "unverified_provider"))
 
 
 def nav_link_pills_html(lang: str, *, footer: bool = False) -> str:
@@ -741,6 +808,9 @@ def render_secrets_status(lang: str) -> None:
             ("OpenAI", status.openai_present, ui_text(lang, "openai_key_help")),
             ("Anthropic", status.anthropic_present, ui_text(lang, "anthropic_key_help")),
             ("Google", status.google_present, ui_text(lang, "google_key_help")),
+            ("Groq", status.groq_present, ui_text(lang, "provider_key_help")),
+            ("DeepSeek", status.deepseek_present, ui_text(lang, "provider_key_help")),
+            ("Qwen", status.qwen_present, ui_text(lang, "provider_key_help")),
             ("HF Token", status.hf_token_present, ui_text(lang, "hf_status_help")),
             ("KOSIS", status.kosis_api_key_present, ui_text(lang, "kosis_status_help")),
         )
@@ -1022,7 +1092,11 @@ def render_model_inputs(pricing_config: dict[str, ModelPricing], lang: str) -> d
 
         return {}
 
-    model_alias = st.selectbox(ui_text(lang, "model"), model_options)
+    model_alias = st.selectbox(
+        ui_text(lang, "model"),
+        model_options,
+        format_func=lambda alias: _model_option_label(alias, pricing_config),
+    )
 
     pricing = get_model_pricing(pricing_config, model_alias)
 
@@ -1043,7 +1117,7 @@ def render_model_inputs(pricing_config: dict[str, ModelPricing], lang: str) -> d
         api_label,
         placeholder=ui_text(lang, "api_key_placeholder"),
         key="kfps_api_key",
-        present=bool(_safe_provider_key(pricing.provider, api_override)),
+        present=bool(_safe_provider_key(pricing.provider, api_override, pricing.api_key_env)),
         help_text=ui_text(lang, "api_key_help"),
     )
 
@@ -1272,6 +1346,7 @@ def render_simple_setup(pricing_config: dict[str, ModelPricing], lang: str) -> d
         model_options,
         index=model_options.index(model_alias),
         key="kfps_model_alias",
+        format_func=lambda alias: _model_option_label(alias, pricing_config),
     )
 
     pricing = get_model_pricing(pricing_config, model_alias)
@@ -1291,7 +1366,7 @@ def render_simple_setup(pricing_config: dict[str, ModelPricing], lang: str) -> d
         api_label,
         placeholder=ui_text(lang, "api_key_placeholder"),
         key="kfps_api_key",
-        present=bool(_safe_provider_key(pricing.provider, api_override)),
+        present=bool(_safe_provider_key(pricing.provider, api_override, pricing.api_key_env)),
         help_text=ui_text(lang, "api_key_help"),
     )
 
@@ -1409,12 +1484,18 @@ def render_cost_estimate(cost_state: dict[str, Any], lang: str) -> None:
 
     c1.metric(ui_text(lang, "new_calls"), f"{cost_state['new_call_count']}명")
 
-    c2.metric(ui_text(lang, "estimated_cost"), _format_cost_range(cost_est))
-
-    c3.metric(
-        ui_text(lang, "estimated_time"),
-        f"{cost_est.estimated_time_min_low:.1f} - {cost_est.estimated_time_min_high:.1f}분",
+    c2.metric(
+        ui_text(lang, "estimated_cost"),
+        _format_cost_range(cost_est) if cost_est else ui_text(lang, "price_unset"),
     )
+
+    if cost_est is not None:
+        c3.metric(
+            ui_text(lang, "estimated_time"),
+            f"{cost_est.estimated_time_min_low:.1f} - {cost_est.estimated_time_min_high:.1f}분",
+        )
+    else:
+        c3.metric(ui_text(lang, "estimated_time"), ui_text(lang, "estimate_only"))
 
     output_cap_value = (
         f"{ESTIMATE_OUTPUT_TOKENS_PER_PERSONA} / {MAX_OUTPUT_TOKENS_PER_PERSONA} tokens per persona"
@@ -1429,8 +1510,18 @@ def render_cost_estimate(cost_state: dict[str, Any], lang: str) -> None:
                 f"{_format_tokens(token_est.estimated_output_tokens_total)} output"
             ),
         ),
-        (ui_text(lang, "cost_input_label"), _format_usd(_input_cost_usd(token_est, pricing))),
-        (ui_text(lang, "cost_output_label"), _format_usd(_output_cost_usd(token_est, pricing))),
+        (
+            ui_text(lang, "cost_input_label"),
+            _format_usd(_input_cost_usd(token_est, pricing))
+            if pricing.input_per_million_usd is not None
+            else ui_text(lang, "price_unset"),
+        ),
+        (
+            ui_text(lang, "cost_output_label"),
+            _format_usd(_output_cost_usd(token_est, pricing))
+            if pricing.output_per_million_usd is not None
+            else ui_text(lang, "price_unset"),
+        ),
         (
             ui_text(lang, "cost_max_output_label"),
             output_cap_value,
@@ -1466,16 +1557,21 @@ def render_model_cost_comparison(
 
     for alias, pricing in pricing_config.items():
         cost_est = _estimate_model_cost(token_est, pricing)
+        provider = _provider_display_name(pricing.provider, pricing.api_key_env)
+        rate = (
+            f"{_format_price(pricing.input_per_million_usd, lang)} / "
+            f"{_format_price(pricing.output_per_million_usd, lang)}"
+        )
+        if cost_est is None:
+            rows.append((float("inf"), alias, provider, rate, ui_text(lang, "price_unset")))
+            continue
 
         rows.append(
             (
                 cost_est.estimated_cost_usd_low,
                 alias,
-                pricing.provider,
-                (
-                    f"{_format_usd(pricing.input_per_million_usd)} / "
-                    f"{_format_usd(pricing.output_per_million_usd)}"
-                ),
+                provider,
+                rate,
                 _format_cost_range(cost_est),
             )
         )

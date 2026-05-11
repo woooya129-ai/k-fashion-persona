@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from src.llm_client import _validate_host
 from src.pricing_config import ModelPricing, get_model_pricing, load_pricing_config
 
 pytestmark = pytest.mark.no_network
@@ -100,6 +101,55 @@ class TestLoadPricingConfig:
         with pytest.raises(ValueError, match="provider"):
             load_pricing_config(path)
 
+    def test_non_string_provider_model_id_raises(self, tmp_path: Path):
+        path = tmp_path / "bad.yaml"
+        path.write_text(
+            "models:\n  m1:\n    provider: x\n"
+            "    provider_model_id: 123\n"
+            "    input_per_million_usd: 1.0\n    output_per_million_usd: 2.0\n",
+            encoding="utf-8",
+        )
+        with pytest.raises(ValueError, match="provider_model_id"):
+            load_pricing_config(path)
+
+    def test_invalid_source_url_raises(self, tmp_path: Path):
+        path = tmp_path / "bad.yaml"
+        path.write_text(
+            "models:\n  m1:\n    provider: x\n"
+            "    input_per_million_usd: 1.0\n    output_per_million_usd: 2.0\n"
+            "    source_url: not-a-url\n",
+            encoding="utf-8",
+        )
+        with pytest.raises(ValueError, match="source_url"):
+            load_pricing_config(path)
+
+    def test_invalid_checked_at_raises(self, tmp_path: Path):
+        path = tmp_path / "bad.yaml"
+        path.write_text(
+            "models:\n  m1:\n    provider: x\n"
+            "    input_per_million_usd: 1.0\n    output_per_million_usd: 2.0\n"
+            "    checked_at: yesterday\n",
+            encoding="utf-8",
+        )
+        with pytest.raises(ValueError, match="checked_at"):
+            load_pricing_config(path)
+
+    def test_config_api_base_url_registers_allowed_host(self, tmp_path: Path):
+        path = tmp_path / "custom.yaml"
+        path.write_text(
+            "models:\n  custom-model:\n    provider: openai_compatible\n"
+            "    provider_model_id: custom-model\n"
+            "    api_base_url: https://llm-config-allowed.example/v1\n"
+            "    api_key_env: CUSTOM_API_KEY\n"
+            "    input_per_million_usd: 1.0\n"
+            "    output_per_million_usd: 2.0\n",
+            encoding="utf-8",
+        )
+
+        load_pricing_config(path)
+
+        _validate_host("https://llm-config-allowed.example/v1/chat/completions")
+
 
 class TestGetModelPricing:
     def test_lookup_existing(self):
@@ -126,10 +176,18 @@ class TestProductionConfigShape:
         assert "claude-sonnet-4-6" in config
         assert "claude-haiku-4-5" in config
         assert "gemini-2.5-flash-lite" in config
+        assert "groq-qwen-qwq" in config
+        assert "deepseek-chat" in config
+        assert "qwen3.6-plus" in config
         for _model_name, pricing in config.items():
             assert isinstance(pricing, ModelPricing)
-            assert pricing.input_per_million_usd >= 0
-            assert pricing.output_per_million_usd >= 0
+            if pricing.has_pricing:
+                assert pricing.input_per_million_usd is not None
+                assert pricing.output_per_million_usd is not None
+                assert pricing.input_per_million_usd >= 0
+                assert pricing.output_per_million_usd >= 0
+            else:
+                assert pricing.reference_only is True
             assert pricing.provider
 
     def test_production_config_meta_section_ignored(self):
@@ -144,8 +202,26 @@ class TestProductionConfigShape:
         config = load_pricing_config(production_path)
         for _model_name, pricing in config.items():
             assert pricing.provider_model_id, f"{_model_name} missing provider_model_id"
+            assert pricing.api_base_url and pricing.api_base_url.startswith("https://")
+            assert pricing.auth_header
+            assert pricing.api_key_env
+            assert isinstance(pricing.supports_json_object, bool)
+            assert isinstance(pricing.supports_json_schema, bool)
+            assert isinstance(pricing.supports_tool_use, bool)
+            assert isinstance(pricing.verified, bool)
             assert pricing.source_url and pricing.source_url.startswith("https://")
             assert pricing.checked_at  # ISO date string
+
+    def test_reference_only_models_can_omit_prices(self):
+        production_path = Path(__file__).parent.parent / "config" / "pricing_config.yaml"
+        config = load_pricing_config(production_path)
+        for alias in ("groq-qwen-qwq", "deepseek-chat", "qwen3.6-plus"):
+            pricing = config[alias]
+            assert pricing.provider == "openai_compatible"
+            assert pricing.input_per_million_usd is None
+            assert pricing.output_per_million_usd is None
+            assert pricing.reference_only is True
+            assert pricing.verified is False
 
 
 class TestModelPricingOptionalMeta:

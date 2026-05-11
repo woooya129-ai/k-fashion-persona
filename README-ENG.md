@@ -49,7 +49,7 @@ flowchart LR
 - Filters by age, sex, province, and occupation
 - Uses seed-based sampling
 - Lets you choose LLM provider/model
-- Accepts OpenAI, Anthropic, or Gemini API keys in the UI
+- Accepts the selected AI provider API key in the UI
 - Accepts a Hugging Face token in the UI or external `.env`
 - Uses a committed KOSIS public-statistics snapshot
 - Optionally refreshes statistics through a KOSIS `statisticsData` API URL
@@ -75,7 +75,13 @@ Optional first-screen background assets can be placed at `design/hero-skyblue-fa
 
 ## Local Runtime And Recommended Specs
 
-The app UI, dataset filtering, sampling, prompt construction, SQLite cache, and Markdown/CSV report generation run on your local machine. However, the first use of the default Hugging Face dataset reads data from Hugging Face Hub, and LLM evaluation sends prompts to the selected OpenAI, Anthropic, or Gemini API server. KOSIS API requests are made only when API refresh is enabled.
+The app UI, dataset filtering, sampling, prompt construction, SQLite cache, and Markdown/CSV report generation run on your local machine. The first use of the default Hugging Face dataset reads data from Hugging Face Hub. LLM evaluation sends prompts to the provider API server you selected. KOSIS API requests are made only when API refresh is enabled.
+
+The app does not save API keys. UI-entered keys are used only for the current Streamlit session. Repeated local runs can read keys from an environment file outside the repository or from OS environment variables.
+
+LLM API endpoints are limited to `api_base_url` hosts registered in `config/pricing_config.yaml`. Editing that YAML changes the allowed host set, so treat config changes as code-reviewed changes for shared or published builds.
+
+At run start, the app sends one preflight request before creating the job to verify JSON parsing and schema validation. That call can incur cost on the user's provider account, but a successful result is cached and reused as the first result in the same run.
 
 The current version does not run a local LLM or local Vision model, so a graphics card is not required.
 
@@ -152,12 +158,16 @@ Environment file example:
 OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
 GOOGLE_API_KEY=
+GROQ_API_KEY=
+DEEPSEEK_API_KEY=
+QWEN_API_KEY=
 HF_TOKEN=
 KOSIS_API_KEY=
 KOSIS_STATISTICS_DATA_URL=
 ```
 
 `GOOGLE_API_KEY` is for the Gemini API key from Google AI Studio, not Vertex AI.
+OpenAI-compatible providers such as Groq, DeepSeek, and Qwen use the environment variable named by `api_key_env` in `pricing_config.yaml`.
 
 Do not place or commit a real `.env` file in the repository root.
 

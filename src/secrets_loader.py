@@ -27,6 +27,9 @@ SECRETS_ENV_PATH: Path = Path.home() / "secrets" / "k-fashion" / ".env"
 OPENAI_KEY_VAR = "OPENAI_API_KEY"
 ANTHROPIC_KEY_VAR = "ANTHROPIC_API_KEY"
 GOOGLE_KEY_VAR = "GOOGLE_API_KEY"
+GROQ_KEY_VAR = "GROQ_API_KEY"
+DEEPSEEK_KEY_VAR = "DEEPSEEK_API_KEY"
+QWEN_KEY_VAR = "QWEN_API_KEY"
 HF_TOKEN_VAR = "HF_TOKEN"
 KOSIS_API_KEY_VAR = "KOSIS_API_KEY"
 
@@ -41,6 +44,9 @@ class LoadedSecretsStatus:
     env_path: Path
     env_path_exists: bool
     google_present: bool = False
+    groq_present: bool = False
+    deepseek_present: bool = False
+    qwen_present: bool = False
     kosis_api_key_present: bool = False
 
 
@@ -63,16 +69,26 @@ def load_secrets_from_env_path(env_path: Path = SECRETS_ENV_PATH) -> LoadedSecre
         env_path=env_path,
         env_path_exists=exists,
         google_present=bool(os.environ.get(GOOGLE_KEY_VAR)),
+        groq_present=bool(os.environ.get(GROQ_KEY_VAR)),
+        deepseek_present=bool(os.environ.get(DEEPSEEK_KEY_VAR)),
+        qwen_present=bool(os.environ.get(QWEN_KEY_VAR)),
         kosis_api_key_present=bool(os.environ.get(KOSIS_API_KEY_VAR)),
     )
 
 
-def get_provider_key(provider: str) -> str | None:
-    """provider 이름 → 환경변수 값. 값 자체는 호출 시점에만 사용, 저장/출력 금지."""
+def get_provider_key(provider: str, api_key_env: str | None = None) -> str | None:
+    """provider 이름 또는 명시 env var → 환경변수 값."""
+    if api_key_env:
+        val = os.environ.get(api_key_env)
+        return val if val else None
+
     mapping = {
         "openai": OPENAI_KEY_VAR,
         "anthropic": ANTHROPIC_KEY_VAR,
         "google": GOOGLE_KEY_VAR,
+        "groq": GROQ_KEY_VAR,
+        "deepseek": DEEPSEEK_KEY_VAR,
+        "qwen": QWEN_KEY_VAR,
     }
     var = mapping.get(provider.lower())
     if var is None:

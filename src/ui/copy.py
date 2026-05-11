@@ -106,6 +106,13 @@ UI_COPY: dict[str, dict[str, str]] = {
         "per_million_tokens": "USD / 1M tokens",
         "input_rate_label": "Input 단가",
         "output_rate_label": "Output 단가",
+        "checked_at_label": "가격 확인일",
+        "source_url_label": "가격 출처",
+        "price_unset": "가격 미설정",
+        "verification_label": "실호출 검증",
+        "verified_provider": "검증됨",
+        "unverified_provider": "미검증 provider — 실패 가능",
+        "estimate_only": "참고 추정치",
         "estimate_basis_label": "추정 기준",
         "sidebar_estimate_basis": "{sample_size}명 · 짧은 제품 카드 가정",
         "run_tokens_label": "이번 실행 토큰",
@@ -115,10 +122,10 @@ UI_COPY: dict[str, dict[str, str]] = {
         "cost_max_output_label": "출력 추정/상한",
         "cost_unit_note": (
             "1M token 단가는 과금 단위이고, 이번 실행은 그중 일부만 쓴다. "
-            "실제 과금은 tokenizer, 출력 길이, 재시도에 따라 달라진다."
+            "실제 과금은 tokenizer, 출력 길이, 재시도, provider 계정 조건에 따라 달라진다."
         ),
         "model_compare_header": "모델별 비용 비교",
-        "model_compare_caption": "현재 제품 카드 길이와 샘플 수 기준의 실행 1회 추정치야.",
+        "model_compare_caption": "현재 제품 카드 길이와 샘플 수 기준의 참고 추정치야.",
         "cost_table_model": "Model",
         "cost_table_provider": "Provider",
         "cost_table_rate": "Input/Output 단가",
@@ -178,7 +185,7 @@ UI_COPY: dict[str, dict[str, str]] = {
         "model_header": "모델",
         "model_missing": "pricing_config.yaml에 모델이 없다.",
         "model": "모델",
-        "api_key": "API KEY",
+        "api_key": "선택한 AI provider API KEY",
         "api_key_placeholder": "키를 붙여넣기",
         "api_key_help": "LLM API 요청용 키야. 입력값은 화면에 표시하지 않아.",
         "hf_token": "HF TOKEN",
@@ -203,6 +210,9 @@ UI_COPY: dict[str, dict[str, str]] = {
         "openai_key_help": "OpenAI 모델 실행용 API KEY 상태야. 값은 표시하지 않아.",
         "anthropic_key_help": "Claude 모델 실행용 API KEY 상태야. 값은 표시하지 않아.",
         "google_key_help": "Gemini 모델 실행용 API KEY 상태야. 값은 표시하지 않아.",
+        "provider_key_help": (
+            "OpenAI-compatible provider 실행용 API KEY 상태야. 값은 표시하지 않아."
+        ),
         "hf_status_help": (
             "Hugging Face 데이터셋 접근용 TOKEN 상태야. 공개 데이터는 보통 없어도 돼."
         ),
@@ -214,11 +224,11 @@ UI_COPY: dict[str, dict[str, str]] = {
         "new_calls": "신규 호출 예상",
         "estimated_cost": "예상 비용",
         "estimated_time": "예상 시간",
-        "cost_caption": "토큰과 비용은 사전 추정치다. 실제 provider 과금과 다를 수 있다.",
+        "cost_caption": "토큰과 비용은 참고 추정치다. 가격 미설정 모델은 비용을 계산하지 않는다.",
         "debug_hash": "debug hash",
         "injection_warning": "프롬프트 인젝션 의심 문구가 감지됐다. 컨셉 문구를 다시 확인해.",
         "run_confirm_header": "실행 확인",
-        "cost_confirm": "예상 비용과 시간이 발생할 수 있음을 확인했다.",
+        "cost_confirm": "참고 추정 비용·시간과 API 전송 범위를 확인했다.",
         "injection_confirm": "감지된 문구를 확인했고 그대로 실행한다.",
         "need_api_key": (
             "선택한 provider의 API KEY가 필요해. "
@@ -227,7 +237,8 @@ UI_COPY: dict[str, dict[str, str]] = {
         "run_button": "ENTER",
         "run_panel_body": (
             "실행하면 선택한 AI 모델이 합성 페르소나에게 컨셉을 물어봐. "
-            "패널 수만큼 API 요청이 나가고 비용이 발생할 수 있어."
+            "먼저 1명 preflight API 요청으로 JSON 응답을 확인하고, "
+            "성공 결과는 본 실행에서 재사용해. 패널 수만큼 비용이 발생할 수 있어."
         ),
         "details_header": "자세히",
         "details_summary": "가격 기준, 예상 비용, 재현용 값을 확인한다.",
@@ -259,6 +270,8 @@ UI_COPY: dict[str, dict[str, str]] = {
         "report_placeholder_hint": "ENTER 실행 후 완료되면 자동으로 이 창으로 이동합니다.",
         "report_footer_disclaimer": (
             "이 결과는 합성 페르소나 기반의 pre-screening 참고용이야. "
+            "모델별 성능과 무료/유료 tier 조건에 따라 "
+            "문장 품질, JSON 안정성, 비용이 달라질 수 있다. "
             "실제 조사나 사업 판단을 대체하지 않아."
         ),
     },
@@ -371,6 +384,13 @@ UI_COPY: dict[str, dict[str, str]] = {
         "per_million_tokens": "USD / 1M tokens",
         "input_rate_label": "Input rate",
         "output_rate_label": "Output rate",
+        "checked_at_label": "Price checked",
+        "source_url_label": "Price source",
+        "price_unset": "Price unset",
+        "verification_label": "Live-call verification",
+        "verified_provider": "Verified",
+        "unverified_provider": "Unverified provider — calls may fail",
+        "estimate_only": "Reference estimate",
         "estimate_basis_label": "Estimate basis",
         "sidebar_estimate_basis": "{sample_size} personas · short product card",
         "run_tokens_label": "Run tokens",
@@ -380,11 +400,12 @@ UI_COPY: dict[str, dict[str, str]] = {
         "cost_max_output_label": "Output estimate / cap",
         "cost_unit_note": (
             "The 1M-token price is the billing rate unit; this run uses only a portion of it. "
-            "Actual billing can vary by tokenizer, output length, and retries."
+            "Actual billing can vary by tokenizer, output length, retries, and provider "
+            "account terms."
         ),
         "model_compare_header": "Model Cost Comparison",
         "model_compare_caption": (
-            "Estimated one-run cost for the current product-card length and sample size."
+            "Reference one-run estimate for the current product-card length and sample size."
         ),
         "cost_table_model": "Model",
         "cost_table_provider": "Provider",
@@ -448,7 +469,7 @@ UI_COPY: dict[str, dict[str, str]] = {
         "model_header": "Model",
         "model_missing": "No models in pricing_config.yaml.",
         "model": "Model",
-        "api_key": "API KEY",
+        "api_key": "Selected AI provider API KEY",
         "api_key_placeholder": "Paste key",
         "api_key_help": "Used for LLM API requests. Typed values are hidden on screen.",
         "hf_token": "HF TOKEN",
@@ -478,6 +499,9 @@ UI_COPY: dict[str, dict[str, str]] = {
         "openai_key_help": "OpenAI API KEY status for model calls. Values are never shown.",
         "anthropic_key_help": "Claude API KEY status for model calls. Values are never shown.",
         "google_key_help": "Gemini API KEY status for model calls. Values are never shown.",
+        "provider_key_help": (
+            "API KEY status for OpenAI-compatible provider calls. Values are never shown."
+        ),
         "hf_status_help": (
             "HF TOKEN status for Hugging Face data access. Public data usually works without it."
         ),
@@ -491,13 +515,15 @@ UI_COPY: dict[str, dict[str, str]] = {
         "new_calls": "New calls",
         "estimated_cost": "Estimated cost",
         "estimated_time": "Estimated time",
-        "cost_caption": "Token and cost values are estimates. Actual provider billing may differ.",
+        "cost_caption": (
+            "Token and cost values are reference estimates. Models without prices are not costed."
+        ),
         "debug_hash": "debug hash",
         "injection_warning": (
             "Possible prompt-injection text detected. Review the concept before running."
         ),
         "run_confirm_header": "Run confirmation",
-        "cost_confirm": "I understand this may incur estimated cost and time.",
+        "cost_confirm": "I reviewed the reference cost/time estimate and API transfer scope.",
         "injection_confirm": "I reviewed the detected text and want to run anyway.",
         "need_api_key": (
             "The selected provider needs an API KEY. "
@@ -506,7 +532,8 @@ UI_COPY: dict[str, dict[str, str]] = {
         "run_button": "ENTER",
         "run_panel_body": (
             "Running asks the selected AI model to evaluate the concept through synthetic "
-            "personas. API requests and cost can increase with panel size."
+            "personas. It first sends one preflight API request to validate JSON, then reuses "
+            "that successful result in the main run. Cost can increase with panel size."
         ),
         "details_header": "Details",
         "details_summary": "Check price context, cost estimate, and reproducibility values.",
@@ -540,6 +567,7 @@ UI_COPY: dict[str, dict[str, str]] = {
         "report_placeholder_hint": "After ENTER completes, the page scrolls to this panel.",
         "report_footer_disclaimer": (
             "This result is reference-only pre-screening based on synthetic personas. "
+            "Model behavior, JSON stability, and cost can vary by provider and free/paid tier. "
             "It does not replace real research or business decisions."
         ),
     },

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import time
@@ -18,7 +19,7 @@ from pydantic import ValidationError
 from src.aggregator import QualityCounts, aggregate
 from src.app_config import DEFAULT_PRICE_CONTEXT_VERSION
 from src.async_runner import make_sync_evaluator_for_worker
-from src.cache import compute_cache_key
+from src.cache import compute_cache_key, compute_legacy_cache_key_v1
 from src.data_loader import (
     LoadedDataset,
     load_huggingface_dataset,
@@ -66,7 +67,7 @@ def _provider_from_str(provider: str) -> Provider:
 
     normalized = provider.lower()
 
-    if normalized not in {"openai", "anthropic", "google"}:
+    if normalized not in {"openai", "anthropic", "google", "openai_compatible"}:
         raise ValueError(f"지원하지 않는 provider: {provider}")
 
     return cast(Provider, normalized)
@@ -174,12 +175,25 @@ def build_persona_payloads(
             temperature=model["temperature"],
             prompt_version=prompt.prompt_version,
             schema_version=prompt.schema_version,
+            api_base_url=getattr(pricing, "api_base_url", None),
+            provider_model_id=getattr(pricing, "provider_model_id", None) or model["model_name"],
+        )
+        legacy_cache_key = compute_legacy_cache_key_v1(
+            persona_id=persona.persona_id,
+            provider=model["provider"],
+            concept_hash=hashes["concept_hash"],
+            price_context_hash=hashes["price_context_hash"],
+            model_name=model["model_name"],
+            temperature=model["temperature"],
+            prompt_version=prompt.prompt_version,
+            schema_version=prompt.schema_version,
         )
 
         payloads.append(
             {
                 "persona_id": persona.persona_id,
                 "_cache_key": cache_key,
+                "_legacy_cache_key": legacy_cache_key,
                 "prompt": {
                     "system": prompt.system,
                     "developer": prompt.developer,
@@ -191,6 +205,9 @@ def build_persona_payloads(
                     "price_context_hash": hashes["price_context_hash"],
                     "provider": model["provider"],
                     "model_name": model["model_name"],
+                    "api_base_url": getattr(pricing, "api_base_url", None),
+                    "provider_model_id": getattr(pricing, "provider_model_id", None)
+                    or model["model_name"],
                     "temperature": model["temperature"],
                     "prompt_version": prompt.prompt_version,
                     "schema_version": prompt.schema_version,
@@ -256,6 +273,59 @@ def _cache_lookup(db_path: Path, cache_key: str) -> str | None:
         ).fetchone()
 
     return None if row is None else str(row[0])
+
+
+def _cache_keys_for_payload(payload: dict[str, Any]) -> tuple[str, ...]:
+    primary = str(payload["_cache_key"])
+    legacy = payload.get("_legacy_cache_key")
+    if legacy is None or str(legacy) == primary:
+        return (primary,)
+    return (primary, str(legacy))
+
+
+def _cache_lookup_for_payload(
+    db_path: Path,
+    payload: dict[str, Any],
+    cache_lookup_fn: Callable[[Path, str], str | None],
+) -> tuple[str, str] | None:
+    for cache_key in _cache_keys_for_payload(payload):
+        cached_json = cache_lookup_fn(db_path, cache_key)
+        if cached_json is not None:
+            return cache_key, cached_json
+    return None
+
+
+def _write_through_legacy_cache_hit(
+    db_path: Path,
+    payload: dict[str, Any],
+    hit_cache_key: str,
+    cached_json: str,
+    cache_store_fn: Callable[[Path, str, EvaluatorResult, dict[str, Any]], None],
+) -> bool:
+    primary_cache_key = str(payload["_cache_key"])
+    if hit_cache_key == primary_cache_key:
+        return True
+
+    # v1 fallback: keep until v0.6.0, then remove once old cache rows have migrated.
+    try:
+        cache_store_fn(
+            db_path,
+            primary_cache_key,
+            {
+                "status": "cached",
+                "error_type": None,
+                "response_json": cached_json,
+                "latency_ms": 0,
+            },
+            payload["cache_metadata"],
+        )
+    except Exception as exc:  # noqa: BLE001 - compatibility write-through is best-effort.
+        logger.warning(
+            "legacy cache write-through failed; keeping legacy cache key: %s",
+            type(exc).__name__,
+        )
+        return False
+    return True
 
 
 def _cache_store(
@@ -330,12 +400,71 @@ def _result_json(data: dict[str, Any]) -> str:
     return json.dumps(data, ensure_ascii=False, sort_keys=True)
 
 
+def validate_cached_result_json(response_json: str) -> None:
+    """Validate cached response JSON before trusting a preflight cache hit."""
+    validate_evaluation_payload(json.loads(response_json))
+
+
+async def run_preflight_and_cache_async(
+    db_path: Path,
+    payload: dict[str, Any],
+    llm_evaluator_async: Callable[[dict[str, Any]], Any],
+    *,
+    cache_lookup_fn: Callable[[Path, str], str | None] = _cache_lookup,
+    cache_store_fn: Callable[[Path, str, EvaluatorResult, dict[str, Any]], None] = _cache_store,
+) -> None:
+    """Run one persona before job creation and cache the successful result.
+
+    This prevents creating a job when the selected provider/model cannot return
+    valid EvaluationResult JSON.
+    """
+    cache_hit = _cache_lookup_for_payload(db_path, payload, cache_lookup_fn)
+    if cache_hit is not None:
+        hit_cache_key, cached_json = cache_hit
+        validate_cached_result_json(cached_json)
+        _write_through_legacy_cache_hit(
+            db_path,
+            payload,
+            hit_cache_key,
+            cached_json,
+            cache_store_fn,
+        )
+        return
+
+    cache_key = str(payload["_cache_key"])
+    result = await llm_evaluator_async(payload)
+    status = str(result.get("status", ""))
+    response_json = result.get("response_json")
+    if status != "success" or not response_json:
+        error_type = str(result.get("error_type") or status or "unknown")
+        raise ValueError(f"preflight failed before job creation: {error_type}")
+
+    validate_cached_result_json(str(response_json))
+    cache_store_fn(db_path, cache_key, result, payload["cache_metadata"])
+    if cache_lookup_fn(db_path, cache_key) is None:
+        raise RuntimeError("preflight succeeded, but cache write failed")
+
+
+def run_preflight_and_cache(
+    db_path: Path,
+    payload: dict[str, Any],
+    llm_evaluator_async: Callable[[dict[str, Any]], Any],
+) -> None:
+    """Synchronous wrapper for Streamlit/start_screening."""
+    asyncio.run(run_preflight_and_cache_async(db_path, payload, llm_evaluator_async))
+
+
 def make_llm_evaluator_async(
     provider: Provider,
     model_name: str,
     api_key: str,
     temperature: float,
-    max_output_tokens: int = 600,
+    max_output_tokens: int = 1200,
+    api_base_url: str | None = None,
+    auth_header: str | None = None,
+    supports_json_object: bool = True,
+    supports_json_schema: bool = False,
+    supports_tool_use: bool = False,
     call_with_retry_fn: Callable[[LLMRequest, httpx.AsyncClient], Any] = call_with_retry,
 ) -> Callable[[dict[str, Any]], Any]:
 
@@ -351,6 +480,11 @@ def make_llm_evaluator_async(
             "developer": prompt["developer"],
             "user": prompt["user"],
             "max_output_tokens": max_output_tokens,
+            "api_base_url": api_base_url,
+            "auth_header": auth_header,
+            "supports_json_object": supports_json_object,
+            "supports_json_schema": supports_json_schema,
+            "supports_tool_use": supports_tool_use,
         }
 
         started = time.perf_counter()
@@ -421,15 +555,23 @@ def make_cached_evaluator_async(
 
         cache_key = str(payload["_cache_key"])
 
-        cached_json = cache_lookup_fn(db_path, cache_key)
+        cache_hit = _cache_lookup_for_payload(db_path, payload, cache_lookup_fn)
 
-        if cached_json is not None:
+        if cache_hit is not None:
+            hit_cache_key, cached_json = cache_hit
+            write_through_ok = _write_through_legacy_cache_hit(
+                db_path,
+                payload,
+                hit_cache_key,
+                cached_json,
+                cache_store_fn,
+            )
             return {
                 "status": "cached",
                 "error_type": None,
                 "response_json": cached_json,
                 "latency_ms": 0,
-                "cache_key": cache_key,
+                "cache_key": cache_key if write_through_ok else hit_cache_key,
             }
 
         result = await llm_evaluator_async(payload)

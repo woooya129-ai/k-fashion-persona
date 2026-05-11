@@ -28,6 +28,7 @@ import respx
 
 from src.llm_client import (
     ALLOWED_HOSTS,
+    PROVIDER_REGISTRY,
     LLMClientError,
     LLMRawResponse,
     LLMRequest,
@@ -36,6 +37,7 @@ from src.llm_client import (
     call_anthropic,
     call_google,
     call_openai,
+    call_openai_compatible,
     call_with_retry,
     parse_evaluation_result,
 )
@@ -74,6 +76,9 @@ pytestmark = pytest.mark.no_network
 OPENAI_URL = "https://api.openai.com/v1/chat/completions"
 ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
 GOOGLE_URL_PREFIX = "https://generativelanguage.googleapis.com/v1beta/models/"
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
+QWEN_URL = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions"
 
 
 def _make_openai_req(**kwargs) -> LLMRequest:
@@ -142,12 +147,22 @@ def test_allowed_hosts_contains_required_domains():
     assert "api.openai.com" in ALLOWED_HOSTS
     assert "api.anthropic.com" in ALLOWED_HOSTS
     assert "generativelanguage.googleapis.com" in ALLOWED_HOSTS
+    assert "api.groq.com" in ALLOWED_HOSTS
+    assert "api.deepseek.com" in ALLOWED_HOSTS
+    assert "dashscope-intl.aliyuncs.com" in ALLOWED_HOSTS
+
+
+def test_provider_registry_contains_openai_compatible():
+    assert set(PROVIDER_REGISTRY) == {"openai", "anthropic", "google", "openai_compatible"}
 
 
 def test_validate_host_allowed_does_not_raise():
     _validate_host("https://api.openai.com/v1/chat/completions")
     _validate_host("https://api.anthropic.com/v1/messages")
     _validate_host("https://generativelanguage.googleapis.com/v1beta/models/foo:generateContent")
+    _validate_host(GROQ_URL)
+    _validate_host(DEEPSEEK_URL)
+    _validate_host(QWEN_URL)
 
 
 def test_validate_host_blocked_evil_example():
@@ -179,6 +194,7 @@ def test_call_openai_200_returns_raw_response():
     assert result.text == VALID_EVAL_JSON_P001
     assert result.input_tokens_actual == 412
     assert result.output_tokens_actual == 98
+    assert result.used_structured_output is True
 
 
 def test_call_openai_200_plain_returns_raw_response():
@@ -190,6 +206,20 @@ def test_call_openai_200_plain_returns_raw_response():
 
     result = _run(_inner())
     assert result.text == VALID_EVAL_JSON_P001
+
+
+def test_call_openai_without_structured_capability_marks_unstructured():
+    async def _inner():
+        with respx.mock:
+            respx.post(OPENAI_URL).mock(return_value=httpx.Response(200, json=OPENAI_200_PLAIN))
+            async with httpx.AsyncClient() as client:
+                return await call_openai(
+                    _make_openai_req(supports_json_object=False, supports_json_schema=False),
+                    client,
+                )
+
+    result = _run(_inner())
+    assert result.used_structured_output is False
 
 
 # ---------------------------------------------------------------------------
@@ -302,6 +332,94 @@ def test_call_openai_400_context_signal_raises_context_length():
 
 
 # ---------------------------------------------------------------------------
+# OpenAI-compatible providers
+# ---------------------------------------------------------------------------
+
+
+def _make_openai_compatible_req(**kwargs) -> LLMRequest:
+    defaults = dict(
+        provider="openai_compatible",
+        model_name="qwen-qwq-32b",
+        api_key="fake-compatible-key",
+        system="system",
+        developer=None,
+        user="user",
+        temperature=0.3,
+        api_base_url="https://api.groq.com/openai/v1",
+        auth_header="Authorization",
+        supports_json_object=True,
+    )
+    defaults.update(kwargs)
+    return LLMRequest(**defaults)
+
+
+def test_call_openai_compatible_payload_uses_configured_base_url_and_json_object():
+    captured: dict = {}
+
+    def side_effect(request):
+        captured["url"] = str(request.url)
+        captured["headers"] = dict(request.headers)
+        captured["json"] = json.loads(request.content)
+        return httpx.Response(200, json=OPENAI_200_STRUCTURED)
+
+    async def _inner():
+        with respx.mock:
+            respx.post(GROQ_URL).mock(side_effect=side_effect)
+            async with httpx.AsyncClient() as client:
+                return await call_openai_compatible(_make_openai_compatible_req(), client)
+
+    result = _run(_inner())
+    assert result.text == VALID_EVAL_JSON_P001
+    assert captured["url"] == GROQ_URL
+    assert captured["json"]["model"] == "qwen-qwq-32b"
+    assert captured["json"]["response_format"] == {"type": "json_object"}
+    assert captured["headers"]["authorization"] == "Bearer fake-compatible-key"
+
+
+def test_openai_compatible_accepts_input_output_token_usage_fields():
+    response_body = {
+        "choices": [{"message": {"content": VALID_EVAL_JSON_P001}}],
+        "usage": {"input_tokens": "123", "output_tokens": "45"},
+    }
+
+    async def _inner():
+        with respx.mock:
+            respx.post(GROQ_URL).mock(return_value=httpx.Response(200, json=response_body))
+            async with httpx.AsyncClient() as client:
+                return await call_openai_compatible(_make_openai_compatible_req(), client)
+
+    result = _run(_inner())
+    assert result.input_tokens_actual == 123
+    assert result.output_tokens_actual == 45
+
+
+@pytest.mark.parametrize(
+    ("base_url", "mock_url", "model_id"),
+    [
+        ("https://api.groq.com/openai/v1", GROQ_URL, "qwen-qwq-32b"),
+        ("https://api.deepseek.com", DEEPSEEK_URL, "deepseek-chat"),
+        (
+            "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+            QWEN_URL,
+            "qwen3.6-plus",
+        ),
+    ],
+)
+def test_openai_compatible_mock_endpoints(base_url: str, mock_url: str, model_id: str):
+    async def _inner():
+        with respx.mock:
+            respx.post(mock_url).mock(return_value=httpx.Response(200, json=OPENAI_200_STRUCTURED))
+            async with httpx.AsyncClient() as client:
+                return await call_openai_compatible(
+                    _make_openai_compatible_req(api_base_url=base_url, model_name=model_id),
+                    client,
+                )
+
+    result = _run(_inner())
+    assert result.text == VALID_EVAL_JSON_P001
+
+
+# ---------------------------------------------------------------------------
 # Anthropic
 # ---------------------------------------------------------------------------
 
@@ -398,6 +516,7 @@ def test_call_google_200_returns_raw_response():
     assert result.text == VALID_EVAL_JSON_P001
     assert result.input_tokens_actual == 395
     assert result.output_tokens_actual == 99
+    assert result.used_structured_output is True
 
 
 def test_call_google_400_treated_as_api_key_invalid():
@@ -564,6 +683,43 @@ def test_parse_evaluation_result_step3_markdown_fence_fallback():
     assert result["sentiment"] in ("positive", "neutral", "negative")
 
 
+def test_parse_evaluation_result_embedded_json_success():
+    text = f"분석 결과는 다음과 같습니다. {VALID_EVAL_JSON_P001} 확인 바랍니다."
+    status, result, err = parse_evaluation_result(_raw(text), "p001")
+    assert status == "success"
+    assert result is not None
+    assert result["persona_id"] == "p001"
+    assert err is None
+
+
+def test_parse_evaluation_result_double_encoded_json_success():
+    text = json.dumps(VALID_EVAL_JSON_P001)
+    status, result, err = parse_evaluation_result(_raw(text), "p001")
+    assert status == "success"
+    assert result is not None
+    assert result["persona_id"] == "p001"
+    assert err is None
+
+
+def test_parse_evaluation_result_list_wrapper_first_object_success():
+    text = json.dumps([json.loads(VALID_EVAL_JSON_P001)], ensure_ascii=False)
+    status, result, err = parse_evaluation_result(_raw(text), "p001")
+    assert status == "success"
+    assert result is not None
+    assert result["persona_id"] == "p001"
+    assert err is None
+
+
+def test_parse_evaluation_result_missing_required_field_returns_parse_failed():
+    content = json.loads(VALID_EVAL_JSON_P001)
+    content.pop("sentiment")
+    status, result, _ = parse_evaluation_result(
+        _raw(json.dumps(content, ensure_ascii=False)), "p001"
+    )
+    assert status == "parse_failed"
+    assert result is None
+
+
 def test_parse_evaluation_result_step4_garbled_returns_parse_failed():
     status, result, err = parse_evaluation_result(_raw(GARBLED_CONTENT), "p001")
     assert status == "parse_failed"
@@ -590,6 +746,16 @@ def test_parse_evaluation_result_bad_sentiment_returns_parse_failed():
         _raw(json.dumps(content, ensure_ascii=False)), "p001"
     )
     assert status == "parse_failed"
+
+
+def test_parse_evaluation_result_interest_score_out_of_range_returns_parse_failed():
+    content = json.loads(VALID_EVAL_JSON_P001)
+    content["interest_score"] = 99
+    status, result, _ = parse_evaluation_result(
+        _raw(json.dumps(content, ensure_ascii=False)), "p001"
+    )
+    assert status == "parse_failed"
+    assert result is None
 
 
 def test_parse_evaluation_result_persona_id_mismatch_replaced(caplog):

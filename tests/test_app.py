@@ -15,6 +15,7 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 import src.app as app
+import src.ui.rendering as rendering
 from src.data_loader import LoadedDataset
 from src.db import get_connection, init_db
 from src.job_manager import create_job, load_job
@@ -476,6 +477,167 @@ def test_cached_worker_cache_store_failure_keeps_llm_success_without_cache_fk(
     assert result_row == ("success", None, response_json)
 
 
+def test_preflight_success_stores_cache_before_job_creation(tmp_path: Path) -> None:
+    db_path = tmp_path / "preflight-success.db"
+    init_db(db_path)
+    cache_key = "p" * 64
+    response_json = MOCK_RESULTS[0].model_dump_json()
+    payload = {
+        "persona_id": MOCK_RESULTS[0].persona_id,
+        "_cache_key": cache_key,
+        "cache_metadata": {
+            "persona_id": MOCK_RESULTS[0].persona_id,
+            "concept_hash": "c" * 64,
+            "price_context_hash": "p" * 64,
+            "provider": "openai",
+            "model_name": "gpt-4o-mini",
+            "temperature": 0.3,
+            "prompt_version": app.PROMPT_VERSION,
+            "schema_version": app.SCHEMA_VERSION,
+            "price_context_version": app.DEFAULT_PRICE_CONTEXT_VERSION,
+        },
+    }
+
+    async def llm_success(_payload: dict) -> dict:
+        return {
+            "status": "success",
+            "error_type": None,
+            "response_json": response_json,
+            "latency_ms": 1,
+        }
+
+    asyncio.run(app.run_preflight_and_cache_async(db_path, payload, llm_success))
+
+    with get_connection(db_path) as conn:
+        cache_row = conn.execute(
+            "SELECT response_json FROM llm_cache WHERE cache_key = ?",
+            (cache_key,),
+        ).fetchone()
+        job_count = conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
+
+    assert cache_row[0] == response_json
+    assert job_count == 0
+
+
+def test_preflight_and_worker_reuse_legacy_cache_key(tmp_path: Path) -> None:
+    db_path = tmp_path / "preflight-legacy-cache.db"
+    init_db(db_path)
+    current_cache_key = "c" * 64
+    legacy_cache_key = "l" * 64
+    response_json = MOCK_RESULTS[0].model_dump_json()
+    metadata = {
+        "persona_id": MOCK_RESULTS[0].persona_id,
+        "concept_hash": "c" * 64,
+        "price_context_hash": "p" * 64,
+        "provider": "openai",
+        "model_name": "gpt-4o-mini",
+        "temperature": 0.3,
+        "prompt_version": app.PROMPT_VERSION,
+        "schema_version": app.SCHEMA_VERSION,
+        "price_context_version": app.DEFAULT_PRICE_CONTEXT_VERSION,
+    }
+    payload = {
+        "persona_id": MOCK_RESULTS[0].persona_id,
+        "_cache_key": current_cache_key,
+        "_legacy_cache_key": legacy_cache_key,
+        "cache_metadata": metadata,
+    }
+    app._cache_store(  # noqa: SLF001 - verifies compatibility with old cache rows.
+        db_path,
+        legacy_cache_key,
+        {
+            "status": "success",
+            "error_type": None,
+            "response_json": response_json,
+            "latency_ms": 1,
+        },
+        metadata,
+    )
+
+    async def llm_must_not_be_called(_payload: dict) -> dict:
+        raise AssertionError("legacy cache hit should skip provider call")
+
+    asyncio.run(app.run_preflight_and_cache_async(db_path, payload, llm_must_not_be_called))
+    evaluator = app.make_cached_evaluator_async(db_path, [payload], llm_must_not_be_called)
+    result = asyncio.run(evaluator(payload))
+
+    assert result["status"] == "cached"
+    assert result["cache_key"] == current_cache_key
+    assert result["response_json"] == response_json
+    with get_connection(db_path) as conn:
+        current_row = conn.execute(
+            "SELECT response_json FROM llm_cache WHERE cache_key = ?",
+            (current_cache_key,),
+        ).fetchone()
+    assert current_row[0] == response_json
+
+
+def test_preflight_parse_failure_does_not_create_job_or_cache(tmp_path: Path) -> None:
+    db_path = tmp_path / "preflight-fail.db"
+    init_db(db_path)
+    payload = {
+        "persona_id": "p001",
+        "_cache_key": "q" * 64,
+        "cache_metadata": {
+            "persona_id": "p001",
+            "concept_hash": "c" * 64,
+            "price_context_hash": "p" * 64,
+            "provider": "openai",
+            "model_name": "gpt-4o-mini",
+            "temperature": 0.3,
+            "prompt_version": app.PROMPT_VERSION,
+            "schema_version": app.SCHEMA_VERSION,
+            "price_context_version": app.DEFAULT_PRICE_CONTEXT_VERSION,
+        },
+    }
+
+    async def llm_parse_failed(_payload: dict) -> dict:
+        return {
+            "status": "parse_failed",
+            "error_type": "schema validation failed",
+            "response_json": None,
+            "latency_ms": 1,
+        }
+
+    with pytest.raises(ValueError, match="preflight failed"):
+        asyncio.run(app.run_preflight_and_cache_async(db_path, payload, llm_parse_failed))
+
+    with get_connection(db_path) as conn:
+        assert conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0] == 0
+        assert conn.execute("SELECT COUNT(*) FROM llm_cache").fetchone()[0] == 0
+
+
+def test_preflight_api_failure_uses_provider_neutral_error(tmp_path: Path) -> None:
+    db_path = tmp_path / "preflight-api-fail.db"
+    init_db(db_path)
+    payload = {
+        "persona_id": "p001",
+        "_cache_key": "r" * 64,
+        "cache_metadata": {
+            "persona_id": "p001",
+            "concept_hash": "c" * 64,
+            "price_context_hash": "p" * 64,
+            "provider": "openai_compatible",
+            "model_name": "qwen-qwq-32b",
+            "temperature": 0.3,
+            "prompt_version": app.PROMPT_VERSION,
+            "schema_version": app.SCHEMA_VERSION,
+            "price_context_version": app.DEFAULT_PRICE_CONTEXT_VERSION,
+        },
+    }
+
+    async def llm_api_failed(_payload: dict) -> dict:
+        return {
+            "status": "api_failed",
+            "error_type": "rate_limit",
+            "response_json": None,
+            "latency_ms": 1,
+        }
+
+    with pytest.raises(ValueError, match="rate_limit"):
+        asyncio.run(app.run_preflight_and_cache_async(db_path, payload, llm_api_failed))
+
+
 def test_make_llm_evaluator_async_parses_success(monkeypatch: pytest.MonkeyPatch) -> None:
     expected = EvaluationResult(
         persona_id="p001",
@@ -864,6 +1026,70 @@ def test_model_options_sort_claude_family_order() -> None:
     ]
 
 
+def test_model_option_labels_include_provider_group() -> None:
+    pricing_config = app.load_pricing_config(Path("config/pricing_config.yaml"))
+
+    assert (
+        app._model_option_label("gpt-5-mini", pricing_config)  # noqa: SLF001
+        == "OpenAI / gpt-5-mini"
+    )
+    assert (
+        app._model_option_label("groq-qwen-qwq", pricing_config)  # noqa: SLF001
+        == "Groq / groq-qwen-qwq"
+    )
+    assert (
+        app._model_option_label("deepseek-chat", pricing_config)  # noqa: SLF001
+        == "DeepSeek / deepseek-chat"
+    )
+    assert (
+        app._model_option_label("qwen3.6-plus", pricing_config)  # noqa: SLF001
+        == "Qwen / qwen3.6-plus"
+    )
+
+
+def test_run_panel_copy_discloses_preflight_cost_and_reuse() -> None:
+    kr_copy = app.ui_text("KR", "run_panel_body")
+    en_copy = app.ui_text("EN", "run_panel_body")
+
+    assert "preflight API 요청" in kr_copy
+    assert "재사용" in kr_copy
+    assert "preflight API request" in en_copy
+    assert "reuses" in en_copy
+
+
+def test_reference_only_model_cost_renders_price_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    pricing_config = app.load_pricing_config(Path("config/pricing_config.yaml"))
+    pricing = pricing_config["groq-qwen-qwq"]
+    token_est = app._estimate_run_tokens(10, 100)  # noqa: SLF001
+    html_calls: list[str] = []
+    warnings: list[str] = []
+
+    assert app._estimate_model_cost(token_est, pricing) is None  # noqa: SLF001
+    monkeypatch.setattr(rendering.st, "subheader", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(rendering.st, "caption", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(rendering.st, "html", lambda body: html_calls.append(str(body)))
+    monkeypatch.setattr(rendering.st, "warning", lambda body: warnings.append(str(body)))
+
+    rendering.render_model_metadata(
+        pricing,
+        pricing.provider_model_id or "groq-qwen-qwq",
+        lang="KR",
+    )
+    rendering.render_model_cost_comparison(
+        {
+            "gpt-5-mini": pricing_config["gpt-5-mini"],
+            "groq-qwen-qwq": pricing,
+        },
+        token_est,
+        "KR",
+    )
+
+    rendered = "\n".join(html_calls)
+    assert app.ui_text("KR", "price_unset") in rendered
+    assert app.ui_text("KR", "unverified_provider") in rendered
+    assert warnings == [app.ui_text("KR", "unverified_provider")]
+
+
 def test_apptest_advanced_details_hidden_by_default() -> None:
     at = _run_app()
 
@@ -1028,7 +1254,7 @@ def test_apptest_local_path_traversal_rejected_without_api_call() -> None:
     )
     at.text_area[0].set_value("조용한 고급감의 미니멀 니트")
     _api_key_inputs(at)[0].set_value("fake-provider-key")
-    _checkbox_by_label(at, "예상 비용과 시간이 발생할 수 있음을 확인했다.").check()
+    _checkbox_by_label(at, app.ui_text("KR", "cost_confirm")).check()
     at.run(timeout=10)
 
     assert _button_by_label(at, app.ui_text("KR", "run_button")).proto.disabled is False

@@ -3,10 +3,8 @@ title: K-Fashion Persona
 emoji: 👗
 colorFrom: green
 colorTo: blue
-sdk: streamlit
-sdk_version: 1.57.0
-python_version: "3.11"
-app_file: src/app.py
+sdk: docker
+app_port: 7860
 pinned: false
 license: agpl-3.0
 short_description: Local-first Korean fashion concept screening with AI personas.
@@ -105,6 +103,8 @@ API key는 앱이 저장하지 않습니다. 화면 입력값은 현재 Streamli
 LLM API endpoint는 `config/pricing_config.yaml`에 등록된 `api_base_url` host만 허용합니다. 이 YAML을 직접 편집하면 허용 host도 바뀌므로, 배포본이나 공유 환경에서는 config 변경을 코드 리뷰 대상으로 봐야 합니다.
 
 실행 시작 시 job 생성 전에 첫 페르소나 1건을 preflight로 호출해 JSON 파싱과 schema 검증을 먼저 확인합니다. 이 호출은 사용자의 provider API key로 과금될 수 있지만, 성공 결과는 캐시에 저장해 같은 실행의 첫 결과로 재사용합니다.
+
+HF Space 배포는 Docker SDK로 Streamlit 앱을 실행합니다. Space routing은 이 파일 상단의 `sdk: docker`, `app_port: 7860` 설정과 root `Dockerfile`을 기준으로 합니다.
 
 현재 버전은 로컬 LLM 또는 로컬 Vision 모델을 돌리지 않으므로 그래픽카드는 필요하지 않습니다.
 

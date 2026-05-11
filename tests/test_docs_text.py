@@ -63,9 +63,10 @@ def test_hf_space_frontmatter_is_configured():
     frontmatter = yaml.safe_load(readme.split("---", 2)[1])
 
     assert frontmatter["title"] == "K-Fashion Persona"
-    assert frontmatter["sdk"] == "streamlit"
-    assert frontmatter["app_file"] == "src/app.py"
-    assert frontmatter["python_version"] == "3.11"
+    assert frontmatter["sdk"] == "docker"
+    assert frontmatter["app_port"] == 7860
+    assert "app_file" not in frontmatter
+    assert "sdk_version" not in frontmatter
     assert frontmatter["colorFrom"] in {
         "red",
         "yellow",
@@ -88,6 +89,17 @@ def test_hf_space_frontmatter_is_configured():
     }
 
 
+def test_hf_space_dockerfile_runs_streamlit_on_declared_port():
+    dockerfile = _read("Dockerfile")
+
+    assert "FROM python:3.11-slim" in dockerfile
+    assert "pip install -r requirements.txt" in dockerfile
+    assert '"streamlit", "run", "src/app.py"' in dockerfile
+    assert '"--server.address=0.0.0.0"' in dockerfile
+    assert '"--server.port=7860"' in dockerfile
+    assert "EXPOSE 7860" in dockerfile
+
+
 def test_requirements_matches_pyproject_runtime_dependencies():
     project = tomllib.loads(_read("pyproject.toml"))
     requirements = {
@@ -103,3 +115,9 @@ def test_local_runtime_dirs_are_gitignored():
     gitignore = _read(".gitignore")
     for pattern in (".obsidian/", ".venv/", ".pytest_cache/", "sandbox/"):
         assert pattern in gitignore
+
+
+def test_docker_context_excludes_local_state_and_secrets():
+    dockerignore = _read(".dockerignore")
+    for pattern in (".obsidian/", ".venv/", ".pytest_cache/", "sandbox/", ".env"):
+        assert pattern in dockerignore

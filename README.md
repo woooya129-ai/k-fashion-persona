@@ -7,7 +7,7 @@ sdk: docker
 app_port: 7860
 pinned: false
 license: agpl-3.0
-short_description: Local-first Korean fashion concept screening with AI personas.
+short_description: AI persona screening for Korean fashion concepts.
 datasets:
   - nvidia/Nemotron-Personas-Korea
 tags:

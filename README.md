@@ -110,6 +110,8 @@ LLM API endpoint는 `config/pricing_config.yaml`에 등록된 `api_base_url` hos
 
 HF Space 배포는 Docker SDK로 Streamlit 앱을 실행합니다. Space routing은 이 파일 상단의 `sdk: docker`, `app_port: 7860` 설정과 root `Dockerfile`을 기준으로 합니다.
 
+공개 HF Space는 `KFPS_REQUIRE_USER_PROVIDER_KEY=1`로 배포합니다. 운영자 공용 LLM provider API key를 사용하지 않으며, 방문자는 화면의 API key 입력칸에 본인 key를 직접 넣어 실행해야 합니다.
+
 현재 버전은 로컬 LLM 또는 로컬 Vision 모델을 돌리지 않으므로 그래픽카드는 필요하지 않습니다.
 
 | 구분 | 최소 | 권장 |

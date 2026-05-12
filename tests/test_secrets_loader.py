@@ -17,12 +17,15 @@ from src.secrets_loader import (
     KOSIS_API_KEY_VAR,
     OPENAI_KEY_VAR,
     QWEN_KEY_VAR,
+    REQUIRE_USER_PROVIDER_KEY_VAR,
     LoadedSecretsStatus,
     get_hf_token,
     get_kosis_api_key,
     get_provider_key,
     load_secrets_from_env_path,
+    provider_env_fallback_allowed,
     redact_for_log,
+    require_user_provider_key,
 )
 
 pytestmark = pytest.mark.no_network
@@ -40,6 +43,7 @@ def isolate_env(monkeypatch: pytest.MonkeyPatch):
         QWEN_KEY_VAR,
         HF_TOKEN_VAR,
         KOSIS_API_KEY_VAR,
+        REQUIRE_USER_PROVIDER_KEY_VAR,
     ):
         monkeypatch.delenv(var, raising=False)
     yield
@@ -63,6 +67,22 @@ class TestLoadSecretsFromEnvPath:
         status = load_secrets_from_env_path(env_path)
         assert status.openai_present is True
         assert status.env_path_exists is True
+
+    def test_required_user_provider_key_hides_provider_env_status(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        monkeypatch.setenv(REQUIRE_USER_PROVIDER_KEY_VAR, "1")
+        monkeypatch.setenv(OPENAI_KEY_VAR, "fake-openai-key-for-test")
+        monkeypatch.setenv(HF_TOKEN_VAR, "fake-hf-token")
+        monkeypatch.setenv(KOSIS_API_KEY_VAR, "fake-kosis-key")
+        env_path = tmp_path / "fake.env"
+        env_path.write_text("# placeholder\n", encoding="utf-8")
+
+        status = load_secrets_from_env_path(env_path)
+
+        assert status.openai_present is False
+        assert status.hf_token_present is True
+        assert status.kosis_api_key_present is True
 
     def test_returned_status_does_not_contain_actual_key(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -97,6 +117,28 @@ class TestGetProviderKey:
     def test_explicit_api_key_env_takes_precedence(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv(GROQ_KEY_VAR, "fake-groq")
         assert get_provider_key("openai_compatible", api_key_env=GROQ_KEY_VAR) == "fake-groq"
+
+    def test_required_user_provider_key_blocks_provider_env(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv(REQUIRE_USER_PROVIDER_KEY_VAR, "true")
+        monkeypatch.setenv(OPENAI_KEY_VAR, "fake-openai")
+
+        assert require_user_provider_key() is True
+        assert provider_env_fallback_allowed() is False
+        assert get_provider_key("openai") is None
+
+    def test_required_user_provider_key_blocks_explicit_provider_env(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        monkeypatch.setenv(REQUIRE_USER_PROVIDER_KEY_VAR, "1")
+        monkeypatch.setenv(GROQ_KEY_VAR, "fake-groq")
+
+        assert get_provider_key("openai_compatible", api_key_env=GROQ_KEY_VAR) is None
+
+    def test_allow_env_fallback_override(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv(REQUIRE_USER_PROVIDER_KEY_VAR, "1")
+        monkeypatch.setenv(OPENAI_KEY_VAR, "fake-openai")
+
+        assert get_provider_key("openai", allow_env_fallback=True) == "fake-openai"
 
     def test_missing_returns_none(self):
         assert get_provider_key("openai") is None

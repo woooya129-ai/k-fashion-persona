@@ -90,6 +90,23 @@ def _safe_provider_key(
         return None
 
 
+def _provider_key_policy_notice(lang: str) -> str | None:
+    if not secrets_loader.require_user_provider_key():
+        return None
+
+    if lang == "EN":
+        return (
+            "This public HF Space does not use a shared owner LLM API key. "
+            "Enter your own provider API key for this session. The app does not save it."
+        )
+
+    return (
+        "이 공개 HF Space는 운영자 공용 LLM API key를 사용하지 않아. "
+        "방문자 본인의 provider API key를 이번 세션에 직접 입력해서 써야 해. "
+        "앱은 입력값을 저장하지 않아."
+    )
+
+
 def _default_model_alias(model_options: list[str]) -> str:
 
     for preferred in BEGINNER_MODEL_PRIORITY:
@@ -1103,6 +1120,9 @@ def render_model_inputs(pricing_config: dict[str, ModelPricing], lang: str) -> d
     model_name = pricing.provider_model_id or model_alias
 
     render_model_metadata(pricing, model_name, lang=lang)
+
+    if notice := _provider_key_policy_notice(lang):
+        st.info(notice)
 
     temperature = st.slider("temperature", 0.0, 1.0, DEFAULT_TEMPERATURE, 0.1)
 

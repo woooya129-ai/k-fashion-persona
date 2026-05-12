@@ -68,6 +68,14 @@ def test_docs_link_github_and_hf_space_reciprocally():
     assert text.count(live_app_url) >= 2
 
 
+def test_docs_state_public_space_requires_user_provider_key():
+    text = _doc_text()
+
+    assert "KFPS_REQUIRE_USER_PROVIDER_KEY=1" in text
+    assert "운영자 공용 LLM provider API key를 사용하지 않으며" in text
+    assert "does not use shared owner LLM provider API keys" in text
+
+
 def test_hf_space_frontmatter_is_configured():
     readme = _read("README.md")
     assert readme.startswith("---\n")

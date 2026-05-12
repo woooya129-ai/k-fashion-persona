@@ -32,6 +32,9 @@ DEEPSEEK_KEY_VAR = "DEEPSEEK_API_KEY"
 QWEN_KEY_VAR = "QWEN_API_KEY"
 HF_TOKEN_VAR = "HF_TOKEN"
 KOSIS_API_KEY_VAR = "KOSIS_API_KEY"
+REQUIRE_USER_PROVIDER_KEY_VAR = "KFPS_REQUIRE_USER_PROVIDER_KEY"
+
+_TRUE_VALUES = {"1", "true", "yes", "on"}
 
 
 @dataclass(frozen=True)
@@ -62,22 +65,45 @@ def load_secrets_from_env_path(env_path: Path = SECRETS_ENV_PATH) -> LoadedSecre
     if exists and load_dotenv is not None:
         load_dotenv(env_path, override=False)
 
+    provider_env_allowed = provider_env_fallback_allowed()
+
     return LoadedSecretsStatus(
-        openai_present=bool(os.environ.get(OPENAI_KEY_VAR)),
-        anthropic_present=bool(os.environ.get(ANTHROPIC_KEY_VAR)),
+        openai_present=provider_env_allowed and bool(os.environ.get(OPENAI_KEY_VAR)),
+        anthropic_present=provider_env_allowed and bool(os.environ.get(ANTHROPIC_KEY_VAR)),
         hf_token_present=bool(os.environ.get(HF_TOKEN_VAR)),
         env_path=env_path,
         env_path_exists=exists,
-        google_present=bool(os.environ.get(GOOGLE_KEY_VAR)),
-        groq_present=bool(os.environ.get(GROQ_KEY_VAR)),
-        deepseek_present=bool(os.environ.get(DEEPSEEK_KEY_VAR)),
-        qwen_present=bool(os.environ.get(QWEN_KEY_VAR)),
+        google_present=provider_env_allowed and bool(os.environ.get(GOOGLE_KEY_VAR)),
+        groq_present=provider_env_allowed and bool(os.environ.get(GROQ_KEY_VAR)),
+        deepseek_present=provider_env_allowed and bool(os.environ.get(DEEPSEEK_KEY_VAR)),
+        qwen_present=provider_env_allowed and bool(os.environ.get(QWEN_KEY_VAR)),
         kosis_api_key_present=bool(os.environ.get(KOSIS_API_KEY_VAR)),
     )
 
 
-def get_provider_key(provider: str, api_key_env: str | None = None) -> str | None:
+def require_user_provider_key() -> bool:
+    """공유 배포에서 provider env key fallback을 끌지 여부."""
+    return os.environ.get(REQUIRE_USER_PROVIDER_KEY_VAR, "").strip().lower() in _TRUE_VALUES
+
+
+def provider_env_fallback_allowed() -> bool:
+    """LLM provider key를 env에서 읽어도 되는지 반환."""
+    return not require_user_provider_key()
+
+
+def get_provider_key(
+    provider: str,
+    api_key_env: str | None = None,
+    *,
+    allow_env_fallback: bool | None = None,
+) -> str | None:
     """provider 이름 또는 명시 env var → 환경변수 값."""
+    if allow_env_fallback is None:
+        allow_env_fallback = provider_env_fallback_allowed()
+
+    if not allow_env_fallback:
+        return None
+
     if api_key_env:
         val = os.environ.get(api_key_env)
         return val if val else None

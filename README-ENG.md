@@ -18,6 +18,8 @@ k-fashion-persona is a local-first Streamlit tool for checking Korean fashion pr
 
 The twin project for US fashion concepts is [us-fashion-persona](https://github.com/woooya129-ai/us-fashion-persona).
 
+The public HF Space is deployed with `KFPS_REQUIRE_USER_PROVIDER_KEY=1`. It does not use shared owner LLM provider API keys. Visitors must enter their own provider API key in the UI for their session.
+
 ## HF Space License Notice
 
 - The code in this HF Space is licensed under **GNU AGPL-3.0-only**.

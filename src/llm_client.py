@@ -84,6 +84,37 @@ EVALUATION_RESULT_RESPONSE_SCHEMA: dict = {
     "required": sorted(EVALUATION_RESULT_KEYS),
     "additionalProperties": False,
 }
+GOOGLE_EVALUATION_RESULT_RESPONSE_SCHEMA: dict = {
+    "type": "OBJECT",
+    "properties": {
+        "persona_id": {"type": "STRING"},
+        "sentiment": {"type": "STRING", "enum": ["positive", "neutral", "negative"]},
+        "interest_score": {"type": "INTEGER"},
+        "price_burden": {
+            "type": "STRING",
+            "enum": ["low", "medium", "high", "very_high", "unknown"],
+        },
+        "main_reasons": {
+            "type": "ARRAY",
+            "items": {"type": "STRING"},
+        },
+        "main_concerns": {
+            "type": "ARRAY",
+            "items": {"type": "STRING"},
+        },
+        "confidence_note": {"type": "STRING"},
+    },
+    "required": sorted(EVALUATION_RESULT_KEYS),
+    "propertyOrdering": [
+        "persona_id",
+        "sentiment",
+        "interest_score",
+        "price_burden",
+        "main_reasons",
+        "main_concerns",
+        "confidence_note",
+    ],
+}
 
 _BASE_BACKOFF_SECONDS: float = 1.0
 _MAX_BACKOFF_SECONDS: float = 60.0
@@ -545,7 +576,7 @@ class GoogleAdapter(LLMProviderAdapter):
         if req.supports_json_object or req.supports_json_schema:
             generation_config["responseMimeType"] = "application/json"
         if req.supports_json_schema:
-            generation_config["responseJsonSchema"] = EVALUATION_RESULT_RESPONSE_SCHEMA
+            generation_config["responseSchema"] = GOOGLE_EVALUATION_RESULT_RESPONSE_SCHEMA
 
         return {
             "system_instruction": {"parts": system_parts},

@@ -270,8 +270,7 @@ UI_COPY: dict[str, dict[str, str]] = {
         "report_placeholder_hint": "ENTER 실행 후 완료되면 자동으로 이 창으로 이동합니다.",
         "report_footer_disclaimer": (
             "이 결과는 합성 페르소나 기반의 pre-screening 참고용이야. "
-            "모델별 성능과 무료/유료 tier 조건에 따라 "
-            "문장 품질, JSON 안정성, 비용이 달라질 수 있다. "
+            "모델별 성능에 따라 문장 품질과 JSON 안정성이 달라질 수 있다. "
             "실제 조사나 사업 판단을 대체하지 않아."
         ),
     },
@@ -567,7 +566,7 @@ UI_COPY: dict[str, dict[str, str]] = {
         "report_placeholder_hint": "After ENTER completes, the page scrolls to this panel.",
         "report_footer_disclaimer": (
             "This result is reference-only pre-screening based on synthetic personas. "
-            "Model behavior, JSON stability, and cost can vary by provider and free/paid tier. "
+            "Model behavior and JSON stability can vary by provider. "
             "It does not replace real research or business decisions."
         ),
     },

@@ -1165,10 +1165,10 @@ def test_apptest_injection_warning_requires_second_confirmation() -> None:
     at.run(timeout=10)
 
     assert "프롬프트 인젝션 의심" in _visible_text(at)
-    assert _checkbox_by_label(at, "감지된 문구를 확인했고 그대로 실행한다.").value is False
+    assert _checkbox_by_label(at, app.ui_text("KR", "injection_confirm")).value is False
     assert _button_by_label(at, app.ui_text("KR", "run_button")).proto.disabled is True
 
-    _checkbox_by_label(at, "감지된 문구를 확인했고 그대로 실행한다.").check()
+    _checkbox_by_label(at, app.ui_text("KR", "injection_confirm")).check()
     at.run(timeout=10)
 
     assert _button_by_label(at, app.ui_text("KR", "run_button")).proto.disabled is False

@@ -431,7 +431,18 @@ def _render_job_panel_impl(lang: str) -> None:
 
     render_persona_results_anchor()
     scroll_to_persona_results_once()
-    st.subheader(ui_text(lang, "status_header"))
+    status_title_col, status_help_col = st.columns([4, 1])
+    with status_title_col:
+        st.subheader(ui_text(lang, "status_header"))
+    with (
+        status_help_col,
+        st.popover(
+            ui_text(lang, "status_help_button"),
+            use_container_width=True,
+        ),
+    ):
+        st.markdown(f"**{ui_text(lang, 'status_help_title')}**")
+        st.markdown(ui_text(lang, "status_help_body"))
     try:
         job = load_job_stats(DB_PATH, job_id)
     except KeyError:
@@ -493,9 +504,11 @@ def _render_job_panel_impl(lang: str) -> None:
             use_container_width=True,
         )
 
-    tab_source, tab_rendered = st.tabs(
-        [ui_text(lang, "report_tab_source"), ui_text(lang, "report_tab_rendered")]
+    tab_rendered, tab_source = st.tabs(
+        [ui_text(lang, "report_tab_rendered"), ui_text(lang, "report_tab_source")]
     )
+    with tab_rendered:
+        st.markdown(run_report.report_markdown)
     with tab_source:
         report_source_label = html.escape(
             ui_text(lang, "report_tab_source"),
@@ -510,8 +523,6 @@ def _render_job_panel_impl(lang: str) -> None:
             </section>
             """
         )
-    with tab_rendered:
-        st.markdown(run_report.report_markdown)
 
     q = run_report.quality
     c1, c2, c3 = st.columns(3)
@@ -657,15 +668,24 @@ def main() -> None:
 
     if enter_requested and not run_button_disabled:
         try:
-            start_screening(
-                concept=concept,
-                dataset=dataset,
-                sample=sample,
-                model=model,
-                price_context=price_context,
-                hashes=hashes,
-                api_key=cast(str, api_key),
-            )
+            status_slot = st.empty()
+            try:
+                with status_slot.status(ui_text(lang, "start_pending_title"), expanded=True):
+                    st.write(ui_text(lang, "start_pending_body"))
+                    start_screening(
+                        concept=concept,
+                        dataset=dataset,
+                        sample=sample,
+                        model=model,
+                        price_context=price_context,
+                        hashes=hashes,
+                        api_key=cast(str, api_key),
+                    )
+            finally:
+                status_slot.empty()
+            if st.session_state.get("active_job_id"):
+                st.success(f"{ui_text(lang, 'job_started')}: {st.session_state['active_job_id']}")
+            render_loading_panel(lang)
         except DatasetAccessError as exc:
             st.error(exc.user_message)
         except (FileNotFoundError, ValueError) as exc:

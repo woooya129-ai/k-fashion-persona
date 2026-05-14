@@ -1334,6 +1334,24 @@ button[data-testid="stBaseButton-header"][kind="header"],
   box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.22);
 }}
 
+.st-key-kfps_concept_presets {{
+  margin: 0 0 14px;
+  padding: 10px;
+  border: 1px solid var(--kfps-hairline);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--kfps-surface) 92%, var(--kfps-primary) 8%);
+}}
+
+.st-key-kfps_concept_presets [data-testid="stHorizontalBlock"] {{
+  gap: 8px !important;
+}}
+
+.st-key-kfps_concept_presets button {{
+  min-height: 40px !important;
+  border-radius: 10px !important;
+  white-space: normal !important;
+}}
+
 .st-key-kfps_enter_overlay {{
   position: relative !important;
 }}

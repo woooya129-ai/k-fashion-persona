@@ -916,22 +916,173 @@ def render_secrets_status(lang: str) -> None:
         st.html(f'<div class="kfps-secret-status-grid">{"".join(cards)}</div>')
 
 
+def _concept_example_presets(lang: str) -> tuple[dict[str, Any], ...]:
+    if lang == "EN":
+        return (
+            {
+                "label": "Minimal knit",
+                "project_name": "Minimal knit concept",
+                "category": "women's knitwear",
+                "price": 159_000,
+                "fit": "regular fit",
+                "material": "merino wool blend",
+                "color": "charcoal",
+                "season": "F/W",
+                "occasion": "office, weekend plans",
+                "style_tone": "quiet luxury, minimal",
+                "target_hypothesis": (
+                    "Office workers in their 30s who value material quality and versatility "
+                    "over visible logos."
+                ),
+                "description": (
+                    "A minimal knit with quiet refinement. It works for both office and "
+                    "weekend wear, emphasizing a soft handfeel and calm color."
+                ),
+            },
+            {
+                "label": "Office shirt",
+                "project_name": "Office shirt concept",
+                "category": "women's shirt",
+                "price": 129_000,
+                "fit": "semi-oversized fit",
+                "material": "100% cotton",
+                "color": "off white",
+                "season": "spring, autumn",
+                "occasion": "office, meetings",
+                "style_tone": "clean classic",
+                "target_hypothesis": (
+                    "Professionals who care about practicality, neat styling, and easy care."
+                ),
+                "description": (
+                    "A cotton shirt designed to reduce wrinkles. A daily office piece balancing "
+                    "a neat impression with comfortable movement."
+                ),
+            },
+            {
+                "label": "Unisex jumper",
+                "project_name": "Unisex jumper concept",
+                "category": "unisex outerwear",
+                "price": 219_000,
+                "fit": "relaxed regular fit",
+                "material": "water-repellent nylon",
+                "color": "deep green",
+                "season": "transitional season",
+                "occasion": "campus, office commute, weekend outings",
+                "style_tone": "casual, practical",
+                "target_hypothesis": (
+                    "Customers who prioritize utility and layering over gendered styling."
+                ),
+                "description": (
+                    "A lightweight water-repellent jumper for everyday movement and weekend "
+                    "outings, with an easy layering silhouette and storage details."
+                ),
+            },
+        )
+    return (
+        {
+            "label": "미니멀 니트",
+            "project_name": "미니멀 니트 컨셉",
+            "category": "여성 니트웨어",
+            "price": 159_000,
+            "fit": "레귤러 핏",
+            "material": "메리노 울 혼방",
+            "color": "차콜",
+            "season": "F/W",
+            "occasion": "출근, 주말 약속",
+            "style_tone": "조용한 고급감, 미니멀",
+            "target_hypothesis": "30대 직장인, 과한 로고보다 소재감과 활용도를 중시",
+            "description": (
+                "조용한 고급감의 미니멀 니트. 출근복과 주말복을 겸할 수 있고, "
+                "부드러운 촉감과 차분한 컬러를 강조."
+            ),
+        },
+        {
+            "label": "출근 셔츠",
+            "project_name": "출근 셔츠 컨셉",
+            "category": "여성 셔츠",
+            "price": 129_000,
+            "fit": "세미 오버핏",
+            "material": "코튼 100%",
+            "color": "오프화이트",
+            "season": "봄, 가을",
+            "occasion": "출근, 미팅",
+            "style_tone": "정돈된 클래식",
+            "target_hypothesis": "실용성과 관리 편의성을 보는 직장인",
+            "description": (
+                "구김을 줄인 코튼 셔츠. 단정한 인상과 편한 움직임을 함께 고려한 데일리 출근 아이템."
+            ),
+        },
+        {
+            "label": "유니섹스 점퍼",
+            "project_name": "유니섹스 점퍼 컨셉",
+            "category": "유니섹스 아우터",
+            "price": 219_000,
+            "fit": "여유 있는 레귤러 핏",
+            "material": "생활 방수 나일론",
+            "color": "딥그린",
+            "season": "간절기",
+            "occasion": "통학, 출근, 주말 외출",
+            "style_tone": "캐주얼, 실용",
+            "target_hypothesis": "성별 구분보다 실용성과 레이어링을 중시하는 고객",
+            "description": (
+                "가벼운 생활 방수 점퍼. 일상 이동과 주말 외출에 맞고, "
+                "레이어링하기 쉬운 실루엣과 수납 디테일을 강조."
+            ),
+        },
+    )
+
+
+def _apply_concept_example(example: dict[str, Any]) -> None:
+    st.session_state["kfps_project_name"] = example["project_name"]
+    st.session_state["kfps_product_category"] = example["category"]
+    st.session_state["kfps_product_price_krw"] = example["price"]
+    st.session_state["kfps_fit"] = example["fit"]
+    st.session_state["kfps_material"] = example["material"]
+    st.session_state["kfps_color"] = example["color"]
+    st.session_state["kfps_season"] = example["season"]
+    st.session_state["kfps_occasion"] = example["occasion"]
+    st.session_state["kfps_style_tone"] = example["style_tone"]
+    st.session_state["kfps_concept_description"] = example["description"]
+    st.session_state["kfps_target_hypothesis"] = example["target_hypothesis"]
+
+
+def _render_concept_example_buttons(lang: str) -> None:
+    presets = _concept_example_presets(lang)
+    with st.container(key="kfps_concept_presets"):
+        st.caption(ui_text(lang, "concept_examples"))
+        cols = st.columns(3, gap="small")
+        for idx, preset in enumerate(presets):
+            if cols[idx].button(
+                str(preset["label"]),
+                key=f"kfps_concept_example_{idx}",
+                use_container_width=True,
+            ):
+                _apply_concept_example(preset)
+                st.rerun()
+
+
 def render_concept_inputs(lang: str) -> dict[str, Any]:
 
     st.subheader(ui_text(lang, "concept_header"))
+    _render_concept_example_buttons(lang)
 
     render_input_section_heading(ui_text(lang, "input_section_basics"))
 
     basic_project_col, basic_category_col, basic_price_col = st.columns(3, gap="small")
 
     with basic_project_col:
-        project_name = st.text_input(ui_text(lang, "project_name"), max_chars=100)
+        project_name = st.text_input(
+            ui_text(lang, "project_name"),
+            max_chars=100,
+            key="kfps_project_name",
+        )
 
     with basic_category_col:
         category = st.text_input(
             ui_text(lang, "category"),
             placeholder=ui_text(lang, "category_placeholder"),
             max_chars=80,
+            key="kfps_product_category",
         )
 
     with basic_price_col:
@@ -941,6 +1092,7 @@ def render_concept_inputs(lang: str) -> dict[str, Any]:
             max_value=10_000_000_000,
             value=159_000,
             step=10_000,
+            key="kfps_product_price_krw",
         )
 
     render_input_section_heading(ui_text(lang, "input_section_style"))
@@ -952,6 +1104,7 @@ def render_concept_inputs(lang: str) -> dict[str, Any]:
             ui_text(lang, "season"),
             placeholder=ui_text(lang, "season_placeholder"),
             max_chars=40,
+            key="kfps_season",
         )
 
     with occasion_col:
@@ -959,6 +1112,7 @@ def render_concept_inputs(lang: str) -> dict[str, Any]:
             ui_text(lang, "occasion"),
             placeholder=ui_text(lang, "occasion_placeholder"),
             max_chars=120,
+            key="kfps_occasion",
         )
 
     with style_col:
@@ -966,6 +1120,7 @@ def render_concept_inputs(lang: str) -> dict[str, Any]:
             ui_text(lang, "style_tone"),
             placeholder=ui_text(lang, "style_tone_placeholder"),
             max_chars=80,
+            key="kfps_style_tone",
         )
 
     render_input_section_heading(ui_text(lang, "input_section_product"))
@@ -977,6 +1132,7 @@ def render_concept_inputs(lang: str) -> dict[str, Any]:
             ui_text(lang, "fit"),
             placeholder=ui_text(lang, "fit_placeholder"),
             max_chars=80,
+            key="kfps_fit",
         )
 
     with material_col:
@@ -984,6 +1140,7 @@ def render_concept_inputs(lang: str) -> dict[str, Any]:
             ui_text(lang, "material"),
             placeholder=ui_text(lang, "material_placeholder"),
             max_chars=80,
+            key="kfps_material",
         )
 
     with color_col:
@@ -991,6 +1148,7 @@ def render_concept_inputs(lang: str) -> dict[str, Any]:
             ui_text(lang, "color"),
             placeholder=ui_text(lang, "color_placeholder"),
             max_chars=80,
+            key="kfps_color",
         )
 
     render_input_section_heading(ui_text(lang, "input_section_target"))

@@ -46,7 +46,7 @@ UI_COPY: dict[str, dict[str, str]] = {
         "hero_pill_license": "AGPL-3.0-only",
         "hero_docs_aria": "정적 설명 페이지 (docs) 열기",
         "hero_license_aria": "GitHub LICENSE 파일 열기",
-        "cost_confirm_toast": "실행하려면 예상 비용·시간 확인에 체크하세요.",
+        "cost_confirm_toast": "실행하려면 예상 비용·시간 확인에 체크해 주세요.",
         "job_already_running": "이미 실행 중인 작업이 있다. 취소하거나 완료를 기다려.",
         "guide_eyebrow": "쉬운 4단계 진행",
         "guide_title": "입력하고, 고르고, 실행하고, 읽으면 끝.",
@@ -134,6 +134,7 @@ UI_COPY: dict[str, dict[str, str]] = {
         "advanced_caption": "모델, 데이터, 샘플링, 필터를 직접 조정한다.",
         "advanced_enable": "세부 설정 직접 조정",
         "concept_header": "컨셉 입력",
+        "concept_examples": "예시로 채우기",
         "input_section_basics": "기본 정보",
         "input_section_style": "스타일/착용 맥락",
         "input_section_product": "제품 디테일",
@@ -161,8 +162,8 @@ UI_COPY: dict[str, dict[str, str]] = {
         "enter_card_title": "ENTER",
         "enter_card_subtitle": "",
         "enter_card_body": (
-            "실행하면 LLM API 요청이 나가고 비용이 발생할 수 있어. "
-            "실행 전 예상 비용 확인 체크가 필요해."
+            "실행하면 LLM API 요청이 나가고 비용이 발생할 수 있어요. "
+            "실행 전 예상 비용 확인 체크가 필요해요."
         ),
         "dataset_header": "데이터 소스",
         "source": "소스",
@@ -220,37 +221,53 @@ UI_COPY: dict[str, dict[str, str]] = {
         "price_context_header": "가격 맥락",
         "price_context_caption": "가격 맥락 참고 지표이며 실제 구매력을 뜻하지 않는다.",
         "cost_header": "비용 / 시간 사전 추정",
-        "need_concept": "컨셉을 먼저 입력해.",
+        "need_concept": "컨셉을 먼저 입력해 주세요.",
         "new_calls": "신규 호출 예상",
         "estimated_cost": "예상 비용",
         "estimated_time": "예상 시간",
         "cost_caption": "토큰과 비용은 참고 추정치다. 가격 미설정 모델은 비용을 계산하지 않는다.",
         "debug_hash": "debug hash",
-        "injection_warning": "프롬프트 인젝션 의심 문구가 감지됐다. 컨셉 문구를 다시 확인해.",
+        "injection_warning": (
+            "프롬프트 인젝션 의심 문구가 감지됐어요. 컨셉 문구를 다시 확인해 주세요."
+        ),
         "run_confirm_header": "실행 확인",
-        "cost_confirm": "참고 추정 비용·시간과 API 전송 범위를 확인했다.",
-        "injection_confirm": "감지된 문구를 확인했고 그대로 실행한다.",
+        "cost_confirm": "참고 추정 비용·시간과 API 전송 범위를 확인했어요.",
+        "injection_confirm": "감지된 문구를 확인했고 그대로 실행할게요.",
         "need_api_key": (
-            "선택한 provider의 API KEY가 필요해. "
-            "입력칸에 붙여넣거나 OS 환경변수/로컬 환경 파일에 넣어둔 값을 써."
+            "선택한 provider의 API KEY가 필요해요. "
+            "입력칸에 붙여넣거나 OS 환경변수/로컬 환경 파일에 넣어둔 값을 써 주세요."
         ),
         "run_button": "ENTER",
         "run_panel_body": (
-            "실행하면 선택한 AI 모델이 합성 페르소나에게 컨셉을 물어봐. "
+            "실행하면 선택한 AI 모델이 합성 페르소나에게 컨셉을 물어봐요. "
             "먼저 1명 preflight API 요청으로 JSON 응답을 확인하고, "
-            "성공 결과는 본 실행에서 재사용해. 패널 수만큼 비용이 발생할 수 있어."
+            "성공 결과는 본 실행에서 재사용해요. 패널 수만큼 비용이 발생할 수 있어요."
         ),
         "details_header": "자세히",
         "details_summary": "가격 기준, 예상 비용, 재현용 값을 확인한다.",
         "results_preview_header": "페르소나 의견 미리보기",
         "results_preview_body": "대표 의견 5개만 먼저 보여줘. 전체 결과는 엑셀용 파일로 내려받아.",
         "excel_download": "엑셀용 CSV 다운로드",
-        "results_loading": "합성 페르소나 의견을 모으는 중",
+        "results_loading": "합성 페르소나 의견을 모으는 중이에요",
+        "start_pending_title": "작동 중이에요",
+        "start_pending_body": (
+            "API 연결과 첫 응답을 확인하고 있어요. 화면이 잠시 흐려져도 작업은 이어져요."
+        ),
+        "job_started": "작업 시작",
         "persona_preview_empty": "아직 보여줄 성공 결과가 없다.",
         "persona_card_reasons": "좋게 본 점",
         "persona_card_concerns": "망설인 점",
         "persona_card_note": "한줄 의견",
         "status_header": "진행 상태",
+        "status_help_button": "도움말",
+        "status_help_title": "성공/실패 기준",
+        "status_help_body": (
+            "success: API 응답을 받았고 JSON 파싱과 스키마 검증을 통과한 수예요.\n\n"
+            "failed: API 실패, 응답 누락, JSON 파싱 실패, "
+            "필수 필드 누락 때문에 리포트 분포에 넣지 못한 수예요.\n\n"
+            "cached: 같은 컨셉과 모델로 이미 저장된 결과를 다시 쓴 수예요.\n\n"
+            "최종 분포와 요약에는 유효 JSON 결과만 들어가요."
+        ),
         "job_missing": "현재 작업 정보를 찾을 수 없다.",
         "refresh": "Refresh",
         "cancel": "Cancel",
@@ -266,12 +283,12 @@ UI_COPY: dict[str, dict[str, str]] = {
         "report_tab_rendered": "미리보기",
         "report_tab_source": "Markdown 원문",
         "report_placeholder_title": "Markdown 리포트",
-        "report_placeholder_body": "결과물이 이곳에 출력됩니다.",
-        "report_placeholder_hint": "ENTER 실행 후 완료되면 자동으로 이 창으로 이동합니다.",
+        "report_placeholder_body": "결과물이 이곳에 출력돼요.",
+        "report_placeholder_hint": "ENTER 실행 후 완료되면 자동으로 이 창으로 이동해요.",
         "report_footer_disclaimer": (
-            "이 결과는 합성 페르소나 기반의 pre-screening 참고용이야. "
+            "이 결과는 합성 페르소나 기반의 pre-screening 참고용이에요. "
             "모델별 성능에 따라 문장 품질과 JSON 안정성이 달라질 수 있다. "
-            "실제 조사나 사업 판단을 대체하지 않아."
+            "실제 조사나 사업 판단을 대체하지 않아요."
         ),
     },
     "EN": {
@@ -414,6 +431,7 @@ UI_COPY: dict[str, dict[str, str]] = {
         "advanced_caption": "Directly control model, data source, sampling, and filters.",
         "advanced_enable": "Customize advanced settings",
         "concept_header": "Concept",
+        "concept_examples": "Fill with example",
         "input_section_basics": "Basics",
         "input_section_style": "Style and Wearing Context",
         "input_section_product": "Product Details",
@@ -542,11 +560,26 @@ UI_COPY: dict[str, dict[str, str]] = {
         ),
         "excel_download": "Download CSV for Excel",
         "results_loading": "Collecting synthetic persona opinions",
+        "start_pending_title": "Working",
+        "start_pending_body": (
+            "Checking the API connection and first response. "
+            "Work continues even if the screen looks dim for a moment."
+        ),
+        "job_started": "Job started",
         "persona_preview_empty": "No successful opinion rows to preview yet.",
         "persona_card_reasons": "Reasons",
         "persona_card_concerns": "Concerns",
         "persona_card_note": "Note",
         "status_header": "Progress",
+        "status_help_button": "Help",
+        "status_help_title": "Success/failure criteria",
+        "status_help_body": (
+            "success: API response was received and passed JSON parsing plus schema validation.\n\n"
+            "failed: API failure, missing response, JSON parsing failure, or missing "
+            "required fields kept the row out of the report distribution.\n\n"
+            "cached: A stored result for the same concept and model was reused.\n\n"
+            "Only valid JSON results are included in the final distribution and summary."
+        ),
         "job_missing": "Current job record was not found.",
         "refresh": "Refresh",
         "cancel": "Cancel",

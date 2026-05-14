@@ -863,7 +863,7 @@ def test_app_source_uses_readable_comfort_tokens_with_targeted_hero_gradient() -
     assert "BALANCE" in source
     assert "HIGH" in source
     assert "MAX" in source
-    assert "MAX_SAMPLE_SIZE = 1000" in source
+    assert "MAX_SAMPLE_SIZE = 100" in source
     assert "sampling-seed" in source
     assert "KOREA_PROVINCE_OPTIONS" in source
     assert "OCCUPATION_KEYWORD_OPTIONS" in source
@@ -908,8 +908,12 @@ def test_apptest_initial_screen_renders_without_exceptions() -> None:
     assert len(at.toggle) == 2
     assert at.toggle[0].proto.label == "Language"
     assert at.toggle[1].proto.label == "Theme"
-    assert len(at.segmented_control) == 1
-    assert at.segmented_control[0].proto.label == app.ui_text("KR", "run_mode")
+    run_mode_controls = [
+        control
+        for control in at.segmented_control
+        if control.proto.label == app.ui_text("KR", "run_mode")
+    ]
+    assert len(run_mode_controls) == 1
     assert len(at.selectbox) >= 1
     assert at.selectbox[0].proto.label == app.ui_text("KR", "model")
     run_button_label = app.ui_text("KR", "run_button")
@@ -933,8 +937,8 @@ def test_apptest_api_key_input_is_password() -> None:
 
 
 def test_app_sampling_and_filter_limits_are_explicit() -> None:
-    assert app.MAX_SAMPLE_SIZE == 1000
-    assert app.RUN_MODE_PRESETS["max"]["sample_size"] == 1000
+    assert app.MAX_SAMPLE_SIZE == 100
+    assert app.RUN_MODE_PRESETS["max"]["sample_size"] == 100
     assert len(app.KOREA_PROVINCE_OPTIONS) == 17
     assert len(app.OCCUPATION_KEYWORD_OPTIONS) == 15
     assert app.ui_text("KR", "sampling_seed") == "sampling-seed"
@@ -1023,6 +1027,29 @@ def test_model_options_sort_claude_family_order() -> None:
         "claude-sonnet-4-5",
         "claude-opus-4-7",
         "claude-opus-4-6",
+    ]
+
+
+def test_product_audience_maps_to_persona_sex_filter() -> None:
+    assert rendering._sex_filter_for_product_audience("womenswear") == frozenset(  # noqa: SLF001
+        {"F"}
+    )
+    assert rendering._sex_filter_for_product_audience("menswear") == frozenset(  # noqa: SLF001
+        {"M"}
+    )
+    assert rendering._sex_filter_for_product_audience("unisex") == frozenset()  # noqa: SLF001
+
+
+def test_product_audience_options_are_fixed_three_way_choice() -> None:
+    assert rendering._product_audience_options("KR") == [  # noqa: SLF001
+        "여성복",
+        "남성복",
+        "유니섹스",
+    ]
+    assert rendering._product_audience_options("EN") == [  # noqa: SLF001
+        "Womenswear",
+        "Menswear",
+        "Unisex",
     ]
 
 
@@ -1175,6 +1202,7 @@ def test_apptest_mock_end_to_end_worker_report_ui(
     at = AppTest.from_string(APP_MODULE_SCRIPT).run(timeout=10)
     assert len(at.exception) == 0
 
+    at.segmented_control[1].set_value("유니섹스")
     _text_input_by_label(at, "프로젝트명").set_value("e2e-project")
     _text_input_by_label(at, "제품 카테고리").set_value("니트웨어")
     at.text_area[0].set_value("조용한 고급감의 미니멀 니트")
@@ -1231,7 +1259,13 @@ def test_apptest_mock_end_to_end_worker_report_ui(
             "SELECT sample_size, matched_count_before_sample, sampling_seed, "
             "sampling_strategy, filter_summary FROM runs"
         ).fetchone()
-    assert run_row == (2, 2, 42, "filter_then_seeded_reservoir", "필터 없음 (전체)")
+    assert run_row == (
+        2,
+        2,
+        42,
+        "filter_then_seeded_reservoir_limited_scan",
+        "필터 없음 (전체)",
+    )
     if real_db_stat_before is None:
         assert not real_db_path.exists()
     else:

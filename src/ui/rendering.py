@@ -72,6 +72,62 @@ from src.ui.dynamic_css import build_comfort_ui_css
 logger = logging.getLogger(__name__)
 ResultRow = dict[str, Any]
 
+_PRODUCT_AUDIENCE_ORDER: tuple[str, ...] = ("womenswear", "menswear", "unisex")
+_PRODUCT_AUDIENCE_SEX_FILTER: dict[str, frozenset[str]] = {
+    "womenswear": frozenset({"F"}),
+    "menswear": frozenset({"M"}),
+    "unisex": frozenset(),
+}
+_PRODUCT_AUDIENCE_LABELS: dict[str, dict[str, str]] = {
+    "KR": {
+        "womenswear": "여성복",
+        "menswear": "남성복",
+        "unisex": "유니섹스",
+    },
+    "EN": {
+        "womenswear": "Womenswear",
+        "menswear": "Menswear",
+        "unisex": "Unisex",
+    },
+}
+
+
+def _product_audience_prompt(lang: str) -> str:
+    return "제품 성별" if lang == "KR" else "Product audience"
+
+
+def _product_audience_label(lang: str, audience: str) -> str:
+    labels = _PRODUCT_AUDIENCE_LABELS.get(lang, _PRODUCT_AUDIENCE_LABELS["KR"])
+    return labels.get(audience, labels["womenswear"])
+
+
+def _product_audience_options(lang: str) -> list[str]:
+    return [_product_audience_label(lang, audience) for audience in _PRODUCT_AUDIENCE_ORDER]
+
+
+def _product_audience_from_label(lang: str, label: str | None) -> str:
+    labels = _PRODUCT_AUDIENCE_LABELS.get(lang, _PRODUCT_AUDIENCE_LABELS["KR"])
+    reverse = {value: key for key, value in labels.items()}
+    return reverse.get(str(label or ""), "womenswear")
+
+
+def _sex_filter_for_product_audience(audience: str) -> frozenset[str]:
+    return _PRODUCT_AUDIENCE_SEX_FILTER.get(audience, frozenset({"F"}))
+
+
+def _render_product_audience_input(lang: str, *, key: str) -> str:
+    default = _product_audience_label(lang, "womenswear")
+    options = _product_audience_options(lang)
+    if st.session_state.get(key) not in options:
+        st.session_state.pop(key, None)
+    selected = st.segmented_control(
+        _product_audience_prompt(lang),
+        options=options,
+        default=default,
+        key=key,
+    )
+    return _product_audience_from_label(lang, str(selected or default))
+
 
 def _safe_provider_key(
     provider: str,
@@ -1069,9 +1125,9 @@ def render_sample_inputs(lang: str) -> dict[str, Any]:
         help=ui_text(lang, "sampling_seed_help"),
     )
 
-    age_min, age_max = st.slider(ui_text(lang, "age"), min_value=0, max_value=100, value=(0, 100))
+    product_audience = _render_product_audience_input(lang, key="kfps_product_audience_full")
 
-    sex = st.multiselect(ui_text(lang, "sex"), ["M", "F"])
+    age_min, age_max = st.slider(ui_text(lang, "age"), min_value=0, max_value=100, value=(0, 100))
 
     province = st.multiselect(
         ui_text(lang, "province"),
@@ -1091,7 +1147,7 @@ def render_sample_inputs(lang: str) -> dict[str, Any]:
         "filter": PersonaFilter(
             age_min=int(age_min) if age_min > 0 else None,
             age_max=int(age_max) if age_max < 100 else None,
-            sex=frozenset(sex),
+            sex=_sex_filter_for_product_audience(product_audience),
             province=frozenset(province),
             occupation_contains=frozenset(occupation),
         ),
@@ -1274,6 +1330,9 @@ def render_simple_setup(pricing_config: dict[str, ModelPricing], lang: str) -> d
 
     temperature = float(preset["temperature"])
 
+    product_audience = _render_product_audience_input(lang, key="kfps_product_audience")
+    audience_sex_filter = _sex_filter_for_product_audience(product_audience)
+
     dataset: dict[str, Any] = {
         "source": "huggingface",
         "dataset_id": DEFAULT_HF_DATASET_ID,
@@ -1284,7 +1343,7 @@ def render_simple_setup(pricing_config: dict[str, ModelPricing], lang: str) -> d
     sample = {
         "sample_size": sample_size,
         "sampling_seed": sampling_seed,
-        "filter": PersonaFilter(),
+        "filter": PersonaFilter(sex=audience_sex_filter),
     }
 
     with st.expander(
@@ -1323,8 +1382,6 @@ def render_simple_setup(pricing_config: dict[str, ModelPricing], lang: str) -> d
             value=(0, 100),
         )
 
-        sex = st.multiselect(ui_text(lang, "sex"), ["M", "F"])
-
         province = st.multiselect(
             ui_text(lang, "province"),
             KOREA_PROVINCE_OPTIONS,
@@ -1343,7 +1400,7 @@ def render_simple_setup(pricing_config: dict[str, ModelPricing], lang: str) -> d
             "filter": PersonaFilter(
                 age_min=int(age_min) if age_min > 0 else None,
                 age_max=int(age_max) if age_max < 100 else None,
-                sex=frozenset(sex),
+                sex=audience_sex_filter,
                 province=frozenset(province),
                 occupation_contains=frozenset(occupation),
             ),
@@ -1352,7 +1409,8 @@ def render_simple_setup(pricing_config: dict[str, ModelPricing], lang: str) -> d
         temperature = st.slider("temperature", 0.0, 1.0, temperature, 0.1)
 
     st.caption(
-        ui_text(lang, "simple_summary").format(
+        f"{_product_audience_label(lang, product_audience)} · "
+        + ui_text(lang, "simple_summary").format(
             mode=_run_mode_label(lang, run_mode),
             sample_size=sample["sample_size"],
             temperature=temperature,

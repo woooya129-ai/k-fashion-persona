@@ -613,6 +613,7 @@ def main() -> None:
     )
     concept = render_concept_inputs(lang)
     enter_button_placeholder = concept.pop("_enter_button_placeholder")
+    cost_confirm_placeholder = concept.pop("_cost_confirm_placeholder")
     price_context = make_price_context(concept["product_price_krw"], kosis)
     cost_state = make_cost_state(concept, sample, model)
     hashes = make_hashes(concept, price_context)
@@ -627,11 +628,12 @@ def main() -> None:
         model["api_key"],
         getattr(model.get("pricing"), "api_key_env", None),
     )
-    confirmed = st.checkbox(
-        ui_text(lang, "cost_confirm"),
-        value=False,
-        key="kfps_cost_confirm",
-    )
+    with cost_confirm_placeholder.container():
+        confirmed = st.checkbox(
+            ui_text(lang, "cost_confirm"),
+            value=False,
+            key="kfps_cost_confirm",
+        )
     if cost_state.get("ready") and not confirmed:
         render_inline_note(ui_text(lang, "cost_confirm_toast"))
     injection_confirmed = True
@@ -668,24 +670,27 @@ def main() -> None:
 
     if enter_requested and not run_button_disabled:
         try:
-            status_slot = st.empty()
-            try:
-                with status_slot.status(ui_text(lang, "start_pending_title"), expanded=True):
-                    st.write(ui_text(lang, "start_pending_body"))
-                    start_screening(
-                        concept=concept,
-                        dataset=dataset,
-                        sample=sample,
-                        model=model,
-                        price_context=price_context,
-                        hashes=hashes,
-                        api_key=cast(str, api_key),
-                    )
-            finally:
-                status_slot.empty()
+            st.toast(
+                ui_text(lang, "start_pending_toast"),
+                icon="⏳",
+            )
+            spinner_text = (
+                f"{ui_text(lang, 'start_pending_title')} · {ui_text(lang, 'start_pending_body')}"
+            )
+            with st.spinner(spinner_text, show_time=True):
+                start_screening(
+                    concept=concept,
+                    dataset=dataset,
+                    sample=sample,
+                    model=model,
+                    price_context=price_context,
+                    hashes=hashes,
+                    api_key=cast(str, api_key),
+                )
             if st.session_state.get("active_job_id"):
                 st.success(f"{ui_text(lang, 'job_started')}: {st.session_state['active_job_id']}")
             render_loading_panel(lang)
+            render_report_placeholder(lang, loading=True)
         except DatasetAccessError as exc:
             st.error(exc.user_message)
         except (FileNotFoundError, ValueError) as exc:

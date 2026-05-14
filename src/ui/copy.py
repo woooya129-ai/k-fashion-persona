@@ -256,6 +256,7 @@ UI_COPY: dict[str, dict[str, str]] = {
         "excel_download": "엑셀용 CSV 다운로드",
         "results_loading": "합성 페르소나 의견을 모으는 중이에요",
         "start_pending_title": "작동 중이에요",
+        "start_pending_toast": "작업을 시작하는 중이에요. 잠시만 기다려 주세요.",
         "start_pending_body": (
             "API 연결과 첫 응답을 확인하고 있어요. 화면이 잠시 흐려져도 작업은 이어져요."
         ),
@@ -566,6 +567,7 @@ UI_COPY: dict[str, dict[str, str]] = {
         "excel_download": "Download CSV for Excel",
         "results_loading": "Collecting synthetic persona opinions",
         "start_pending_title": "Working",
+        "start_pending_toast": "Starting the run. Please wait a moment.",
         "start_pending_body": (
             "Checking the API connection and first response. "
             "Work continues even if the screen looks dim for a moment."

@@ -34,7 +34,7 @@ PRODUCT_CARD_FIELD_LABELS_KR: dict[str, str] = {
 APP_VERSION = "0.5.3"
 DEFAULT_PRICE_CONTEXT_VERSION = "kosis_hybrid_2026_v1"
 DEFAULT_TEMPERATURE = 0.3
-MAX_SAMPLE_SIZE = 1000
+MAX_SAMPLE_SIZE = 100
 TERMINAL_STATUSES = {"completed", "failed", "cancelled"}
 ESTIMATE_SYSTEM_PROMPT_TOKENS = 400
 ESTIMATE_PERSONA_TOKENS = 350
@@ -47,7 +47,7 @@ RUN_MODE_PRESETS: dict[str, dict[str, Any]] = {
     "quick": {"sample_size": 10, "temperature": 0.2},
     "balanced": {"sample_size": 30, "temperature": 0.3},
     "deep": {"sample_size": 60, "temperature": 0.3},
-    "max": {"sample_size": 1000, "temperature": 0.3},
+    "max": {"sample_size": MAX_SAMPLE_SIZE, "temperature": 0.3},
 }
 KOREA_PROVINCE_OPTIONS: tuple[str, ...] = (
     "서울",

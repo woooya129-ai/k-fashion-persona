@@ -10,6 +10,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from itertools import islice
 from pathlib import Path
 from typing import Any, cast
 
@@ -17,7 +18,7 @@ import httpx
 from pydantic import ValidationError
 
 from src.aggregator import QualityCounts, aggregate
-from src.app_config import DEFAULT_PRICE_CONTEXT_VERSION
+from src.app_config import DEFAULT_PRICE_CONTEXT_VERSION, MAX_SAMPLE_SIZE
 from src.async_runner import make_sync_evaluator_for_worker
 from src.cache import compute_cache_key, compute_legacy_cache_key_v1
 from src.data_loader import (
@@ -713,6 +714,7 @@ def _load_and_sample(
     load_huggingface_dataset_fn: Callable[..., Any] = load_huggingface_dataset,
     load_local_file_fn: Callable[[Path], Any] = load_local_file,
 ):
+    sample_size = min(max(1, int(sample["sample_size"])), MAX_SAMPLE_SIZE)
 
     if dataset["source"] == "huggingface":
         loaded, rows = load_huggingface_dataset_fn(
@@ -722,13 +724,18 @@ def _load_and_sample(
             revision=dataset["revision"],
             token=hf_token,
         )
+        max_scan_rows = min(
+            max(int(sample.get("max_scan_rows") or MAX_SAMPLE_SIZE), sample_size),
+            MAX_SAMPLE_SIZE,
+        )
+        rows = islice(rows, max_scan_rows)
 
         personas_iter = normalize_rows_to_personas(rows)
 
         sampled = sample_iterable_to_result(
             personas_iter,
             sample["filter"],
-            sample["sample_size"],
+            sample_size,
             sample["sampling_seed"],
         )
 
@@ -741,7 +748,7 @@ def _load_and_sample(
 
     filtered = apply_filter(personas, sample["filter"])
 
-    sampled = sample_to_result(filtered, sample["sample_size"], sample["sampling_seed"])
+    sampled = sample_to_result(filtered, sample_size, sample["sampling_seed"])
 
     return loaded, sampled
 
@@ -749,6 +756,6 @@ def _load_and_sample(
 def _sampling_strategy_for_dataset(dataset: dict[str, Any]) -> str:
 
     if dataset["source"] == "huggingface":
-        return "filter_then_seeded_reservoir"
+        return "filter_then_seeded_reservoir_limited_scan"
 
     return "filter_then_seeded_random_sample"

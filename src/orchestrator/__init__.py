@@ -416,8 +416,9 @@ async def run_preflight_and_cache_async(
 ) -> None:
     """Run one persona before job creation and cache the successful result.
 
-    This prevents creating a job when the selected provider/model cannot return
-    valid EvaluationResult JSON.
+    This caches a valid probe before job creation. Parse-only probe failures do
+    not block the run because the worker can still collect successful rows from
+    the remaining panel.
     """
     cache_hit = _cache_lookup_for_payload(db_path, payload, cache_lookup_fn)
     if cache_hit is not None:
@@ -436,6 +437,9 @@ async def run_preflight_and_cache_async(
     result = await llm_evaluator_async(payload)
     status = str(result.get("status", ""))
     response_json = result.get("response_json")
+    if status == "parse_failed":
+        logger.warning("preflight parse failed; continuing without preflight cache")
+        return
     if status != "success" or not response_json:
         error_type = str(result.get("error_type") or status or "unknown")
         raise ValueError(f"preflight failed before job creation: {error_type}")

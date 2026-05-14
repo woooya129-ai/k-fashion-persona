@@ -576,7 +576,7 @@ class GoogleAdapter(LLMProviderAdapter):
         if req.supports_json_object or req.supports_json_schema:
             generation_config["responseMimeType"] = "application/json"
         if req.supports_json_schema:
-            generation_config["responseSchema"] = GOOGLE_EVALUATION_RESULT_RESPONSE_SCHEMA
+            generation_config["responseJsonSchema"] = EVALUATION_RESULT_RESPONSE_SCHEMA
 
         return {
             "system_instruction": {"parts": system_parts},

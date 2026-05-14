@@ -599,8 +599,7 @@ def test_preflight_parse_failure_does_not_create_job_or_cache(tmp_path: Path) ->
             "latency_ms": 1,
         }
 
-    with pytest.raises(ValueError, match="preflight failed"):
-        asyncio.run(app.run_preflight_and_cache_async(db_path, payload, llm_parse_failed))
+    asyncio.run(app.run_preflight_and_cache_async(db_path, payload, llm_parse_failed))
 
     with get_connection(db_path) as conn:
         assert conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0] == 0

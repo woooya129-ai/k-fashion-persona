@@ -519,6 +519,23 @@ def test_call_google_200_returns_raw_response():
     assert result.used_structured_output is True
 
 
+def test_call_google_json_schema_uses_current_rest_field():
+    google_url = f"{GOOGLE_URL_PREFIX}gemini-1.5-flash:generateContent"
+
+    async def _inner():
+        with respx.mock:
+            route = respx.post(google_url).mock(return_value=httpx.Response(200, json=GOOGLE_200))
+            async with httpx.AsyncClient() as client:
+                await call_google(_make_google_req(supports_json_schema=True), client)
+            return json.loads(route.calls.last.request.content)
+
+    request_body = _run(_inner())
+    generation_config = request_body["generationConfig"]
+    assert generation_config["responseMimeType"] == "application/json"
+    assert "responseJsonSchema" in generation_config
+    assert "responseSchema" not in generation_config
+
+
 def test_call_google_400_treated_as_api_key_invalid():
     google_url = f"{GOOGLE_URL_PREFIX}gemini-1.5-flash:generateContent"
 

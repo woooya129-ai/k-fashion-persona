@@ -36,7 +36,7 @@ UI_COPY: dict[str, dict[str, str]] = {
             "패션 컨셉을 AI 페르소나 패널을 통해 전문 설문이나 "
             "본조사 전 반응의 흐름을 빠르게 확인합니다."
         ),
-        "hero_eyebrow": "로컬 퍼블릭 베타 · v0.5.3",
+        "hero_eyebrow": "로컬 퍼블릭 베타 · v0.6.0",
         "hero_pill_1": "로컬 실행",
         "hero_pill_2": "원문 저장 없음",
         "hero_pill_3": "리포트 내보내기",
@@ -47,27 +47,27 @@ UI_COPY: dict[str, dict[str, str]] = {
         "hero_docs_aria": "정적 설명 페이지 (docs) 열기",
         "hero_license_aria": "GitHub LICENSE 파일 열기",
         "cost_confirm_toast": "실행하려면 예상 비용·시간 확인에 체크해 주세요.",
-        "job_already_running": "이미 실행 중인 작업이 있다. 취소하거나 완료를 기다려.",
+        "job_already_running": "이미 실행 중인 작업이 있어요. 취소하거나 완료를 기다려 주세요.",
         "guide_eyebrow": "쉬운 4단계 진행",
-        "guide_title": "입력하고, 고르고, 실행하고, 읽으면 끝.",
+        "guide_title": "입력하고, 고르고, 실행하고, 읽으면 끝나요.",
         "guide_1_title": "컨셉 입력",
-        "guide_1_body": "제품 설명과 가격을 적는다.",
-        "guide_1_detail": "상품 특징, 가격, 타깃 가설만 적으면 첫 검토가 시작된다.",
+        "guide_1_body": "제품 설명과 가격을 적어요.",
+        "guide_1_detail": "상품 특징, 가격, 타깃 가설만 적으면 첫 검토가 시작돼요.",
         "guide_2_title": "패널 선택",
-        "guide_2_body": "샘플 수와 조건을 고른다.",
-        "guide_2_detail": "합성 페르소나 패널을 골라 어떤 사람들에게 물어볼지 정한다.",
+        "guide_2_body": "샘플 수와 조건을 골라요.",
+        "guide_2_detail": "합성 페르소나 패널을 골라 어떤 사람들에게 물어볼지 정해요.",
         "guide_3_title": "비용 확인",
-        "guide_3_body": "예상 호출과 비용을 확인한다.",
-        "guide_3_detail": "실행 전 호출 수와 예상 비용을 먼저 보고 과한 실행을 막는다.",
+        "guide_3_body": "예상 호출과 비용을 확인해요.",
+        "guide_3_detail": "실행 전 호출 수와 예상 비용을 먼저 보고 과한 실행을 막아요.",
         "guide_4_title": "결과 확인",
-        "guide_4_body": "분포와 이유를 리포트로 받는다.",
-        "guide_4_detail": "좋음, 애매함, 어려움 같은 반응 방향을 한 장 리포트처럼 읽는다.",
+        "guide_4_body": "분포와 이유를 리포트로 받아요.",
+        "guide_4_detail": "좋음, 애매함, 어려움 같은 반응 방향을 한 장 리포트처럼 읽어요.",
         "dataset_story_eyebrow": "데이터셋 이해",
         "dataset_story_title": "왜 이 데이터셋이 나왔나",
         "dataset_story_body": (
-            "한국 사용자를 위한 AI는 번역만으로 부족해. 지역, 직업, 생활 맥락, 말투가 "
+            "한국 사용자를 위한 AI는 번역만으로 부족해요. 지역, 직업, 생활 맥락, 말투가 "
             "다르기 때문에 한국 인구 분포를 닮은 합성 페르소나가 필요해졌고, "
-            "이 데이터셋은 소버린 AI와 편향 완화를 목표로 공개됐어."
+            "이 데이터셋은 소버린 AI와 편향 완화를 목표로 공개됐어요."
         ),
         "dataset_card_1_title": "공공 분포 기반",
         "dataset_card_1_body": "KOSIS, 대법원, NHIS, KREI 등 공개 통계의 분포를 참고.",
@@ -77,15 +77,15 @@ UI_COPY: dict[str, dict[str, str]] = {
         "dataset_card_3_body": "이 도구는 일부 페르소나를 패널처럼 뽑아 컨셉 반응을 요약.",
         "section_project": "방향성을 잡아보세요",
         "section_project_caption": (
-            "아래 칸에 컨셉, 가격, 타깃 가설을 넣으면 바로 검토 준비가 된다."
+            "아래 칸에 컨셉, 가격, 타깃 가설을 넣으면 바로 검토 준비가 돼요."
         ),
         "section_econ": "Economic Context",
-        "section_econ_caption": "가격은 KOSTAT 의류비 기준으로만 맥락화한다.",
+        "section_econ_caption": "가격은 KOSTAT 의류비 기준으로만 맥락화해요.",
         "section_run": "Run",
-        "section_run_caption": "비용 확인 후 worker thread를 시작하고 진행률을 1초마다 갱신한다.",
+        "section_run_caption": "비용 확인 후 worker thread를 시작하고 진행률을 1초마다 갱신해요.",
         "setup": "설정",
         "quick_setup_header": "쉬운 설정",
-        "quick_setup_caption": "처음이면 BALANCE만 고르고 바로 진행해도 된다.",
+        "quick_setup_caption": "처음이면 BALANCE만 고르고 바로 진행해도 돼요.",
         "run_mode": "실행 방식",
         "mode_quick": "FAST",
         "mode_balanced": "BALANCE",
@@ -121,20 +121,20 @@ UI_COPY: dict[str, dict[str, str]] = {
         "cost_output_label": "출력 비용",
         "cost_max_output_label": "출력 추정/상한",
         "cost_unit_note": (
-            "1M token 단가는 과금 단위이고, 이번 실행은 그중 일부만 쓴다. "
-            "실제 과금은 tokenizer, 출력 길이, 재시도, provider 계정 조건에 따라 달라진다."
+            "1M token 단가는 과금 단위이고, 이번 실행은 그중 일부만 써요. "
+            "실제 과금은 tokenizer, 출력 길이, 재시도, provider 계정 조건에 따라 "
+            "차이가 생길 수 있어요."
         ),
         "model_compare_header": "모델별 비용 비교",
-        "model_compare_caption": "현재 제품 카드 길이와 샘플 수 기준의 참고 추정치야.",
+        "model_compare_caption": "현재 제품 카드 길이와 샘플 수 기준의 참고 추정치예요.",
         "cost_table_model": "Model",
         "cost_table_provider": "Provider",
         "cost_table_rate": "Input/Output 단가",
         "cost_table_estimate": "실행 추정",
         "advanced_header": "Advanced",
-        "advanced_caption": "모델, 데이터, 샘플링, 필터를 직접 조정한다.",
+        "advanced_caption": "모델, 데이터, 샘플링, 필터를 직접 조정해요.",
         "advanced_enable": "세부 설정 직접 조정",
         "concept_header": "컨셉 입력",
-        "concept_examples": "예시로 채우기",
         "input_section_basics": "기본 정보",
         "input_section_style": "스타일/착용 맥락",
         "input_section_product": "제품 디테일",
@@ -177,55 +177,59 @@ UI_COPY: dict[str, dict[str, str]] = {
         "sex": "성별",
         "sampling_seed": "sampling-seed",
         "sampling_seed_help": (
-            "같은 숫자를 쓰면 같은 조건에서 같은 페르소나 샘플을 다시 뽑기 위한 재현용 값이야."
+            "같은 숫자를 쓰면 같은 조건에서 같은 페르소나 샘플을 다시 뽑기 위한 재현용 값이에요."
         ),
         "province": "지역",
-        "province_help": "최대 17개 시도/광역 단위를 선택할 수 있어. 여러 개면 OR로 적용돼.",
+        "province_help": "최대 17개 시도/광역 단위를 선택할 수 있어요. 여러 개면 OR로 적용돼요.",
         "occupation": "직업 키워드",
-        "occupation_help": "최대 15개 대표 키워드를 선택할 수 있어. 여러 개면 OR로 부분 검색돼.",
+        "occupation_help": (
+            "최대 15개 대표 키워드를 선택할 수 있어요. 여러 개면 OR로 부분 검색돼요."
+        ),
         "model_header": "모델",
-        "model_missing": "pricing_config.yaml에 모델이 없다.",
+        "model_missing": "pricing_config.yaml에 모델이 없어요.",
         "model": "모델",
         "api_key": "선택한 AI provider API KEY",
         "api_key_placeholder": "키를 붙여넣기",
-        "api_key_help": "LLM API 요청용 키야. 입력값은 화면에 표시하지 않아.",
+        "api_key_help": "LLM API 요청용 키예요. 입력값은 화면에 표시하지 않아요.",
         "hf_token": "HF TOKEN",
         "hf_token_placeholder": "토큰을 붙여넣기",
-        "hf_token_help": "Hugging Face 데이터 접근용 토큰이야. 공개 데이터셋은 보통 없어도 돼.",
+        "hf_token_help": "Hugging Face 데이터 접근용 토큰이에요. 공개 데이터셋은 보통 없어도 돼요.",
         "kosis_header": "KOSIS 통계",
         "kosis_api_key": "KOSIS API KEY",
         "kosis_api_key_placeholder": "선택 사항",
-        "kosis_api_key_help": "선택 사항. KOSIS API URL 갱신에만 사용하고 저장하지 않아.",
+        "kosis_api_key_help": "선택 사항이에요. KOSIS API URL 갱신에만 사용하고 저장하지 않아요.",
         "kosis_segment": "KOSIS 기준 계층",
-        "kosis_segment_help": "스냅샷에서 리포트와 프롬프트에 넣을 공식 통계 기준 계층을 고른다.",
+        "kosis_segment_help": "스냅샷에서 리포트와 프롬프트에 넣을 공식 통계 기준 계층을 골라요.",
         "kosis_refresh": "KOSIS API로 통계 갱신",
         "kosis_api_url": "KOSIS statisticsData URL",
         "kosis_api_url_placeholder": "https://kosis.kr/openapi/statisticsData.do?...",
         "kosis_api_url_help": (
-            "KOSIS URL 생성기로 만든 통계자료 API URL. 비워두면 내장 스냅샷을 사용한다."
+            "KOSIS URL 생성기로 만든 통계자료 API URL이에요. 비워두면 내장 스냅샷을 사용해요."
         ),
         "secrets_status_header": "API KEY / HF TOKEN 상태",
         "env_file_missing": ".env 파일 없음",
         "secret_present": "OK",
         "secret_missing": "MISSING",
-        "openai_key_help": "OpenAI 모델 실행용 API KEY 상태야. 값은 표시하지 않아.",
-        "anthropic_key_help": "Claude 모델 실행용 API KEY 상태야. 값은 표시하지 않아.",
-        "google_key_help": "Gemini 모델 실행용 API KEY 상태야. 값은 표시하지 않아.",
+        "openai_key_help": "OpenAI 모델 실행용 API KEY 상태예요. 값은 표시하지 않아요.",
+        "anthropic_key_help": "Claude 모델 실행용 API KEY 상태예요. 값은 표시하지 않아요.",
+        "google_key_help": "Gemini 모델 실행용 API KEY 상태예요. 값은 표시하지 않아요.",
         "provider_key_help": (
-            "OpenAI-compatible provider 실행용 API KEY 상태야. 값은 표시하지 않아."
+            "OpenAI-compatible provider 실행용 API KEY 상태예요. 값은 표시하지 않아요."
         ),
         "hf_status_help": (
-            "Hugging Face 데이터셋 접근용 TOKEN 상태야. 공개 데이터는 보통 없어도 돼."
+            "Hugging Face 데이터셋 접근용 TOKEN 상태예요. 공개 데이터는 보통 없어도 돼요."
         ),
-        "kosis_status_help": "KOSIS 통계자료 API 갱신용 KEY 상태야. 스냅샷만 쓸 때는 없어도 돼.",
+        "kosis_status_help": (
+            "KOSIS 통계자료 API 갱신용 KEY 상태예요. 스냅샷만 쓸 때는 없어도 돼요."
+        ),
         "price_context_header": "가격 맥락",
-        "price_context_caption": "가격 맥락 참고 지표이며 실제 구매력을 뜻하지 않는다.",
+        "price_context_caption": "가격 맥락 참고 지표이며 실제 구매력을 뜻하지 않아요.",
         "cost_header": "비용 / 시간 사전 추정",
         "need_concept": "컨셉을 먼저 입력해 주세요.",
         "new_calls": "신규 호출 예상",
         "estimated_cost": "예상 비용",
         "estimated_time": "예상 시간",
-        "cost_caption": "토큰과 비용은 참고 추정치다. 가격 미설정 모델은 비용을 계산하지 않는다.",
+        "cost_caption": "토큰과 비용은 참고 추정치예요. 가격 미설정 모델은 비용을 계산하지 않아요.",
         "debug_hash": "debug hash",
         "injection_warning": (
             "프롬프트 인젝션 의심 문구가 감지됐어요. 컨셉 문구를 다시 확인해 주세요."
@@ -244,9 +248,11 @@ UI_COPY: dict[str, dict[str, str]] = {
             "성공 결과는 본 실행에서 재사용해요. 패널 수만큼 비용이 발생할 수 있어요."
         ),
         "details_header": "자세히",
-        "details_summary": "가격 기준, 예상 비용, 재현용 값을 확인한다.",
+        "details_summary": "가격 기준, 예상 비용, 재현용 값을 확인해요.",
         "results_preview_header": "페르소나 의견 미리보기",
-        "results_preview_body": "대표 의견 5개만 먼저 보여줘. 전체 결과는 엑셀용 파일로 내려받아.",
+        "results_preview_body": (
+            "대표 의견 5개만 먼저 보여줘요. 전체 결과는 엑셀용 파일로 내려받을 수 있어요."
+        ),
         "excel_download": "엑셀용 CSV 다운로드",
         "results_loading": "합성 페르소나 의견을 모으는 중이에요",
         "start_pending_title": "작동 중이에요",
@@ -254,7 +260,7 @@ UI_COPY: dict[str, dict[str, str]] = {
             "API 연결과 첫 응답을 확인하고 있어요. 화면이 잠시 흐려져도 작업은 이어져요."
         ),
         "job_started": "작업 시작",
-        "persona_preview_empty": "아직 보여줄 성공 결과가 없다.",
+        "persona_preview_empty": "아직 보여줄 성공 결과가 없어요.",
         "persona_card_reasons": "좋게 본 점",
         "persona_card_concerns": "망설인 점",
         "persona_card_note": "한줄 의견",
@@ -268,10 +274,10 @@ UI_COPY: dict[str, dict[str, str]] = {
             "cached: 같은 컨셉과 모델로 이미 저장된 결과를 다시 쓴 수예요.\n\n"
             "최종 분포와 요약에는 유효 JSON 결과만 들어가요."
         ),
-        "job_missing": "현재 작업 정보를 찾을 수 없다.",
+        "job_missing": "현재 작업 정보를 찾을 수 없어요.",
         "refresh": "Refresh",
         "cancel": "Cancel",
-        "no_results": "저장된 결과가 없다.",
+        "no_results": "저장된 결과가 없어요.",
         "report_header": "리포트",
         "included": "분포 포함",
         "parse_failed": "파싱 실패",
@@ -287,7 +293,7 @@ UI_COPY: dict[str, dict[str, str]] = {
         "report_placeholder_hint": "ENTER 실행 후 완료되면 자동으로 이 창으로 이동해요.",
         "report_footer_disclaimer": (
             "이 결과는 합성 페르소나 기반의 pre-screening 참고용이에요. "
-            "모델별 성능에 따라 문장 품질과 JSON 안정성이 달라질 수 있다. "
+            "모델별 성능에 따라 문장 품질과 JSON 안정성에 차이가 생길 수 있어요. "
             "실제 조사나 사업 판단을 대체하지 않아요."
         ),
     },
@@ -324,7 +330,7 @@ UI_COPY: dict[str, dict[str, str]] = {
             "Show a fashion concept to an AI persona panel and quickly check reaction flow "
             "before expert surveys or main research."
         ),
-        "hero_eyebrow": "Local public beta · v0.5.3",
+        "hero_eyebrow": "Local public beta · v0.6.0",
         "hero_pill_1": "Local run",
         "hero_pill_2": "No raw concept storage",
         "hero_pill_3": "Report export",
@@ -431,7 +437,6 @@ UI_COPY: dict[str, dict[str, str]] = {
         "advanced_caption": "Directly control model, data source, sampling, and filters.",
         "advanced_enable": "Customize advanced settings",
         "concept_header": "Concept",
-        "concept_examples": "Fill with example",
         "input_section_basics": "Basics",
         "input_section_style": "Style and Wearing Context",
         "input_section_product": "Product Details",

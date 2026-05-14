@@ -895,7 +895,7 @@ def test_app_source_uses_readable_comfort_tokens_with_targeted_hero_gradient() -
     assert "docs/docs.html" in source
     assert "📄" in source
     assert "woooya129-ai/k-fashion-persona" in source
-    assert "로컬 퍼블릭 베타 · v0.5.3" in source
+    assert "로컬 퍼블릭 베타 · v0.6.0" in source
     assert "설명 ⇄ 도구" not in source
     assert "st.segmented_control" in source
 
@@ -1041,13 +1041,13 @@ def test_product_audience_maps_to_persona_sex_filter() -> None:
 
 def test_product_audience_options_are_fixed_three_way_choice() -> None:
     assert rendering._product_audience_options("KR") == [  # noqa: SLF001
-        "여성복",
-        "남성복",
+        "여성",
+        "남성",
         "유니섹스",
     ]
     assert rendering._product_audience_options("EN") == [  # noqa: SLF001
-        "Womenswear",
-        "Menswear",
+        "Women",
+        "Men",
         "Unisex",
     ]
 
@@ -1201,7 +1201,10 @@ def test_apptest_mock_end_to_end_worker_report_ui(
     at = AppTest.from_string(APP_MODULE_SCRIPT).run(timeout=10)
     assert len(at.exception) == 0
 
-    at.segmented_control[1].set_value("유니섹스")
+    _button_by_label(at, "유니섹스").click()
+    at = at.run(timeout=10)
+    assert len(at.exception) == 0
+
     _text_input_by_label(at, "프로젝트명").set_value("e2e-project")
     _text_input_by_label(at, "제품 카테고리").set_value("니트웨어")
     at.text_area[0].set_value("조용한 고급감의 미니멀 니트")

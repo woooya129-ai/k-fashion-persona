@@ -359,7 +359,7 @@ def start_screening(
     hf_token = str(model.get("hf_token", "")).strip() or None
     loaded, sampled = _load_and_sample(dataset, sample, hf_token=hf_token)
     if not sampled.rows:
-        st.error("필터 조건에 맞는 페르소나가 0명이다.")
+        st.error("필터 조건에 맞는 페르소나가 0명이에요.")
         return
 
     prompt_template_md = PROMPT_TEMPLATE_PATH.read_text(encoding="utf-8")

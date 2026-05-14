@@ -1334,7 +1334,7 @@ button[data-testid="stBaseButton-header"][kind="header"],
   box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.22);
 }}
 
-.st-key-kfps_concept_presets {{
+.st-key-kfps_product_audience_buttons {{
   margin: 0 0 14px;
   padding: 10px;
   border: 1px solid var(--kfps-hairline);
@@ -1342,11 +1342,11 @@ button[data-testid="stBaseButton-header"][kind="header"],
   background: color-mix(in srgb, var(--kfps-surface) 92%, var(--kfps-primary) 8%);
 }}
 
-.st-key-kfps_concept_presets [data-testid="stHorizontalBlock"] {{
+.st-key-kfps_product_audience_buttons [data-testid="stHorizontalBlock"] {{
   gap: 8px !important;
 }}
 
-.st-key-kfps_concept_presets button {{
+.st-key-kfps_product_audience_buttons button {{
   min-height: 40px !important;
   border-radius: 10px !important;
   white-space: normal !important;

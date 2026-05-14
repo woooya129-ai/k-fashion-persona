@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.6.0 - 2026-05-15
+
+- 컨셉 입력 아래 제품 성별 선택을 `여성 / 남성 / 유니섹스` 3버튼으로 배치.
+- 제품 성별 버튼을 내부 페르소나 필터 `F / M / UNI` 흐름에 연결.
+- 실행 시작 시 `작동 중이에요` 안내를 표시하고, 작업 시작 후 안내가 사라지도록 정리.
+- 진행 상태 도움말에 `success`, `failed`, `cached` 기준을 추가.
+- 리포트 기본 탭을 `미리보기`로 변경.
+- 한국어 안내 문구를 존댓말 `-요` 톤으로 정리.
+- 프로젝트 버전 표기를 `v0.6.0`으로 통일.
+
 ## 0.5.3 - 2026-05-10 (Attribution and rights positioning)
 
 - Added `CITATION.cff` to make project attribution explicit.

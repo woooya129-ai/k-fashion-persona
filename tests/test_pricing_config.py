@@ -175,6 +175,9 @@ class TestProductionConfigShape:
         assert "claude-opus-4-7" in config
         assert "claude-sonnet-4-6" in config
         assert "claude-haiku-4-5" in config
+        assert "gemini-3.1-flash-lite" in config
+        assert "gemini-3.1-pro-preview" in config
+        assert "gemini-3-flash-preview" in config
         assert "gemini-2.5-flash-lite" in config
         assert "groq-qwen-qwq" in config
         assert "deepseek-chat" in config

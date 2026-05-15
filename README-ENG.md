@@ -2,7 +2,7 @@
 
 ## Check K-fashion Concepts With AI Personas First
 
-[![Version](https://img.shields.io/badge/version-0.6.0-0F766E)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.6.1-0F766E)](pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
 [![HF Space](https://img.shields.io/badge/HF%20Space-k--fashion--persona-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/spaces/w00ya/k-fashion-persona)

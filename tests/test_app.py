@@ -895,7 +895,7 @@ def test_app_source_uses_readable_comfort_tokens_with_targeted_hero_gradient() -
     assert "docs/docs.html" in source
     assert "📄" in source
     assert "woooya129-ai/k-fashion-persona" in source
-    assert "로컬 퍼블릭 베타 · v0.6.0" in source
+    assert "로컬 퍼블릭 베타 · v0.6.1" in source
     assert "설명 ⇄ 도구" not in source
     assert "st.segmented_control" in source
 
@@ -977,6 +977,42 @@ def test_load_and_sample_hf_unfiltered_uses_seeded_reservoir_sampling(
     assert seed_42_a == seed_42_b
     assert seed_42_a != seed_999
     assert seed_42_a != ["stream-0", "stream-1", "stream-2"]
+
+
+def test_load_and_sample_hf_filtered_scans_until_audience_count_is_filled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    female = next(row for row in ALL_MOCK_PERSONAS if row["sex"] == "F")
+    male = next(row for row in ALL_MOCK_PERSONAS if row["sex"] == "M")
+
+    def rows():
+        for index in range(app.MAX_SAMPLE_SIZE):
+            yield {**male, "uuid": f"stream-male-{index}", "age": 30 + (index % 10)}
+        for index in range(5):
+            yield {**female, "uuid": f"stream-female-{index}", "age": 24 + index}
+
+    def fake_load_huggingface_dataset(**_kwargs):
+        return LoadedDataset("huggingface:test", "fixture", -1), rows()
+
+    monkeypatch.setattr(app, "load_huggingface_dataset", fake_load_huggingface_dataset)
+
+    _loaded, sampled = app._load_and_sample(  # noqa: SLF001 - app orchestration helper.
+        {
+            "source": "huggingface",
+            "dataset_id": app.DEFAULT_HF_DATASET_ID,
+            "split": app.DEFAULT_SPLIT,
+            "revision": None,
+        },
+        {
+            "sample_size": 5,
+            "sampling_seed": 42,
+            "filter": app.PersonaFilter(sex=frozenset({"F"})),
+        },
+    )
+
+    assert sampled.matched_count_before_sample == 5
+    assert sampled.sample_size == 5
+    assert {persona.sex for persona in sampled.rows} == {"F"}
 
 
 def test_load_and_sample_hf_passes_explicit_token(monkeypatch: pytest.MonkeyPatch) -> None:

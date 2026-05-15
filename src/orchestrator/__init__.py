@@ -32,7 +32,12 @@ from src.economic_context import KOSTAT_2025_ANNUAL_CLOTHING_KRW
 from src.job_manager import RunMeta
 from src.llm_client import LLMClientError, LLMRequest, Provider, call_with_retry
 from src.llm_client import parse_evaluation_result as parse_llm_evaluation_result
-from src.persona_filter import apply_filter, sample_iterable_to_result, sample_to_result
+from src.persona_filter import (
+    apply_filter,
+    has_active_filter,
+    sample_iterable_to_result,
+    sample_to_result,
+)
 from src.persona_normalizer import Persona
 from src.prompt_builder import PROMPT_VERSION, SCHEMA_VERSION, build_prompt
 from src.report_writer import render_csv, render_markdown
@@ -728,11 +733,12 @@ def _load_and_sample(
             revision=dataset["revision"],
             token=hf_token,
         )
-        max_scan_rows = min(
-            max(int(sample.get("max_scan_rows") or MAX_SAMPLE_SIZE), sample_size),
-            MAX_SAMPLE_SIZE,
-        )
-        rows = islice(rows, max_scan_rows)
+        explicit_max_scan_rows = sample.get("max_scan_rows")
+        if explicit_max_scan_rows is not None:
+            max_scan_rows = max(int(explicit_max_scan_rows), sample_size)
+            rows = islice(rows, max_scan_rows)
+        elif not has_active_filter(sample["filter"]):
+            rows = islice(rows, MAX_SAMPLE_SIZE)
 
         personas_iter = normalize_rows_to_personas(rows)
 

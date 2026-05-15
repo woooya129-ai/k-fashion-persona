@@ -1054,7 +1054,6 @@ def render_concept_inputs(lang: str) -> dict[str, Any]:
         render_enter_card(lang)
 
         enter_button_placeholder = st.empty()
-        cost_confirm_placeholder = st.empty()
 
     raw_fields: dict[str, Any] = {
         "category": category,
@@ -1086,7 +1085,6 @@ def render_concept_inputs(lang: str) -> dict[str, Any]:
         "canonical_product_card_text": canonical_text,
         "concept_text": canonical_text,
         "_enter_button_placeholder": enter_button_placeholder,
-        "_cost_confirm_placeholder": cost_confirm_placeholder,
     }
 
 

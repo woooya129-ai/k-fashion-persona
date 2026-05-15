@@ -613,7 +613,6 @@ def main() -> None:
     )
     concept = render_concept_inputs(lang)
     enter_button_placeholder = concept.pop("_enter_button_placeholder")
-    cost_confirm_placeholder = concept.pop("_cost_confirm_placeholder")
     price_context = make_price_context(concept["product_price_krw"], kosis)
     cost_state = make_cost_state(concept, sample, model)
     hashes = make_hashes(concept, price_context)
@@ -628,12 +627,11 @@ def main() -> None:
         model["api_key"],
         getattr(model.get("pricing"), "api_key_env", None),
     )
-    with cost_confirm_placeholder.container():
-        confirmed = st.checkbox(
-            ui_text(lang, "cost_confirm"),
-            value=False,
-            key="kfps_cost_confirm",
-        )
+    confirmed = st.checkbox(
+        ui_text(lang, "cost_confirm"),
+        value=False,
+        key="kfps_cost_confirm",
+    )
     if cost_state.get("ready") and not confirmed:
         render_inline_note(ui_text(lang, "cost_confirm_toast"))
     injection_confirmed = True

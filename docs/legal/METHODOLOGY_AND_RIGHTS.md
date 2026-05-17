@@ -32,7 +32,7 @@ not to overclaim ownership of an abstract idea.
 - Documentation, report wording, prompt files, UI copy, and structured workflow
   descriptions are project materials that should be attributed when reused.
 - The project name, official repository, official website, and branding are
-  separate from the source-code license. See `docs/BRANDING_POLICY.md`.
+  separate from the source-code license. See `docs/legal/BRANDING_POLICY.md`.
 - `CITATION.cff` gives a stable citation format for academic, portfolio, and
   business references.
 - Commercial or closed-source adoption can be handled through a separate

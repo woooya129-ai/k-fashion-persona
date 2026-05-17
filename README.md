@@ -27,7 +27,7 @@ tags:
 [![HF Space](https://img.shields.io/badge/HF%20Space-k--fashion--persona-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/spaces/w00ya/k-fashion-persona)
 [![Live App](https://img.shields.io/badge/Live%20App-hf.space-0F766E)](https://w00ya-k-fashion-persona.hf.space)
 [![Docs](https://img.shields.io/badge/Docs-INSTALL-2563EB?logo=readthedocs&logoColor=white)](docs/INSTALL.md)
-[![English README](https://img.shields.io/badge/README-English-2563EB)](README-ENG.md)
+[![English README](https://img.shields.io/badge/README-English-2563EB)](docs/README-ENG.md)
 [![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-0F766E.svg)](LICENSE)
 
 ![k-fashion-persona overview](docs/assets/k-fashion-persona-images.jpeg)
@@ -224,9 +224,9 @@ uv run python -m src.agent_bridge import --pack outputs\agent-pack-demo --result
 - 기본 페르소나 데이터셋: NVIDIA Nemotron-Personas-Korea
 - 데이터셋 라이선스: CC BY 4.0 attribution
 - 통계 컨텍스트: KOSTAT / KOSIS 공개 통계
-- 전체 고지: [LICENSE](LICENSE), [NOTICE](NOTICE), [THIRD_PARTY_NOTICES](docs/THIRD_PARTY_NOTICES.md)
+- 전체 고지: [LICENSE](LICENSE), [NOTICE](docs/legal/NOTICE.md), [THIRD_PARTY_NOTICES](docs/legal/THIRD_PARTY_NOTICES.md)
 - 인용 형식: [CITATION.cff](CITATION.cff)
-- 방법론: [docs/METHODOLOGY_AND_RIGHTS.md](docs/METHODOLOGY_AND_RIGHTS.md)
+- 방법론: [docs/legal/METHODOLOGY_AND_RIGHTS.md](docs/legal/METHODOLOGY_AND_RIGHTS.md)
 
 상업적 폐쇄 도입, 사내 SaaS, 재배포 제품, AGPL 조건 적용이 어려운 사용은 별도 상용 라이선스 또는 듀얼 라이선스 협의 대상입니다.
 

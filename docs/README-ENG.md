@@ -2,16 +2,16 @@
 
 ## Check K-fashion Concepts With AI Personas First
 
-[![Version](https://img.shields.io/badge/version-0.6.2-0F766E)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.6.2-0F766E)](../pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
 [![HF Space](https://img.shields.io/badge/HF%20Space-k--fashion--persona-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/spaces/w00ya/k-fashion-persona)
 [![Live App](https://img.shields.io/badge/Live%20App-hf.space-0F766E)](https://w00ya-k-fashion-persona.hf.space)
-[![Docs](https://img.shields.io/badge/Docs-INSTALL--ENG-2563EB?logo=readthedocs&logoColor=white)](docs/INSTALL-ENG.md)
-[![Korean README](https://img.shields.io/badge/README-Korean-2563EB)](README.md)
-[![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-0F766E.svg)](LICENSE)
+[![Docs](https://img.shields.io/badge/Docs-INSTALL--ENG-2563EB?logo=readthedocs&logoColor=white)](INSTALL-ENG.md)
+[![Korean README](https://img.shields.io/badge/README-Korean-2563EB)](../README.md)
+[![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-0F766E.svg)](../LICENSE)
 
-![k-fashion-persona overview](docs/assets/k-fashion-persona-images.jpeg)
+![k-fashion-persona overview](assets/k-fashion-persona-images.jpeg)
 
 `k-fashion-persona` is a local-first Streamlit tool for checking Korean fashion product concepts before launch or formal research. Enter a product card and persona filters, then get a Markdown/CSV report with interest reasons, hesitation points, price burden, and fashion risk signals.
 
@@ -28,9 +28,9 @@ It is not a real purchase-rate, sales, or market-share prediction service. Use i
 | Presets | FAST 50, BALANCE 100, HIGH 300, MAX 1000 personas |
 | Advanced | User-entered sample sizes are allowed |
 
-![main screen](docs/assets/kfashionpersona-screenshot-03.webp)
+![main screen](assets/kfashionpersona-screenshot-03.webp)
 
-![result screen](docs/assets/kfashionpersona-screenshot-04.webp)
+![result screen](assets/kfashionpersona-screenshot-04.webp)
 
 ## Runtime Model
 
@@ -59,7 +59,7 @@ cd k-fashion-persona
 uv sync --all-extras --dev
 ```
 
-Full setup guide: [docs/INSTALL-ENG.md](docs/INSTALL-ENG.md)
+Full setup guide: [docs/INSTALL-ENG.md](INSTALL-ENG.md)
 
 ## Quick Start
 
@@ -197,9 +197,9 @@ Inappropriate use:
 - Persona dataset: NVIDIA Nemotron-Personas-Korea
 - Dataset license: CC BY 4.0 attribution applies
 - Statistics context: KOSTAT / KOSIS public statistics
-- Full notices: [LICENSE](LICENSE), [NOTICE](NOTICE), [THIRD_PARTY_NOTICES](docs/THIRD_PARTY_NOTICES.md)
-- Citation format: [CITATION.cff](CITATION.cff)
-- Methodology: [docs/METHODOLOGY_AND_RIGHTS.md](docs/METHODOLOGY_AND_RIGHTS.md)
+- Full notices: [LICENSE](../LICENSE), [NOTICE](legal/NOTICE.md), [THIRD_PARTY_NOTICES](legal/THIRD_PARTY_NOTICES.md)
+- Citation format: [CITATION.cff](../CITATION.cff)
+- Methodology: [docs/legal/METHODOLOGY_AND_RIGHTS.md](legal/METHODOLOGY_AND_RIGHTS.md)
 
 Closed-source commercial use, internal SaaS, redistributed products, or use cases that cannot adopt AGPL terms may require a separate written commercial license or dual-license arrangement.
 

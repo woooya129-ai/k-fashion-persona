@@ -8,7 +8,7 @@ pytestmark = pytest.mark.no_network
 
 DOC_PATHS = (
     Path("README.md"),
-    Path("README-ENG.md"),
+    Path("docs/README-ENG.md"),
     Path("docs/INSTALL.md"),
     Path("docs/INSTALL-ENG.md"),
 )
@@ -36,7 +36,7 @@ def test_docs_do_not_limit_api_keys_to_three_providers():
 
 def test_docs_state_local_runtime_and_external_transfer_scope():
     readme_kr = _read("README.md")
-    readme_en = _read("README-ENG.md")
+    readme_en = _read("docs/README-ENG.md")
     install_kr = _read("docs/INSTALL.md")
     install_en = _read("docs/INSTALL-ENG.md")
 
@@ -122,7 +122,7 @@ def test_hf_space_dockerfile_runs_streamlit_on_declared_port():
 def test_project_version_matches_pyproject():
     pyproject = tomllib.loads(_read("pyproject.toml"))
     readme = _read("README.md")
-    readme_en = _read("README-ENG.md")
+    readme_en = _read("docs/README-ENG.md")
     version = pyproject["project"]["version"]
 
     assert f"version-{version}" in readme

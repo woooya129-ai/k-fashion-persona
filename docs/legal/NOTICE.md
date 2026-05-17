@@ -35,9 +35,9 @@ official website, or an endorsed distribution unless written permission is
 granted by the project owner.
 
 Third-party datasets, libraries, and materials remain under their respective
-licenses. See docs/THIRD_PARTY_NOTICES.md.
+licenses. See docs/legal/THIRD_PARTY_NOTICES.md.
 
 For citation, attribution, methodology, and rights-positioning guidance, see
-CITATION.cff and docs/METHODOLOGY_AND_RIGHTS.md.
+CITATION.cff and docs/legal/METHODOLOGY_AND_RIGHTS.md.
 
 No warranty is provided. See LICENSE for details.

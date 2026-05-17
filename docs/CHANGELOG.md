@@ -19,7 +19,7 @@
 ## 0.5.3 - 2026-05-10 (Attribution and rights positioning)
 
 - Added `CITATION.cff` to make project attribution explicit.
-- Added `docs/METHODOLOGY_AND_RIGHTS.md` to document the pre-screening workflow,
+- Added `docs/legal/METHODOLOGY_AND_RIGHTS.md` to document the pre-screening workflow,
   attribution expectations, commercial adoption boundary, and IP positioning.
 - Clarified README, commercial-license, and NOTICE references for citation,
   methodology, branding, and commercial adoption.
@@ -38,7 +38,7 @@
 
 - Project license remains GNU AGPL-3.0-only (unchanged for OSS use).
 - Added: Commercial license option for closed-source/SaaS adoption.
-- See `LICENSE-COMMERCIAL.md` and contact woooya129@gmail.com.
+- See `docs/legal/LICENSE-COMMERCIAL.md` and contact woooya129@gmail.com.
 - Pre-0.5.1 versions are AGPL-3.0-only and remain valid under that license
   for those who already received them.
 

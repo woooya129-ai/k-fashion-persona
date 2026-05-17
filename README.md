@@ -1,6 +1,6 @@
 ---
 title: K-Fashion Persona
-emoji: 🧥
+emoji:
 colorFrom: green
 colorTo: blue
 sdk: docker
@@ -17,16 +17,34 @@ tags:
   - market-research
 ---
 
-# k-fashion-persona
+<table>
+  <tr>
+    <td align="left" valign="top" width="120">
+      <img src="docs/assets/k-fashion-persona-icon.svg" alt="k-fashion-persona icon" width="64" height="64" />
+      <br />
+      <strong>k</strong><br />
+      <strong>fashion</strong><br />
+      <strong>persona</strong>
+    </td>
+    <td align="left" valign="top">
+      <table>
+        <tr><th align="left">title</th><td>K-Fashion Persona</td></tr>
+        <tr><th align="left">emoji</th><td></td></tr>
+        <tr><th align="left">colorFrom</th><td>green</td></tr>
+        <tr><th align="left">colorTo</th><td>blue</td></tr>
+        <tr><th align="left">sdk</th><td>docker</td></tr>
+        <tr><th align="left">app_port</th><td>7860</td></tr>
+        <tr><th align="left">pinned</th><td>false</td></tr>
+        <tr><th align="left">license</th><td>agpl-3.0</td></tr>
+        <tr><th align="left">short_description</th><td>AI persona screening for Korean fashion concepts.</td></tr>
+        <tr><th align="left">datasets</th><td>nvidia/Nemotron-Personas-Korea</td></tr>
+        <tr><th align="left">tags</th><td>streamlit<br />fashion<br />personas<br />market-research</td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
 
-<div align="left">
-  <img src="docs/assets/k-fashion-persona-icon.svg" alt="k-fashion-persona icon" width="64" height="64" />
-  <div align="left">
-    <strong>k</strong><br />
-    <strong>fashion</strong><br />
-    <strong>persona</strong>
-  </div>
-</div>
+# k-fashion-persona
 
 ## K-fashion 컨셉을 AI 페르소나로 먼저 점검
 

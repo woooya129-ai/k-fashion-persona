@@ -7,108 +7,41 @@
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
 [![HF Space](https://img.shields.io/badge/HF%20Space-k--fashion--persona-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/spaces/w00ya/k-fashion-persona)
 [![Live App](https://img.shields.io/badge/Live%20App-hf.space-0F766E)](https://w00ya-k-fashion-persona.hf.space)
-[![Twin Project](https://img.shields.io/badge/GitHub-us--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/us-fashion-persona)
 [![Docs](https://img.shields.io/badge/Docs-INSTALL--ENG-2563EB?logo=readthedocs&logoColor=white)](docs/INSTALL-ENG.md)
 [![Korean README](https://img.shields.io/badge/README-Korean-2563EB)](README.md)
 [![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-0F766E.svg)](LICENSE)
-[![Citation](https://img.shields.io/badge/citation-CFF-2563EB)](CITATION.cff)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Woody%20Kim-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/woody-kim-ab2741403/)
 
-k-fashion-persona is a local-first Streamlit tool for checking Korean fashion product concepts with synthetic AI personas before launch or formal research.
+![k-fashion-persona overview](docs/assets/k-fashion-persona-images.jpeg)
 
-The twin project for US fashion concepts is [us-fashion-persona](https://github.com/woooya129-ai/us-fashion-persona).
+`k-fashion-persona` is a local-first Streamlit tool for checking Korean fashion product concepts before launch or formal research. Enter a product card and persona filters, then get a Markdown/CSV report with interest reasons, hesitation points, price burden, and fashion risk signals.
 
-The public HF Space is deployed with `KFPS_REQUIRE_USER_PROVIDER_KEY=1`. It does not use shared owner LLM provider API keys. Visitors must enter their own provider API key in the UI for their session.
+It is not a real purchase-rate, sales, or market-share prediction service. Use it to narrow hypotheses before surveys, interviews, and sales-data analysis.
 
-## HF Space License Notice
+## At A Glance
 
-- The code in this HF Space is licensed under **GNU AGPL-3.0-only**.
-- `Protected` HF Space visibility does not remove or weaken the license. It only limits source display and cloning on Hugging Face Hub.
-- Access to the running app does not grant source-code transfer, exclusive rights, or commercial relicensing permission.
-- If you modify this code and provide it as a network service, review the source-offer obligations under AGPL-3.0-only.
-- The source repository is [woooya129-ai/k-fashion-persona](https://github.com/woooya129-ai/k-fashion-persona).
-- The running HF Space is [w00ya/k-fashion-persona](https://huggingface.co/spaces/w00ya/k-fashion-persona).
-- The default persona dataset, NVIDIA Nemotron-Personas-Korea, is subject to **CC BY 4.0 attribution**.
-- The authoritative license and notices are [LICENSE](LICENSE), [NOTICE](NOTICE), and [THIRD_PARTY_NOTICES](docs/THIRD_PARTY_NOTICES.md).
+| Item | Details |
+|---|---|
+| Input | Category, price, fit, material, color, season, wearing context, style tone, target hypothesis, product description |
+| Panel | Synthetic personas from NVIDIA Nemotron-Personas-Korea |
+| Filters | Age, sex, province, occupation, seed, sample size |
+| Output | Reaction distribution, interest score, reasons, concerns, price burden, representative card, Markdown/CSV |
+| Presets | FAST 50, BALANCE 100, HIGH 300, MAX 1000 personas |
+| Advanced | User-entered sample sizes are allowed |
 
-Enter a product card with category, price, fit, material, color, season, wearing context, style tone, brand message, and target hypothesis. The app scans interest reasons, hesitation points, price burden, and fashion risk signals.
+![main screen](docs/assets/kfashionpersona-screenshot-03.webp)
 
-This is not a real consumer prediction, purchase-rate prediction, sales prediction, or market-share prediction service.
+![result screen](docs/assets/kfashionpersona-screenshot-04.webp)
 
-```mermaid
-flowchart LR
-  A["Synthetic personas"] --> C["Persona panel"]
-  B["Product card"] --> C
-  C --> D["Taste check"]
-  D --> E["Early signals"]
-  E --> F["Next step"]
-```
+## Runtime Model
 
-![k-fashion-persona main screen](docs/assets/kfashionpersona-screenshot-03.webp)
+- UI, dataset filtering, sampling, prompt construction, SQLite cache, and Markdown/CSV report generation run locally on the user's machine.
+- Streamlit API mode sends prompts to the selected provider API server.
+- Agent Pack mode exports prompt files and lets your Codex or Claude Code CLI evaluate them.
+- The app does not save API keys. UI-entered keys are used only for the current Streamlit session.
+- LLM API endpoints are limited to `api_base_url` hosts in `config/pricing_config.yaml`. Editing that file changes the allowed host set, so review it before shared deployment.
+- The public HF Space is deployed with `KFPS_REQUIRE_USER_PROVIDER_KEY=1`. It does not use shared owner LLM provider API keys. Visitors must enter their own provider key.
 
-![k-fashion-persona result screen](docs/assets/kfashionpersona-screenshot-04.webp)
-
-## What It Does
-
-- Builds a synthetic persona panel with Korean context
-- Accepts a product-card style fashion concept
-- Filters by age, sex, province, and occupation
-- Uses seed-based sampling
-- Lets you choose LLM provider/model
-- Accepts the selected AI provider API key in the UI
-- Accepts a Hugging Face token in the UI or external `.env`
-- Uses a committed KOSIS public-statistics snapshot
-- Optionally refreshes statistics through a KOSIS `statisticsData` API URL
-- Exports Markdown and CSV reports
-
-## Data And Statistics
-
-The default persona dataset is [NVIDIA Nemotron-Personas-Korea](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea). It is a synthetic persona dataset, not real-person data.
-
-According to the official Hugging Face dataset page, the dataset contains 1M records, 7M persona descriptions, 26 fields, and about 1.98GB of Parquet data. The app's default mode uses Hugging Face `datasets` streaming, so it does not load the full dataset into RAM at once. Filtering and reservoir sampling run locally.
-
-Income and asset values are not inferred as individual persona attributes from the NVIDIA dataset. The report context for income, assets, and household clothing-footwear spending comes from Statistics Korea (KOSTAT) / KOSIS public statistics stored in `data/public/kosis_household_context.csv`.
-
-If you enter a KOSIS API key and a `statisticsData` URL, the run attempts to use that API response first. If refresh fails or no supported metrics are found, it falls back to the committed public-statistics snapshot. For security, API refresh accepts only the `https://kosis.kr/openapi/statisticsData.do` path.
-
-These are household-level aggregate statistics. They do not represent a synthetic persona's real income, assets, or purchasing power.
-
-## Prompt Versions And Optional Assets
-
-The default prompt is `prompts/concept_eval_ko_v0_3.md`. `concept_eval_ko_v0_2` is kept for existing cache and regression-test compatibility. Both prompt versions use the `eval_v0_1` result schema.
-
-Optional first-screen background assets can be placed at `design/hero-skyblue-fabric.png` and `design/direction-bg.png`. If they are missing, the app falls back to built-in backgrounds and logs that once.
-
-## Local Runtime And Recommended Specs
-
-The app UI, dataset filtering, sampling, prompt construction, SQLite cache, and Markdown/CSV report generation run on your local machine. The first use of the default Hugging Face dataset reads data from Hugging Face Hub. Streamlit LLM evaluation sends prompts to the provider API server you selected. Agent Pack mode exports prompt files and lets your Codex or Claude Code CLI evaluate them. KOSIS API requests are made only when API refresh is enabled.
-
-The app does not save API keys. UI-entered keys are used only for the current Streamlit session. Repeated local runs can read keys from an environment file outside the repository or from OS environment variables.
-
-LLM API endpoints are limited to `api_base_url` hosts registered in `config/pricing_config.yaml`. Editing that YAML changes the allowed host set, so treat config changes as code-reviewed changes for shared or published builds.
-
-At run start, the app sends one preflight request before creating the job to verify JSON parsing and schema validation. That call can incur cost on the user's provider account, but a successful result is cached and reused as the first result in the same run.
-
-The current version does not run a local LLM or local Vision model, so a graphics card is not required.
-
-| Item | Minimum | Recommended |
-|---|---:|---:|
-| CPU | 2+ cores | 4+ cores |
-| RAM | 8GB | 16GB+ |
-| Disk space | 5GB+ free | 10-20GB+ free |
-| GPU | Not required | Not required |
-| Network | Required for HF dataset loading and LLM API calls | Stable broadband recommended |
-
-Notes:
-
-- The default HF mode streams the dataset and does not load the full 1.98GB into RAM.
-- The default HF mode scans up to 3000 rows sequentially per run to fill the matching panel.
-- Local CSV/Parquet mode uses pandas and can use more RAM. If you plan to read a full 2GB-class Parquet/CSV file locally, 16-32GB RAM is recommended.
-- The default presets are FAST 50, BALANCE 100, HIGH 300, and MAX 1000 personas. Advanced accepts user-entered sample sizes without a hard UI limit.
-- Large `MAX` or Advanced runs usually increase LLM API cost and runtime before RAM becomes the main bottleneck.
-- If a future mode runs local LLM/Vision models directly, GPU requirements will be separate. The current public version does not use a GPU.
-
-## Quick Start
+## Installation
 
 Requirements:
 
@@ -117,12 +50,20 @@ Requirements:
 - `uv`
 - An API key for your chosen LLM provider or a signed-in Codex/Claude Code CLI
 - Hugging Face token if needed
-- Optional KOSIS API key
+
+Install:
 
 ```bash
 git clone https://github.com/woooya129-ai/k-fashion-persona.git
 cd k-fashion-persona
 uv sync --all-extras --dev
+```
+
+Full setup guide: [docs/INSTALL-ENG.md](docs/INSTALL-ENG.md)
+
+## Quick Start
+
+```bash
 uv run streamlit run src/app.py
 ```
 
@@ -132,35 +73,17 @@ Open:
 http://localhost:8501
 ```
 
-To make the local Docs button work, run this in another terminal:
+## Standard Use
 
-```bash
-uv run python -m http.server 8510
-```
+1. Run the Streamlit app.
+2. Choose a provider and model.
+3. Enter the provider API key.
+4. Fill in the product card.
+5. Adjust sample size, seed, and persona filters.
+6. Check estimated cost and time.
+7. Press `ENTER`, then download Markdown or CSV.
 
-For the full setup guide, read [docs/INSTALL-ENG.md](docs/INSTALL-ENG.md).
-
-## API Keys
-
-The easiest path is to paste keys into the password fields in the Streamlit UI. The app does not show the raw key value and does not save it to the repository.
-
-For repeated local runs, place a local environment file outside the repository.
-
-### macOS / Linux
-
-```bash
-mkdir -p ~/secrets/k-fashion
-cp .env.example ~/secrets/k-fashion/.env
-```
-
-### Windows PowerShell
-
-```powershell
-New-Item -ItemType Directory -Force "$HOME\secrets\k-fashion"
-Copy-Item .env.example "$HOME\secrets\k-fashion\.env"
-```
-
-Environment file example:
+For repeated local runs, keep keys in an environment file outside the repository or in OS environment variables. Do not place or commit a real `.env` file in the repository root.
 
 ```env
 OPENAI_API_KEY=
@@ -174,34 +97,23 @@ KOSIS_API_KEY=
 KOSIS_STATISTICS_DATA_URL=
 ```
 
-`GOOGLE_API_KEY` is for the Gemini API key from Google AI Studio, not Vertex AI.
-OpenAI-compatible providers such as Groq, DeepSeek, and Qwen use the environment variable named by `api_key_env` in `pricing_config.yaml`.
-
-Do not place or commit a real `.env` file in the repository root.
-
 ## Codex / Claude Code Subscription Mode
 
-API-key providers remain supported. If you use a Codex or Claude Code subscription, use `Agent Pack` mode instead of treating those tools as direct in-app API providers. The app exports one prompt file per persona, your logged-in CLI evaluates them, and the importer converts the JSON results back into the normal Markdown and CSV report.
+Codex and Claude Code subscription users can use `Agent Pack` mode without turning those tools into direct in-app API providers. The flow is offline: `export -> CLI run -> import`.
 
-This mode does not store LLM credentials. CLI login and usage limits are handled by Codex or Claude Code. A 50, 100, 300, or 1000 persona run creates the same number of CLI calls, so start with `--sample-size 5` or `--sample-size 10` before a large run.
-
-Install and sign in to Codex CLI:
+Codex CLI:
 
 ```powershell
 npm install -g @openai/codex
 codex
 ```
 
-After running `codex`, sign in with your ChatGPT account to use Codex through eligible Plus, Pro, Business, Edu, or Enterprise plans. See the [OpenAI Codex CLI docs](https://developers.openai.com/codex/cli) and the [openai/codex repository](https://github.com/openai/codex).
-
-Install and sign in to Claude Code:
+Claude Code:
 
 ```powershell
 irm https://claude.ai/install.ps1 | iex
 claude
 ```
-
-Claude Code requires a Pro, Max, Team, Enterprise, or Console account, not the free Claude plan. Finish browser login after running `claude`. See the [Claude Code setup docs](https://code.claude.com/docs/en/setup) and [programmatic usage docs](https://code.claude.com/docs/en/headless).
 
 Create an Agent Pack:
 
@@ -209,14 +121,14 @@ Create an Agent Pack:
 uv run python -m src.agent_bridge export --concept examples/agent_bridge_concept.example.json --out outputs/agent-pack-demo --sample-size 50 --audience unisex
 ```
 
-Evaluate with Codex:
+Run with Codex, then import:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File outputs\agent-pack-demo\commands\run-codex.ps1
 uv run python -m src.agent_bridge import --pack outputs\agent-pack-demo --results outputs\agent-pack-demo\results\codex --out outputs\agent-report-codex
 ```
 
-Evaluate with Claude Code:
+Run with Claude Code, then import:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File outputs\agent-pack-demo\commands\run-claude.ps1
@@ -225,102 +137,34 @@ uv run python -m src.agent_bridge import --pack outputs\agent-pack-demo --result
 
 Notes:
 
-- This is not an automatic Codex/Claude provider inside Streamlit. It is an offline `export -> CLI run -> import` bridge.
+- A 50-persona run makes 50 CLI calls. Start with `--sample-size 5` or `--sample-size 10`.
 - Claude subscription users should use the default `run-claude.ps1`. `KFPS_CLAUDE_BARE=1` is for API-key or auth-helper automation.
-- Default HF export scans up to 3000 rows sequentially to fill matching personas. Override this with `--max-scan-rows`.
 - Import writes `agent-report.md`, `agent-report.csv`, and `normalized-results.jsonl`.
+- Codex docs: [OpenAI Codex CLI](https://developers.openai.com/codex/cli)
+- Claude docs: [Claude Code setup](https://code.claude.com/docs/en/setup)
 
-## How To Use
+## Data And Statistics
 
-1. Run the Streamlit app.
-2. Choose a provider and model.
-3. Enter the provider API key.
-4. Enter `HF TOKEN` if needed.
-5. Choose the KOSIS reference segment.
-6. Optionally enter `KOSIS API KEY` and `KOSIS statisticsData URL`, then enable API refresh.
-7. Fill in the product card.
-8. Adjust sample size, seed, and filters.
-9. Confirm estimated cost and time.
-10. Press `ENTER`.
-11. Download the Markdown or CSV report.
+- Default dataset: [NVIDIA Nemotron-Personas-Korea](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
+- Dataset type: synthetic Korean-context personas, not real-person data
+- Dataset license: CC BY 4.0 attribution
+- Size: officially listed as 1M records, 7M persona descriptions, 26 fields, and about 1.98GB of Parquet data
+- Default loading: Hugging Face `datasets` streaming
+- Default scan: up to 3000 rows sequentially per run to fill matching personas
 
-Product-card fields:
+Income, assets, and clothing-footwear spending are not inferred from individual personas. Price-burden context comes from the committed KOSTAT/KOSIS public-statistics snapshot at `data/public/kosis_household_context.csv`. If you enter a KOSIS API key and `statisticsData` URL, the app tries that response first and falls back to the snapshot if refresh fails.
 
-- Category
-- Price
-- Fit / silhouette
-- Material
-- Color
-- Season
-- Wearing context
-- Style tone
-- Target hypothesis
-- Brand message / product description
+## Recommended Specs
 
-For local CSV or Parquet data, files must stay under `data/`. The recommended path is `data/raw/`.
+| Item | Minimum | Recommended |
+|---|---:|---:|
+| CPU | 2+ cores | 4+ cores |
+| RAM | 8GB | 16GB+ |
+| Disk space | 5GB+ free | 10-20GB+ free |
+| GPU | Not required | Not required |
+| Network | Required for HF dataset loading and LLM API calls | Stable broadband recommended |
 
-## Report Example
-
-Below is a shortened Markdown report example. Numbers are illustrative. Real output depends on the product concept, persona filter, provider/model, sampling seed, and KOSIS reference segment.
-
-```markdown
-# k-fashion-persona — Synthetic Persona Panel Report
-
-## Synthetic Panel Reaction Distribution
-
-| Metric | Value |
-|---|---|
-| Positive reactions | 18 / 40 |
-| Neutral reactions | 14 / 40 |
-| Negative reactions | 8 / 40 |
-| Average interest score | 6.4 / 10 |
-| Price burden high or above | 13 / 40 |
-
-## KOSIS Reference Statistics
-
-- Reference segment: National total
-- Reference period: 2025_Q4, 2025, 2024
-- Price denominator: KRW 2,136,000 (annualized household clothing-footwear spending)
-- Product price / denominator: 0.09x (medium)
-
-| Metric | Value | Period | Source |
-|---|---:|---|---|
-| Annualized clothing-footwear spending | KRW 2,136,000 | 2025_Q4 | 2025 Q4 Household Income and Expenditure Survey |
-| Monthly clothing-footwear spending | KRW 178,000 | 2025_Q4 | 2025 Q4 Household Income and Expenditure Survey |
-| Monthly household income | KRW 5,422,000 | 2025_Q4 | 2025 Q4 Household Income and Expenditure Survey |
-| Average household assets | KRW 566,780,000 | 2025 | 2025 Household Finance and Welfare Survey |
-
-> These values are KOSIS/KOSTAT household aggregate statistics. They do not mean individual persona income, assets, or purchasing power.
-
-## Main Positive Reasons
-
-- Works for both office wear and weekend outings
-- Light khaki fits the spring season
-- Water-resistant cotton blend feels practical
-
-## Main Hesitation Reasons
-
-- KRW 189,000 may feel high for a basic outerwear item
-- Semi-oversized fit may look bulky on some body types
-- Care instructions and wrinkle resistance need more detail
-
-## Fashion Risk Signals
-
-| Category | Signal Count | Example Concern |
-|---|---:|---|
-| Price burden | 6 | Price feels high |
-| Fit risk | 4 | Semi-oversized fit may look bulky |
-| Material/care burden | 3 | Washing and wrinkles are a concern |
-
----
-
-Persona dataset: NVIDIA Nemotron-Personas-Korea, CC BY 4.0.
-Public statistics context uses Statistics Korea (KOSTAT) / KOSIS household clothing-footwear spending, income, and asset statistics; it does not infer individual income or assets.
-Built with Codex and Claude Code.
-Contact: woooya129 [at] gmail [dot] com
-```
-
-CSV reports flatten the same content into `section,key,value`.
+Large samples usually increase LLM API cost and runtime before RAM becomes the bottleneck.
 
 ## Interpreting Results
 
@@ -341,7 +185,6 @@ Inappropriate use:
 
 ## Limits
 
-- This is not a real consumer-data prediction model.
 - Synthetic persona reactions can differ from real buying behavior.
 - The dataset is not built specifically for fashion purchase research.
 - Images, lookbooks, fit photos, and body measurements are not included by default.
@@ -354,36 +197,12 @@ Inappropriate use:
 - Persona dataset: NVIDIA Nemotron-Personas-Korea
 - Dataset license: CC BY 4.0 attribution applies
 - Statistics context: KOSTAT / KOSIS public statistics
+- Full notices: [LICENSE](LICENSE), [NOTICE](NOTICE), [THIRD_PARTY_NOTICES](docs/THIRD_PARTY_NOTICES.md)
+- Citation format: [CITATION.cff](CITATION.cff)
+- Methodology: [docs/METHODOLOGY_AND_RIGHTS.md](docs/METHODOLOGY_AND_RIGHTS.md)
 
-Review AGPL-3.0-only terms before using this in a commercial service or closed-source product.
-
-### License And Commercial Use
-
-- Open source: GNU AGPL-3.0-only (`LICENSE` file)
-- Commercial license: closed-source commercial use, internal SaaS, redistributed products, or use cases that cannot adopt AGPL terms may be handled under a separate written commercial license or dual-license arrangement
+Closed-source commercial use, internal SaaS, redistributed products, or use cases that cannot adopt AGPL terms may require a separate written commercial license or dual-license arrangement.
 
 Contact: woooya129 [at] gmail [dot] com
 
-### Attribution And Methodology
-
-- Citation format: `CITATION.cff`
-- Methodology and rights positioning: `docs/METHODOLOGY_AND_RIGHTS.md`
-- This repository does not claim ownership of an abstract idea. It separates
-  public source code, documentation, prompts, report structure, branding, and
-  commercial adoption terms.
-- Closed-source products, internal SaaS, paid consulting workflows, and official
-  branding use should be handled through commercial-license discussion.
-
-Built with Codex and Claude Code.
-
-## v0.5.0 Runtime Layout
-
-- `src/app.py`: Streamlit entry point and public compatibility wrappers for tests
-- `src/app_config.py`: shared app constants and run presets
-- `src/ui/`: UI copy, CSS, static assets, and rendering helpers
-- `src/orchestrator/`: data loading, persona payload construction, cache use, LLM evaluation, and report assembly
-- Existing tests that monkeypatch `src.app` keep the same public import path
-
-## Contact
-
-woooya129 [at] gmail [dot] com
+US twin project: [us-fashion-persona](https://github.com/woooya129-ai/us-fashion-persona)

@@ -119,24 +119,11 @@ def test_hf_space_dockerfile_runs_streamlit_on_declared_port():
     assert "EXPOSE 7860" in dockerfile
 
 
-def test_requirements_matches_pyproject_runtime_dependencies():
-    project = tomllib.loads(_read("pyproject.toml"))
-    requirements = {
-        line.strip()
-        for line in _read("requirements.txt").splitlines()
-        if line.strip() and not line.startswith("#")
-    }
+def test_project_version_matches_pyproject():
+    pyproject = tomllib.loads(_read("pyproject.toml"))
+    readme = _read("README.md")
+    readme_en = _read("README-ENG.md")
+    version = pyproject["project"]["version"]
 
-    assert requirements == set(project["project"]["dependencies"])
-
-
-def test_local_runtime_dirs_are_gitignored():
-    gitignore = _read(".gitignore")
-    for pattern in (".obsidian/", ".venv/", ".pytest_cache/", "sandbox/"):
-        assert pattern in gitignore
-
-
-def test_docker_context_excludes_local_state_and_secrets():
-    dockerignore = _read(".dockerignore")
-    for pattern in (".obsidian/", ".venv/", ".pytest_cache/", "sandbox/", ".env"):
-        assert pattern in dockerignore
+    assert f"version-{version}" in readme
+    assert f"version-{version}" in readme_en

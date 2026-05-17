@@ -19,15 +19,15 @@ tags:
 
 <table align="right">
   <tr>
-    <td align="left" valign="middle" width="256" height="256">
-      <img src="docs/assets/k-fashion-persona-icon.svg" alt="k-fashion-persona icon" width="256" height="256" />
+    <td align="left" valign="middle" width="128" height="128">
+      <img src="docs/assets/k-fashion-persona-icon.svg" alt="k-fashion-persona icon" width="128" height="128" />
     </td>
-    <td align="left" valign="middle" height="256">
-      <h1>
+    <td align="left" valign="middle" height="128">
+      <h2>
         <strong><b>k</b></strong><br />
         <strong><b>fashion</b></strong><br />
         <strong><b>persona</b></strong>
-      </h1>
+      </h2>
     </td>
   </tr>
 </table>

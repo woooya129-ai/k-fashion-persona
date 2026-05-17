@@ -23,7 +23,7 @@ tags:
 
 ## K-fashion 컨셉을 AI 페르소나로 먼저 점검
 
-[![Version](https://img.shields.io/badge/version-0.6.1-0F766E)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.6.2-0F766E)](pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
 [![HF Space](https://img.shields.io/badge/HF%20Space-k--fashion--persona-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/spaces/w00ya/k-fashion-persona)
@@ -100,7 +100,7 @@ KOSIS API key와 `statisticsData` URL을 입력하면 실행 시 해당 URL의 �
 
 ## 로컬 실행 범위와 권장 사양
 
-앱 UI, 데이터셋 필터링, 샘플링, 프롬프트 생성, SQLite 캐시, Markdown/CSV 리포트 생성은 사용자 PC에서 로컬로 실행됩니다. 기본 Hugging Face 데이터셋을 처음 사용할 때는 Hugging Face Hub에서 데이터셋을 읽어옵니다. LLM 평가는 사용자가 선택한 provider API 서버로 프롬프트를 전송합니다. KOSIS API 갱신을 켠 경우에만 KOSIS API에도 요청합니다.
+앱 UI, 데이터셋 필터링, 샘플링, 프롬프트 생성, SQLite 캐시, Markdown/CSV 리포트 생성은 사용자 PC에서 로컬로 실행됩니다. 기본 Hugging Face 데이터셋을 처음 사용할 때는 Hugging Face Hub에서 데이터셋을 읽어옵니다. Streamlit 실행의 LLM 평가는 사용자가 선택한 provider API 서버로 프롬프트를 전송합니다. Agent Pack 모드는 프롬프트를 파일로 내보내고 사용자의 Codex/Claude Code CLI가 평가합니다. KOSIS API 갱신을 켠 경우에만 KOSIS API에도 요청합니다.
 
 API key는 앱이 저장하지 않습니다. 화면 입력값은 현재 Streamlit 세션에서만 쓰고, 반복 실행용 key는 저장소 밖 환경 파일 또는 OS 환경변수에서 읽습니다.
 
@@ -125,8 +125,10 @@ HF Space 배포는 Docker SDK로 Streamlit 앱을 실행합니다. Space routing
 주의:
 
 - HF 기본 모드는 streaming 로딩이라 1.98GB 데이터셋 전체를 RAM에 올리지 않습니다.
+- HF 기본 모드는 실행마다 앞에서부터 최대 3000행을 순차 스캔해 조건에 맞는 패널을 채웁니다.
 - 로컬 CSV/Parquet 파일 모드는 pandas로 파일을 읽으므로 큰 파일은 RAM을 더 씁니다. 전체 2GB급 Parquet/CSV를 로컬 파일로 직접 읽을 계획이면 16-32GB RAM을 권장합니다.
-- `MAX`처럼 큰 샘플을 실행하면 RAM보다 LLM API 비용과 실행 시간이 먼저 증가합니다.
+- 기본 프리셋은 FAST 50명, BALANCE 100명, HIGH 300명, MAX 1000명입니다. Advanced에서는 샘플 수 제한 없이 직접 입력할 수 있습니다.
+- `MAX`나 Advanced의 큰 샘플을 실행하면 RAM보다 LLM API 비용과 실행 시간이 먼저 증가합니다.
 - 향후 로컬 LLM/Vision 모델을 직접 돌리는 모드를 추가한다면 GPU 요구사항은 별도로 생깁니다. 현재 공개 버전 기준으로는 GPU를 쓰지 않습니다.
 
 ## 빠른 실행
@@ -136,7 +138,7 @@ HF Space 배포는 Docker SDK로 Streamlit 앱을 실행합니다. Space routing
 - Git
 - Python 3.11 이상
 - `uv`
-- 사용할 LLM provider API key
+- 사용할 LLM provider API key 또는 로그인된 Codex/Claude Code CLI
 - 필요 시 Hugging Face token
 - 선택 사항: KOSIS API key
 
@@ -199,6 +201,57 @@ KOSIS_STATISTICS_DATA_URL=
 Groq, DeepSeek, Qwen 같은 OpenAI-compatible provider는 `pricing_config.yaml`의 `api_key_env`에 지정된 환경변수를 사용합니다.
 
 저장소 root에 실제 `.env` 파일을 두거나 commit하지 마세요.
+
+## 구독형 Codex / Claude Code 사용
+
+API key 방식은 계속 지원합니다. 구독형 Codex 또는 Claude Code 사용자는 앱이 provider API를 직접 호출하게 하는 대신 `Agent Pack`을 내보내고, 로그인된 CLI로 평가한 결과를 다시 가져올 수 있습니다.
+
+이 모드는 LLM credential을 저장하지 않습니다. Codex/Claude 로그인과 사용량 관리는 각 CLI가 담당합니다. 단, 50명, 100명, 300명, 1000명 평가는 그만큼 CLI 호출을 만들기 때문에 구독 한도나 Agent SDK credit을 소모할 수 있습니다. 처음에는 `--sample-size 5` 또는 `--sample-size 10`으로 확인하세요.
+
+Codex CLI 설치와 로그인:
+
+```powershell
+npm install -g @openai/codex
+codex
+```
+
+`codex` 실행 후 ChatGPT 계정으로 로그인하면 Plus, Pro, Business, Edu, Enterprise 플랜의 Codex 사용량을 쓸 수 있습니다. 자세한 기준은 [OpenAI Codex CLI 문서](https://developers.openai.com/codex/cli)와 [openai/codex 저장소](https://github.com/openai/codex)를 확인하세요.
+
+Claude Code 설치와 로그인:
+
+```powershell
+irm https://claude.ai/install.ps1 | iex
+claude
+```
+
+Claude Code는 Free 플랜이 아니라 Pro, Max, Team, Enterprise 또는 Console 계정이 필요합니다. `claude` 실행 후 브라우저 로그인까지 완료하세요. 자세한 기준은 [Claude Code 설치 문서](https://code.claude.com/docs/en/setup)와 [Claude Code programmatic usage 문서](https://code.claude.com/docs/en/headless)를 확인하세요.
+
+Agent Pack 생성:
+
+```powershell
+uv run python -m src.agent_bridge export --concept examples/agent_bridge_concept.example.json --out outputs/agent-pack-demo --sample-size 50 --audience unisex
+```
+
+Codex로 평가:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File outputs\agent-pack-demo\commands\run-codex.ps1
+uv run python -m src.agent_bridge import --pack outputs\agent-pack-demo --results outputs\agent-pack-demo\results\codex --out outputs\agent-report-codex
+```
+
+Claude Code로 평가:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File outputs\agent-pack-demo\commands\run-claude.ps1
+uv run python -m src.agent_bridge import --pack outputs\agent-pack-demo --results outputs\agent-pack-demo\results\claude --out outputs\agent-report-claude
+```
+
+주의:
+
+- 이 방식은 Streamlit 앱 안에서 Codex/Claude Code를 자동 provider로 실행하는 기능이 아닙니다. `export -> CLI 실행 -> import` 순서의 오프라인 브릿지입니다.
+- Claude 구독 계정 사용자는 기본 `run-claude.ps1`을 그대로 쓰세요. `KFPS_CLAUDE_BARE=1`은 API key 또는 별도 auth helper를 쓰는 자동화용입니다.
+- HF 기본 export는 최대 3000행까지 순차 scan해서 조건에 맞는 페르소나를 채웁니다. `--max-scan-rows`로 조정할 수 있습니다.
+- 결과물은 `agent-report.md`, `agent-report.csv`, `normalized-results.jsonl`로 생성됩니다.
 
 ## 사용 방법
 

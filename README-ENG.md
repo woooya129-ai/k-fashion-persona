@@ -2,7 +2,7 @@
 
 ## Check K-fashion Concepts With AI Personas First
 
-[![Version](https://img.shields.io/badge/version-0.6.1-0F766E)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.6.2-0F766E)](pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
 [![HF Space](https://img.shields.io/badge/HF%20Space-k--fashion--persona-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/spaces/w00ya/k-fashion-persona)
@@ -81,7 +81,7 @@ Optional first-screen background assets can be placed at `design/hero-skyblue-fa
 
 ## Local Runtime And Recommended Specs
 
-The app UI, dataset filtering, sampling, prompt construction, SQLite cache, and Markdown/CSV report generation run on your local machine. The first use of the default Hugging Face dataset reads data from Hugging Face Hub. LLM evaluation sends prompts to the provider API server you selected. KOSIS API requests are made only when API refresh is enabled.
+The app UI, dataset filtering, sampling, prompt construction, SQLite cache, and Markdown/CSV report generation run on your local machine. The first use of the default Hugging Face dataset reads data from Hugging Face Hub. Streamlit LLM evaluation sends prompts to the provider API server you selected. Agent Pack mode exports prompt files and lets your Codex or Claude Code CLI evaluate them. KOSIS API requests are made only when API refresh is enabled.
 
 The app does not save API keys. UI-entered keys are used only for the current Streamlit session. Repeated local runs can read keys from an environment file outside the repository or from OS environment variables.
 
@@ -102,8 +102,10 @@ The current version does not run a local LLM or local Vision model, so a graphic
 Notes:
 
 - The default HF mode streams the dataset and does not load the full 1.98GB into RAM.
+- The default HF mode scans up to 3000 rows sequentially per run to fill the matching panel.
 - Local CSV/Parquet mode uses pandas and can use more RAM. If you plan to read a full 2GB-class Parquet/CSV file locally, 16-32GB RAM is recommended.
-- Large `MAX` runs usually increase LLM API cost and runtime before RAM becomes the main bottleneck.
+- The default presets are FAST 50, BALANCE 100, HIGH 300, and MAX 1000 personas. Advanced accepts user-entered sample sizes without a hard UI limit.
+- Large `MAX` or Advanced runs usually increase LLM API cost and runtime before RAM becomes the main bottleneck.
 - If a future mode runs local LLM/Vision models directly, GPU requirements will be separate. The current public version does not use a GPU.
 
 ## Quick Start
@@ -113,7 +115,7 @@ Requirements:
 - Git
 - Python 3.11 or newer
 - `uv`
-- An API key for your chosen LLM provider
+- An API key for your chosen LLM provider or a signed-in Codex/Claude Code CLI
 - Hugging Face token if needed
 - Optional KOSIS API key
 
@@ -176,6 +178,57 @@ KOSIS_STATISTICS_DATA_URL=
 OpenAI-compatible providers such as Groq, DeepSeek, and Qwen use the environment variable named by `api_key_env` in `pricing_config.yaml`.
 
 Do not place or commit a real `.env` file in the repository root.
+
+## Codex / Claude Code Subscription Mode
+
+API-key providers remain supported. If you use a Codex or Claude Code subscription, use `Agent Pack` mode instead of treating those tools as direct in-app API providers. The app exports one prompt file per persona, your logged-in CLI evaluates them, and the importer converts the JSON results back into the normal Markdown and CSV report.
+
+This mode does not store LLM credentials. CLI login and usage limits are handled by Codex or Claude Code. A 50, 100, 300, or 1000 persona run creates the same number of CLI calls, so start with `--sample-size 5` or `--sample-size 10` before a large run.
+
+Install and sign in to Codex CLI:
+
+```powershell
+npm install -g @openai/codex
+codex
+```
+
+After running `codex`, sign in with your ChatGPT account to use Codex through eligible Plus, Pro, Business, Edu, or Enterprise plans. See the [OpenAI Codex CLI docs](https://developers.openai.com/codex/cli) and the [openai/codex repository](https://github.com/openai/codex).
+
+Install and sign in to Claude Code:
+
+```powershell
+irm https://claude.ai/install.ps1 | iex
+claude
+```
+
+Claude Code requires a Pro, Max, Team, Enterprise, or Console account, not the free Claude plan. Finish browser login after running `claude`. See the [Claude Code setup docs](https://code.claude.com/docs/en/setup) and [programmatic usage docs](https://code.claude.com/docs/en/headless).
+
+Create an Agent Pack:
+
+```powershell
+uv run python -m src.agent_bridge export --concept examples/agent_bridge_concept.example.json --out outputs/agent-pack-demo --sample-size 50 --audience unisex
+```
+
+Evaluate with Codex:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File outputs\agent-pack-demo\commands\run-codex.ps1
+uv run python -m src.agent_bridge import --pack outputs\agent-pack-demo --results outputs\agent-pack-demo\results\codex --out outputs\agent-report-codex
+```
+
+Evaluate with Claude Code:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File outputs\agent-pack-demo\commands\run-claude.ps1
+uv run python -m src.agent_bridge import --pack outputs\agent-pack-demo --results outputs\agent-pack-demo\results\claude --out outputs\agent-report-claude
+```
+
+Notes:
+
+- This is not an automatic Codex/Claude provider inside Streamlit. It is an offline `export -> CLI run -> import` bridge.
+- Claude subscription users should use the default `run-claude.ps1`. `KFPS_CLAUDE_BARE=1` is for API-key or auth-helper automation.
+- Default HF export scans up to 3000 rows sequentially to fill matching personas. Override this with `--max-scan-rows`.
+- Import writes `agent-report.md`, `agent-report.csv`, and `normalized-results.jsonl`.
 
 ## How To Use
 

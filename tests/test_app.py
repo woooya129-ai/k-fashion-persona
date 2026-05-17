@@ -862,7 +862,8 @@ def test_app_source_uses_readable_comfort_tokens_with_targeted_hero_gradient() -
     assert "BALANCE" in source
     assert "HIGH" in source
     assert "MAX" in source
-    assert "MAX_SAMPLE_SIZE = 100" in source
+    assert "MAX_SAMPLE_SIZE = 1_000" in source
+    assert "DEFAULT_HF_MAX_SCAN_ROWS = 3_000" in source
     assert "sampling-seed" in source
     assert "KOREA_PROVINCE_OPTIONS" in source
     assert "OCCUPATION_KEYWORD_OPTIONS" in source
@@ -895,7 +896,7 @@ def test_app_source_uses_readable_comfort_tokens_with_targeted_hero_gradient() -
     assert "docs/docs.html" in source
     assert "📄" in source
     assert "woooya129-ai/k-fashion-persona" in source
-    assert "로컬 퍼블릭 베타 · v0.6.1" in source
+    assert "로컬 퍼블릭 베타 · v0.6.2" in source
     assert "설명 ⇄ 도구" not in source
     assert "st.segmented_control" in source
 
@@ -936,14 +937,18 @@ def test_apptest_api_key_input_is_password() -> None:
 
 
 def test_app_sampling_and_filter_limits_are_explicit() -> None:
-    assert app.MAX_SAMPLE_SIZE == 100
-    assert app.RUN_MODE_PRESETS["max"]["sample_size"] == 100
+    assert app.MAX_SAMPLE_SIZE == 1000
+    assert app.DEFAULT_HF_MAX_SCAN_ROWS == 3000
+    assert app.RUN_MODE_PRESETS["quick"]["sample_size"] == 50
+    assert app.RUN_MODE_PRESETS["balanced"]["sample_size"] == 100
+    assert app.RUN_MODE_PRESETS["deep"]["sample_size"] == 300
+    assert app.RUN_MODE_PRESETS["max"]["sample_size"] == 1000
     assert len(app.KOREA_PROVINCE_OPTIONS) == 17
     assert len(app.OCCUPATION_KEYWORD_OPTIONS) == 15
     assert app.ui_text("KR", "sampling_seed") == "sampling-seed"
 
 
-def test_load_and_sample_hf_unfiltered_uses_seeded_reservoir_sampling(
+def test_load_and_sample_hf_unfiltered_uses_sequential_limited_scan(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     def rows():
@@ -966,7 +971,7 @@ def test_load_and_sample_hf_unfiltered_uses_seeded_reservoir_sampling(
             },
             {"sample_size": 3, "sampling_seed": seed, "filter": app.PersonaFilter()},
         )
-        assert sampled.matched_count_before_sample == 10
+        assert sampled.matched_count_before_sample == 3
         assert sampled.sample_size == 3
         return [p.persona_id for p in sampled.rows]
 
@@ -975,8 +980,8 @@ def test_load_and_sample_hf_unfiltered_uses_seeded_reservoir_sampling(
     seed_999 = ids_for(999)
 
     assert seed_42_a == seed_42_b
-    assert seed_42_a != seed_999
-    assert seed_42_a != ["stream-0", "stream-1", "stream-2"]
+    assert seed_42_a == seed_999
+    assert seed_42_a == ["stream-0", "stream-1", "stream-2"]
 
 
 def test_load_and_sample_hf_filtered_scans_until_audience_count_is_filled(
@@ -1013,6 +1018,42 @@ def test_load_and_sample_hf_filtered_scans_until_audience_count_is_filled(
     assert sampled.matched_count_before_sample == 5
     assert sampled.sample_size == 5
     assert {persona.sex for persona in sampled.rows} == {"F"}
+
+
+def test_load_and_sample_hf_stops_at_default_scan_cap(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    female = next(row for row in ALL_MOCK_PERSONAS if row["sex"] == "F")
+    male = next(row for row in ALL_MOCK_PERSONAS if row["sex"] == "M")
+
+    def rows():
+        for index in range(app.DEFAULT_HF_MAX_SCAN_ROWS):
+            yield {**male, "uuid": f"stream-male-{index}", "age": 30 + (index % 10)}
+        for index in range(5):
+            yield {**female, "uuid": f"stream-female-{index}", "age": 24 + index}
+
+    def fake_load_huggingface_dataset(**_kwargs):
+        return LoadedDataset("huggingface:test", "fixture", -1), rows()
+
+    monkeypatch.setattr(app, "load_huggingface_dataset", fake_load_huggingface_dataset)
+
+    _loaded, sampled = app._load_and_sample(  # noqa: SLF001 - app orchestration helper.
+        {
+            "source": "huggingface",
+            "dataset_id": app.DEFAULT_HF_DATASET_ID,
+            "split": app.DEFAULT_SPLIT,
+            "revision": None,
+        },
+        {
+            "sample_size": 5,
+            "sampling_seed": 42,
+            "filter": app.PersonaFilter(sex=frozenset({"F"})),
+        },
+    )
+
+    assert sampled.rows == []
+    assert sampled.matched_count_before_sample == 0
+    assert sampled.sample_size == 0
 
 
 def test_load_and_sample_hf_passes_explicit_token(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1063,6 +1104,26 @@ def test_model_options_sort_claude_family_order() -> None:
         "claude-opus-4-7",
         "claude-opus-4-6",
     ]
+
+
+def test_dominant_sentiment_preview_picks_highest_ratio_with_stable_tie() -> None:
+    rows = [
+        {"sentiment": "neutral", "persona_id": "n1"},
+        {"sentiment": "positive", "persona_id": "p1"},
+        {"sentiment": "negative", "persona_id": "g1"},
+        {"sentiment": "neutral", "persona_id": "n2"},
+        {"sentiment": "positive", "persona_id": "p2"},
+    ]
+
+    dominant = rendering._dominant_sentiment_preview(rows)  # noqa: SLF001
+
+    assert dominant is not None
+    sentiment, count, total, pct, representative = dominant
+    assert sentiment == "positive"
+    assert count == 2
+    assert total == 5
+    assert pct == 40.0
+    assert representative["persona_id"] == "p1"
 
 
 def test_product_audience_maps_to_persona_sex_filter() -> None:
@@ -1301,7 +1362,7 @@ def test_apptest_mock_end_to_end_worker_report_ui(
         2,
         2,
         42,
-        "filter_then_seeded_reservoir_limited_scan",
+        "filter_then_take_until_sample_size_limited_scan",
         "필터 없음 (전체)",
     )
     if real_db_stat_before is None:

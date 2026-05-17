@@ -27,6 +27,7 @@ import httpx
 import streamlit as st
 
 from src.app_config import (
+    DEFAULT_HF_MAX_SCAN_ROWS,
     DEFAULT_PRICE_CONTEXT_VERSION,
     KOREA_PROVINCE_OPTIONS,
     MAX_OUTPUT_TOKENS_PER_PERSONA,
@@ -182,6 +183,7 @@ _COMPAT_UI_EXPORTS = (
 __all__ = (
     "DB_PATH",
     "DEFAULT_HF_DATASET_ID",
+    "DEFAULT_HF_MAX_SCAN_ROWS",
     "DEFAULT_PRICE_CONTEXT_VERSION",
     "DEFAULT_SPLIT",
     "KOREA_PROVINCE_OPTIONS",

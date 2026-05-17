@@ -1683,6 +1683,32 @@ button[data-testid="stBaseButton-header"][kind="header"],
   color: var(--kfps-body);
 }}
 
+.kfps-dominant-opinion {{
+  margin-top: 14px;
+  max-width: 720px;
+}}
+
+.kfps-dominant-card {{
+  border-color: color-mix(in srgb, var(--kfps-primary) 28%, var(--kfps-hairline));
+  background: color-mix(in srgb, var(--kfps-primary) 6%, var(--kfps-surface));
+}}
+
+.kfps-dominant-summary {{
+  margin: 0 0 12px;
+  color: var(--kfps-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}}
+
+.kfps-opinion-project {{
+  margin: 0 0 8px;
+  color: var(--kfps-primary);
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.2;
+  word-break: keep-all;
+}}
+
 .kfps-opinion-meta {{
   display: flex;
   align-items: center;

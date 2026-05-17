@@ -210,6 +210,35 @@ def sample_iterable_to_result(
     )
 
 
+def take_matching_iterable_to_result(
+    personas: Iterable[Persona],
+    filt: PersonaFilter,
+    sample_size: int,
+    seed: int,
+) -> SampleResult:
+    """Collect matching personas in stream order until sample_size is reached."""
+    if sample_size <= 0:
+        raise ValueError(f"sample_size must be positive, got {sample_size}")
+
+    rows: list[Persona] = []
+    matched_count = 0
+
+    for persona in personas:
+        if not filt.matches(persona):
+            continue
+        matched_count += 1
+        rows.append(persona)
+        if len(rows) >= sample_size:
+            break
+
+    return SampleResult(
+        rows=sorted(rows, key=lambda p: p.persona_id),
+        matched_count_before_sample=matched_count,
+        sample_size=len(rows),
+        sampling_seed=seed,
+    )
+
+
 def preview_first_n(rows: list[Any], n: int = 30) -> list[Any]:
     """샘플 미리보기. PM v3 §23 Phase 2 완료기준.
 

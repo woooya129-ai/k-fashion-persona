@@ -11,6 +11,7 @@ from src.persona_filter import (
     sample_iterable_to_result,
     sample_personas,
     sample_to_result,
+    take_matching_iterable_to_result,
 )
 from src.persona_normalizer import Persona
 
@@ -265,6 +266,43 @@ class TestSampleIterableToResult:
         seed_999 = sample_iterable_to_result(iter(personas), PersonaFilter(), 3, seed=999)
 
         assert [p.persona_id for p in seed_42.rows] != [p.persona_id for p in seed_999.rows]
+
+
+class TestTakeMatchingIterableToResult:
+    def test_takes_first_matching_rows_and_stops(self):
+        personas = [_make(f"m{i}", 20 + i, "M") for i in range(5)] + [
+            _make(f"f{i}", 25 + i, "F") for i in range(5)
+        ]
+
+        result = take_matching_iterable_to_result(
+            iter(personas),
+            PersonaFilter(sex=frozenset({"F"})),
+            3,
+            seed=42,
+        )
+
+        assert [p.persona_id for p in result.rows] == ["f0", "f1", "f2"]
+        assert result.matched_count_before_sample == 3
+        assert result.sample_size == 3
+        assert result.sampling_seed == 42
+
+    def test_returns_partial_when_stream_ends_before_target(self):
+        personas = [_make("f0", 25, "F"), _make("m0", 30, "M")]
+
+        result = take_matching_iterable_to_result(
+            iter(personas),
+            PersonaFilter(sex=frozenset({"F"})),
+            3,
+            seed=42,
+        )
+
+        assert [p.persona_id for p in result.rows] == ["f0"]
+        assert result.matched_count_before_sample == 1
+        assert result.sample_size == 1
+
+    def test_zero_sample_size_raises(self):
+        with pytest.raises(ValueError):
+            take_matching_iterable_to_result(iter(SAMPLE_PERSONAS), PersonaFilter(), 0, seed=42)
 
 
 class TestPreviewFirstN:

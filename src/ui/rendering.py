@@ -28,7 +28,6 @@ from src.app_config import (
     ESTIMATE_SYSTEM_PROMPT_TOKENS,
     KOREA_PROVINCE_OPTIONS,
     MAX_OUTPUT_TOKENS_PER_PERSONA,
-    MAX_SAMPLE_SIZE,
     OCCUPATION_KEYWORD_OPTIONS,
     PRODUCT_CARD_EMPTY_PLACEHOLDER,
     PRODUCT_CARD_FIELD_LABELS_KR,
@@ -1146,10 +1145,9 @@ def render_sample_inputs(lang: str) -> dict[str, Any]:
     sample_size = st.number_input(
         ui_text(lang, "sample_size"),
         min_value=1,
-        max_value=MAX_SAMPLE_SIZE,
-        value=30,
+        value=int(RUN_MODE_PRESETS["balanced"]["sample_size"]),
         step=10,
-        help=ui_text(lang, "sample_help").format(max_sample=MAX_SAMPLE_SIZE),
+        help=ui_text(lang, "sample_help"),
     )
 
     sampling_seed = st.number_input(
@@ -1396,10 +1394,9 @@ def render_simple_setup(pricing_config: dict[str, ModelPricing], lang: str) -> d
         sample_size = st.number_input(
             ui_text(lang, "sample_size"),
             min_value=1,
-            max_value=MAX_SAMPLE_SIZE,
             value=sample_size,
             step=10,
-            help=ui_text(lang, "sample_help").format(max_sample=MAX_SAMPLE_SIZE),
+            help=ui_text(lang, "sample_help"),
         )
 
         sampling_seed = st.number_input(
@@ -2074,6 +2071,88 @@ def persona_opinions_csv(rows: list[dict[str, str]]) -> str:
     return "\ufeff" + output.getvalue()
 
 
+_SENTIMENT_PREVIEW_ORDER = ("positive", "neutral", "negative")
+_SENTIMENT_PREVIEW_LABELS = {
+    "KR": {
+        "positive": "긍정",
+        "neutral": "중립",
+        "negative": "부정",
+    },
+    "EN": {
+        "positive": "positive",
+        "neutral": "neutral",
+        "negative": "negative",
+    },
+}
+
+
+def _sentiment_preview_label(lang: str, sentiment: str) -> str:
+    labels = _SENTIMENT_PREVIEW_LABELS.get(lang, _SENTIMENT_PREVIEW_LABELS["KR"])
+    return labels.get(sentiment, sentiment)
+
+
+def _dominant_sentiment_preview(
+    rows: list[dict[str, str]],
+) -> tuple[str, int, int, float, dict[str, str]] | None:
+    counts = {sentiment: 0 for sentiment in _SENTIMENT_PREVIEW_ORDER}
+    for row in rows:
+        sentiment = row.get("sentiment", "")
+        if sentiment in counts:
+            counts[sentiment] += 1
+
+    total = sum(counts.values())
+    if total <= 0:
+        return None
+
+    dominant = max(
+        _SENTIMENT_PREVIEW_ORDER,
+        key=lambda sentiment: (counts[sentiment], -_SENTIMENT_PREVIEW_ORDER.index(sentiment)),
+    )
+    representative = next(row for row in rows if row.get("sentiment") == dominant)
+    pct = round(counts[dominant] / total * 100, 1)
+    return dominant, counts[dominant], total, pct, representative
+
+
+def _dominant_sentiment_card_html(rows: list[dict[str, str]], lang: str) -> str:
+    dominant = _dominant_sentiment_preview(rows)
+    if dominant is None:
+        return ""
+
+    sentiment, count, total, pct, row = dominant
+    sentiment_label = _sentiment_preview_label(lang, sentiment)
+    summary = ui_text(lang, "dominant_preview_body").format(
+        sentiment=sentiment_label,
+        count=count,
+        total=total,
+        pct=f"{pct:.1f}",
+    )
+    sentiment_class = html.escape(sentiment, quote=True)
+
+    return f"""
+        <div class="kfps-dominant-opinion">
+          <article class="kfps-opinion-card kfps-dominant-card">
+            <div class="kfps-opinion-project">
+              {html.escape(ui_text(lang, "dominant_preview_project"))}
+            </div>
+            <div class="kfps-opinion-meta">
+              <span>{html.escape(ui_text(lang, "dominant_preview_header"))}</span>
+              <span class="kfps-sentiment {sentiment_class}">
+                {html.escape(sentiment_label)}
+              </span>
+            </div>
+            <p class="kfps-dominant-summary">{html.escape(summary)}</p>
+            <p class="kfps-opinion-profile">{html.escape(row["profile"])}</p>
+            <h4>{html.escape(ui_text(lang, "persona_card_reasons"))}</h4>
+            <p>{html.escape(row["main_reasons"] or "-")}</p>
+            <h4>{html.escape(ui_text(lang, "persona_card_concerns"))}</h4>
+            <p>{html.escape(row["main_concerns"] or "-")}</p>
+            <h4>{html.escape(ui_text(lang, "persona_card_note"))}</h4>
+            <p>{html.escape(row["confidence_note"])}</p>
+          </article>
+        </div>
+    """
+
+
 def render_persona_opinion_preview(
     result_rows: list[ResultRow],
     persona_attributes: dict[str, dict[str, Any]],
@@ -2109,6 +2188,8 @@ def render_persona_opinion_preview(
 
     cards = []
 
+    project_label = html.escape(project_name)
+
     for row in opinion_rows[:5]:
         sentiment = html.escape(row["sentiment"])
 
@@ -2116,6 +2197,8 @@ def render_persona_opinion_preview(
             f"""
 
             <article class="kfps-opinion-card">
+
+              <div class="kfps-opinion-project">{project_label}</div>
 
               <div class="kfps-opinion-meta">
 
@@ -2145,6 +2228,10 @@ def render_persona_opinion_preview(
         )
 
     st.html(f'<div class="kfps-opinion-grid">{"".join(cards)}</div>')
+
+    dominant_card = _dominant_sentiment_card_html(opinion_rows, lang)
+    if dominant_card:
+        st.html(dominant_card)
 
     st.download_button(
         ui_text(lang, "excel_download"),

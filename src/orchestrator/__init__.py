@@ -18,7 +18,7 @@ import httpx
 from pydantic import ValidationError
 
 from src.aggregator import QualityCounts, aggregate
-from src.app_config import DEFAULT_PRICE_CONTEXT_VERSION, MAX_SAMPLE_SIZE
+from src.app_config import DEFAULT_HF_MAX_SCAN_ROWS, DEFAULT_PRICE_CONTEXT_VERSION
 from src.async_runner import make_sync_evaluator_for_worker
 from src.cache import compute_cache_key, compute_legacy_cache_key_v1
 from src.data_loader import (
@@ -34,9 +34,9 @@ from src.llm_client import LLMClientError, LLMRequest, Provider, call_with_retry
 from src.llm_client import parse_evaluation_result as parse_llm_evaluation_result
 from src.persona_filter import (
     apply_filter,
-    has_active_filter,
     sample_iterable_to_result,
     sample_to_result,
+    take_matching_iterable_to_result,
 )
 from src.persona_normalizer import Persona
 from src.prompt_builder import PROMPT_VERSION, SCHEMA_VERSION, build_prompt
@@ -723,7 +723,7 @@ def _load_and_sample(
     load_huggingface_dataset_fn: Callable[..., Any] = load_huggingface_dataset,
     load_local_file_fn: Callable[[Path], Any] = load_local_file,
 ):
-    sample_size = min(max(1, int(sample["sample_size"])), MAX_SAMPLE_SIZE)
+    sample_size = max(1, int(sample["sample_size"]))
 
     if dataset["source"] == "huggingface":
         loaded, rows = load_huggingface_dataset_fn(
@@ -734,15 +734,22 @@ def _load_and_sample(
             token=hf_token,
         )
         explicit_max_scan_rows = sample.get("max_scan_rows")
-        if explicit_max_scan_rows is not None:
-            max_scan_rows = max(int(explicit_max_scan_rows), sample_size)
-            rows = islice(rows, max_scan_rows)
-        elif not has_active_filter(sample["filter"]):
-            rows = islice(rows, MAX_SAMPLE_SIZE)
+        max_scan_rows = (
+            max(1, int(explicit_max_scan_rows))
+            if explicit_max_scan_rows is not None
+            else DEFAULT_HF_MAX_SCAN_ROWS
+        )
+        rows = islice(rows, max_scan_rows)
 
         personas_iter = normalize_rows_to_personas(rows)
 
-        sampled = sample_iterable_to_result(
+        sample_func = (
+            sample_iterable_to_result
+            if sample.get("seeded_reservoir_sampling")
+            else take_matching_iterable_to_result
+        )
+
+        sampled = sample_func(
             personas_iter,
             sample["filter"],
             sample_size,
@@ -766,6 +773,6 @@ def _load_and_sample(
 def _sampling_strategy_for_dataset(dataset: dict[str, Any]) -> str:
 
     if dataset["source"] == "huggingface":
-        return "filter_then_seeded_reservoir_limited_scan"
+        return "filter_then_take_until_sample_size_limited_scan"
 
     return "filter_then_seeded_random_sample"

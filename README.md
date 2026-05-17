@@ -36,6 +36,14 @@ tags:
 
 실제 구매율, 매출, 시장점유율을 예측하는 서비스가 아닙니다. 설문, 인터뷰, 판매 데이터 분석 전에 가설을 좁히는 보조 도구입니다.
 
+## Nemotron-Personas-Korea 소개
+
+![Nemotron-Personas-Korea 생성 구조](docs/assets/nemotron-personas-korea.png)
+
+Nemotron-Personas-Korea는 NVIDIA가 2026년 4월 공개한 CC BY 4.0 한국어 합성 페르소나 데이터셋입니다. KOSIS, 대법원, 국민건강보험공단, 한국농촌경제연구원, NAVER Cloud 통계 분포를 바탕으로 이름, 나이, 직업, 지역, 교육 수준 등을 합성해 한국 사회의 다양한 맥락을 반영합니다.
+
+기존 영어 중심 데이터셋에서 과소 표현되던 고령층, 농촌 지역, 저학력 직군의 공백을 줄이고 한국어 AI의 편향 완화와 응답 다양성 향상을 돕습니다.
+
 ## 빠른 이해
 
 | 구분 | 내용 |

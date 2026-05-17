@@ -17,36 +17,22 @@ tags:
   - market-research
 ---
 
-<table>
+<table align="right">
   <tr>
-    <td align="left" valign="top" width="120">
-      <img src="docs/assets/k-fashion-persona-icon.svg" alt="k-fashion-persona icon" width="64" height="64" />
-      <br />
-      <strong>k</strong><br />
-      <strong>fashion</strong><br />
-      <strong>persona</strong>
+    <td align="left" valign="middle" width="256" height="256">
+      <img src="docs/assets/k-fashion-persona-icon.svg" alt="k-fashion-persona icon" width="256" height="256" />
     </td>
-    <td align="left" valign="top">
-      <table>
-        <tr><th align="left">title</th><td>K-Fashion Persona</td></tr>
-        <tr><th align="left">emoji</th><td></td></tr>
-        <tr><th align="left">colorFrom</th><td>green</td></tr>
-        <tr><th align="left">colorTo</th><td>blue</td></tr>
-        <tr><th align="left">sdk</th><td>docker</td></tr>
-        <tr><th align="left">app_port</th><td>7860</td></tr>
-        <tr><th align="left">pinned</th><td>false</td></tr>
-        <tr><th align="left">license</th><td>agpl-3.0</td></tr>
-        <tr><th align="left">short_description</th><td>AI persona screening for Korean fashion concepts.</td></tr>
-        <tr><th align="left">datasets</th><td>nvidia/Nemotron-Personas-Korea</td></tr>
-        <tr><th align="left">tags</th><td>streamlit<br />fashion<br />personas<br />market-research</td></tr>
-      </table>
+    <td align="left" valign="middle" height="256">
+      <h1>
+        <strong><b>k</b></strong><br />
+        <strong><b>fashion</b></strong><br />
+        <strong><b>persona</b></strong>
+      </h1>
     </td>
   </tr>
 </table>
 
-# k-fashion-persona
-
-## K-fashion 컨셉을 AI 페르소나로 먼저 점검
+# K-fashion 컨셉을 AI 페르소나로 먼저 점검
 
 [![Version](https://img.shields.io/badge/version-0.6.2-0F766E)](pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)

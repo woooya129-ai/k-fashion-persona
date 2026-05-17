@@ -19,6 +19,15 @@ tags:
 
 # k-fashion-persona
 
+<div align="left">
+  <img src="docs/assets/k-fashion-persona-icon.svg" alt="k-fashion-persona icon" width="64" height="64" />
+  <div align="left">
+    <strong>k</strong><br />
+    <strong>fashion</strong><br />
+    <strong>persona</strong>
+  </div>
+</div>
+
 ## K-fashion 컨셉을 AI 페르소나로 먼저 점검
 
 [![Version](https://img.shields.io/badge/version-0.6.2-0F766E)](pyproject.toml)
@@ -47,7 +56,7 @@ Nemotron-Personas-Korea는 NVIDIA가 2026년 4월 공개한 CC BY 4.0 한국어 
 ## 빠른 이해
 
 | 구분 | 내용 |
-|---|---|
+|:---|:---|
 | 입력 | 카테고리, 가격, 핏, 소재, 컬러, 시즌, 착용 상황, 스타일 톤, 타깃 가설, 제품 설명 |
 | 패널 | NVIDIA Nemotron-Personas-Korea 기반 합성 페르소나 |
 | 필터 | 연령, 성별, 지역, 직업, seed, 샘플 수 |

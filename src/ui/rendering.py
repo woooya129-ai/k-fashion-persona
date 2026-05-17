@@ -312,6 +312,8 @@ def render_top_bar(lang_seed: str, theme_seed: str) -> tuple[str, bool]:
 
             <div class="kfps-top-brandbar" aria-label="Product">
 
+              <span class="kfps-brand-icon" aria-hidden="true"></span>
+
               <strong>{product_name}</strong>
 
             </div>

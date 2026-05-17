@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from src.ui.assets import GITHUB_MARK_MASK_URI
+from src.ui.assets import GITHUB_MARK_MASK_URI, KFPS_ICON_MASK_URI
 
 
 def build_comfort_ui_css(
@@ -28,6 +28,7 @@ def build_comfort_ui_css(
             "chip": "#4d525a",
             "info": "#dfe8ff",
             "help_dot_ink": "#c7c0b5",
+            "brand_icon": "#ffffff",
         }
     else:
         root = {
@@ -45,6 +46,7 @@ def build_comfort_ui_css(
             "chip": "#e6e1d7",
             "info": "#22314f",
             "help_dot_ink": "#3a3d42",
+            "brand_icon": "#000000",
         }
     color_scheme = "dark" if dark_mode else "light"
     hero_background = (
@@ -82,6 +84,7 @@ def build_comfort_ui_css(
   --kfps-chip: {root["chip"]};
   --kfps-info: {root["info"]};
   --kfps-help-dot-ink: {root["help_dot_ink"]};
+  --kfps-brand-icon: {root["brand_icon"]};
   --kfps-radius: 16px;
   --kfps-radius-pill: 9999px;
   --kfps-enter-card-height: 272px;
@@ -562,13 +565,26 @@ button[data-testid="stBaseButton-header"][kind="header"],
   min-height: 40px;
   display: flex;
   align-items: center;
+  gap: 9px;
   overflow: hidden;
   white-space: nowrap;
   color: var(--kfps-body);
   font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
 }}
 
+.kfps-brand-icon {{
+  flex: 0 0 auto;
+  display: inline-block;
+  width: 26px;
+  height: 26px;
+  background: var(--kfps-brand-icon);
+  mask: url("{KFPS_ICON_MASK_URI}") center / contain no-repeat;
+  -webkit-mask: url("{KFPS_ICON_MASK_URI}") center / contain no-repeat;
+}}
+
 .kfps-top-brandbar strong {{
+  flex: 1 1 auto;
+  min-width: 0;
   color: var(--kfps-ink);
   font-size: 18px;
   line-height: 1;

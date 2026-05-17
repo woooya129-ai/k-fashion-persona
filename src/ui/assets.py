@@ -12,6 +12,7 @@ from urllib.parse import quote
 import streamlit as st
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+KFPS_ICON_PATH: Path = REPO_ROOT / "docs" / "assets" / "k-fashion-persona-icon.svg"
 FABRIC_PATH: Path = REPO_ROOT / "design" / "hero-skyblue-fabric.png"
 DIRECTION_BG_PATH: Path = REPO_ROOT / "design" / "direction-bg.png"
 HF_DATASET_URL = "https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea"
@@ -42,6 +43,15 @@ GITHUB_MARK_SVG = (
 )
 GITHUB_MARK_MASK_URI = f"data:image/svg+xml,{quote(GITHUB_MARK_SVG, safe='')}"
 GITHUB_PILL_ICON_HTML = '<span class="kfps-pill-github" aria-hidden="true"></span>'
+
+
+def _svg_mask_uri(path: Path) -> str:
+    if not path.exists():
+        return ""
+    return f"data:image/svg+xml,{quote(path.read_text(encoding='utf-8'), safe='')}"
+
+
+KFPS_ICON_MASK_URI = _svg_mask_uri(KFPS_ICON_PATH)
 
 
 def _docs_static_base_url() -> str:

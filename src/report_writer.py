@@ -414,9 +414,7 @@ def _append_validation_flags_section(lines: list[str], report: AggregateReport) 
     for key, label in _VALIDATION_FLAG_LABELS.items():
         lines.append(f"| {label} | {len(report.validation_flags.get(key, []))} |")
     lines.append("")
-    lines.append(
-        "> 이 표는 확정 오류가 아니라 입력과 응답 사이의 검증 필요 가능성을 표시합니다."
-    )
+    lines.append("> 이 표는 확정 오류가 아니라 입력과 응답 사이의 검증 필요 가능성을 표시합니다.")
     lines.append("")
 
 

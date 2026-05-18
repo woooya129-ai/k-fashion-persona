@@ -483,7 +483,11 @@ def _iter_result_documents(results_path: Path) -> Iterable[Any]:
 
     for path in paths:
         text = path.read_text(encoding="utf-8")
-        yield from _json_documents_from_text(text)
+        documents = _json_documents_from_text(text)
+        if not documents:
+            yield None
+            continue
+        yield from documents
 
 
 def import_agent_results(
@@ -498,18 +502,41 @@ def import_agent_results(
         (pack_dir / paths["persona_attributes"]).read_text(encoding="utf-8")
     )
     price_context = json.loads((pack_dir / paths["price_context"]).read_text(encoding="utf-8"))
+    expected_persona_ids = [str(row.get("persona_id", "")) for row in manifest.get("prompts", [])]
+    expected_persona_ids = [persona_id for persona_id in expected_persona_ids if persona_id]
+    if int(manifest.get("prompt_count", len(expected_persona_ids))) != len(expected_persona_ids):
+        raise ValueError("Agent Pack manifest prompt_count does not match prompts list.")
+    expected_persona_id_set = set(expected_persona_ids)
 
     rows_by_persona: dict[str, dict[str, Any]] = {}
-    parse_failed_count = 0
+    parse_failed_rows: list[dict[str, Any]] = []
+
+    def add_parse_failed(persona_id: str, error_type: str) -> None:
+        parse_failed_rows.append(
+            {
+                "persona_id": persona_id,
+                "status": "parse_failed",
+                "error_type": error_type,
+                "response_json": None,
+                "latency_ms": None,
+            }
+        )
+
     for document in _iter_result_documents(results_path):
+        if document is None:
+            add_parse_failed(f"parse_failed_{len(parse_failed_rows)}", "agent_result_no_json")
+            continue
         payload = _coerce_evaluation_payload(document)
         if payload is None:
-            parse_failed_count += 1
+            add_parse_failed(f"parse_failed_{len(parse_failed_rows)}", "agent_result_parse_failed")
             continue
         try:
             result = validate_evaluation_payload(payload)
         except ValidationError:
-            parse_failed_count += 1
+            add_parse_failed(f"parse_failed_{len(parse_failed_rows)}", "agent_result_parse_failed")
+            continue
+        if expected_persona_id_set and result.persona_id not in expected_persona_id_set:
+            add_parse_failed(result.persona_id, "agent_result_unexpected_persona")
             continue
         rows_by_persona.setdefault(
             result.persona_id,
@@ -522,16 +549,11 @@ def import_agent_results(
             },
         )
 
-    result_rows = list(rows_by_persona.values()) + [
-        {
-            "persona_id": f"parse_failed_{index}",
-            "status": "parse_failed",
-            "error_type": "agent_result_parse_failed",
-            "response_json": None,
-            "latency_ms": None,
-        }
-        for index in range(parse_failed_count)
-    ]
+    for persona_id in expected_persona_ids:
+        if persona_id not in rows_by_persona:
+            add_parse_failed(persona_id, "agent_result_missing")
+
+    result_rows = list(rows_by_persona.values()) + parse_failed_rows
     run_report = build_run_report(result_rows, persona_attributes, price_context)
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -547,7 +569,7 @@ def import_agent_results(
     return AgentImportSummary(
         output_dir=output_dir,
         success_count=len(rows_by_persona),
-        parse_failed_count=parse_failed_count,
+        parse_failed_count=len(parse_failed_rows),
         report_markdown_path=report_md_path,
         report_csv_path=report_csv_path,
     )

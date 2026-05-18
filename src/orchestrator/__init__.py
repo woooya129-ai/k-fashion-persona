@@ -37,7 +37,6 @@ from src.persona_filter import (
     sample_iterable_to_result,
     sample_to_result,
     sample_with_age_assist,
-    take_matching_iterable_to_result,
 )
 from src.persona_normalizer import Persona
 from src.prompt_builder import PROMPT_VERSION, SCHEMA_VERSION, build_prompt
@@ -126,8 +125,16 @@ def _economic_context_text(concept: dict[str, Any], price_context: dict[str, Any
     metric_lines = []
 
     for row in price_context.get("metric_rows", [])[:8]:
+        unit = str(row.get("unit") or "KRW")
+        value = row.get("value", row.get("value_krw"))
+        if unit == "KRW":
+            value_text = f"{int(value):,}원"
+        else:
+            value_text = f"{float(value):g}" if isinstance(value, int | float) else str(value)
+            if unit.lower() not in {"index", "지수"}:
+                value_text = f"{value_text} {unit}"
         metric_lines.append(
-            f"- {row['label']}: {int(row['value_krw']):,}원 ({row['period']}, {row['source_name']})"
+            f"- {row['label']}: {value_text} ({row['period']}, {row['source_name']})"
         )
 
     metric_text = "\n".join(metric_lines)
@@ -745,13 +752,7 @@ def _load_and_sample(
 
         personas = list(normalize_rows_to_personas(rows))
 
-        sample_func = (
-            sample_iterable_to_result
-            if sample.get("seeded_reservoir_sampling")
-            else take_matching_iterable_to_result
-        )
-
-        sampled = sample_func(
+        sampled = sample_iterable_to_result(
             iter(personas),
             sample["filter"],
             sample_size,
@@ -792,6 +793,6 @@ def _load_and_sample(
 def _sampling_strategy_for_dataset(dataset: dict[str, Any]) -> str:
 
     if dataset["source"] == "huggingface":
-        return "filter_then_take_until_sample_size_limited_scan"
+        return "filter_then_seeded_reservoir_sample_limited_scan"
 
     return "filter_then_seeded_random_sample"

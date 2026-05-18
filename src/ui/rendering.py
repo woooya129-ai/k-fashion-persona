@@ -125,26 +125,51 @@ def _normalize_age_range(age_min: int, age_max: int) -> tuple[int, int]:
     return lower, upper
 
 
+def _nearest_age_slider_value(value: int) -> int:
+    return max(0, min(100, int(round(int(value) / 10) * 10)))
+
+
+def _sync_age_direct_from_slider(slider_key: str, direct_key: str) -> None:
+    st.session_state[direct_key] = int(st.session_state.get(slider_key, 0))
+
+
+def _sync_age_slider_from_direct(direct_key: str, slider_key: str) -> None:
+    st.session_state[slider_key] = _nearest_age_slider_value(
+        int(st.session_state.get(direct_key, 0))
+    )
+
+
 def _render_age_range_inputs(lang: str, key_prefix: str) -> tuple[int, int]:
     render_input_section_heading(ui_text(lang, "age"))
+    min_slider_key = f"{key_prefix}_age_min_slider"
+    max_slider_key = f"{key_prefix}_age_max_slider"
+    min_direct_key = f"{key_prefix}_age_min_direct"
+    max_direct_key = f"{key_prefix}_age_max_direct"
+    st.session_state.setdefault(min_slider_key, 0)
+    st.session_state.setdefault(max_slider_key, 100)
+    st.session_state.setdefault(min_direct_key, int(st.session_state[min_slider_key]))
+    st.session_state.setdefault(max_direct_key, int(st.session_state[max_slider_key]))
+
     slider_cols = st.columns(2, gap="small")
     with slider_cols[0]:
         age_min_slider = st.slider(
             ui_text(lang, "age_min"),
             min_value=0,
             max_value=100,
-            value=0,
             step=10,
-            key=f"{key_prefix}_age_min_slider",
+            key=min_slider_key,
+            on_change=_sync_age_direct_from_slider,
+            args=(min_slider_key, min_direct_key),
         )
     with slider_cols[1]:
         age_max_slider = st.slider(
             ui_text(lang, "age_max"),
             min_value=0,
             max_value=100,
-            value=100,
             step=10,
-            key=f"{key_prefix}_age_max_slider",
+            key=max_slider_key,
+            on_change=_sync_age_direct_from_slider,
+            args=(max_slider_key, max_direct_key),
         )
 
     number_cols = st.columns(2, gap="small")
@@ -153,20 +178,26 @@ def _render_age_range_inputs(lang: str, key_prefix: str) -> tuple[int, int]:
             ui_text(lang, "age_min_direct"),
             min_value=0,
             max_value=100,
-            value=int(age_min_slider),
             step=1,
-            key=f"{key_prefix}_age_min_direct",
+            key=min_direct_key,
+            on_change=_sync_age_slider_from_direct,
+            args=(min_direct_key, min_slider_key),
         )
     with number_cols[1]:
         age_max_direct = st.number_input(
             ui_text(lang, "age_max_direct"),
             min_value=0,
             max_value=100,
-            value=int(age_max_slider),
             step=1,
-            key=f"{key_prefix}_age_max_direct",
+            key=max_direct_key,
+            on_change=_sync_age_slider_from_direct,
+            args=(max_direct_key, max_slider_key),
         )
 
+    if int(age_min_slider) != int(st.session_state[min_slider_key]):
+        st.session_state[min_direct_key] = int(age_min_slider)
+    if int(age_max_slider) != int(st.session_state[max_slider_key]):
+        st.session_state[max_direct_key] = int(age_max_slider)
     return _normalize_age_range(int(age_min_direct), int(age_max_direct))
 
 
@@ -1062,9 +1093,8 @@ def render_concept_inputs(lang: str) -> dict[str, Any]:
             max_chars=80,
             key="kfps_style_tone",
         )
-        style_tone = (
-            style_tone_custom.strip()
-            or ("" if str(style_tone_preset) == "직접 입력" else str(style_tone_preset))
+        style_tone = style_tone_custom.strip() or (
+            "" if str(style_tone_preset) == "직접 입력" else str(style_tone_preset)
         )
 
     render_input_section_heading(ui_text(lang, "input_section_product"))
@@ -1817,9 +1847,7 @@ def _format_design_details(value: Any) -> str:
     if not isinstance(value, list | tuple | set):
         return PRODUCT_CARD_EMPTY_PLACEHOLDER
     normalized = [
-        normalize_concept_text(str(item))
-        for item in value
-        if normalize_concept_text(str(item))
+        normalize_concept_text(str(item)) for item in value if normalize_concept_text(str(item))
     ]
     return ", ".join(normalized) if normalized else PRODUCT_CARD_EMPTY_PLACEHOLDER
 

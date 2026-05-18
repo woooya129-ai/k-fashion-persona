@@ -211,6 +211,43 @@ def test_build_persona_payloads_confines_concept_to_prompt(
     )
 
 
+def test_build_persona_payloads_preserves_non_krw_kosis_units(
+    all_mock_personas: list[dict],
+    concept: dict,
+    model: dict,
+    hashes: dict[str, str],
+) -> None:
+    personas = [normalize_persona(all_mock_personas[0], 0)]
+    assert personas[0] is not None
+    price_context = {
+        "price_burden_ratio": 0.5,
+        "price_burden_label": "medium",
+        "metric_rows": [
+            {
+                "label": "의류·신발 소비자물가지수",
+                "value": 112.3,
+                "value_krw": 112.3,
+                "unit": "2020=100",
+                "period": "2025_Q4",
+                "source_name": "소비자물가지수",
+            }
+        ],
+    }
+
+    payloads = app.build_persona_payloads(
+        personas=personas,  # type: ignore[arg-type]
+        concept=concept,
+        model=model,
+        price_context=price_context,
+        hashes=hashes,
+        prompt_template_md=PROMPT_TEMPLATE_PATH.read_text(encoding="utf-8"),
+    )
+
+    prompt_user = payloads[0]["prompt"]["user"]
+    assert "의류·신발 소비자물가지수: 112.3 2020=100" in prompt_user
+    assert "의류·신발 소비자물가지수: 112원" not in prompt_user
+
+
 def test_make_run_meta_uses_dataset_and_hash_metadata(
     model: dict,
     hashes: dict[str, str],
@@ -915,10 +952,7 @@ def test_apptest_initial_screen_renders_without_exceptions() -> None:
     ]
     assert len(run_mode_controls) == 1
     assert len(at.selectbox) >= 1
-    assert any(
-        selectbox.proto.label == app.ui_text("KR", "model")
-        for selectbox in at.selectbox
-    )
+    assert any(selectbox.proto.label == app.ui_text("KR", "model") for selectbox in at.selectbox)
     run_button_label = app.ui_text("KR", "run_button")
     run_buttons = [button for button in at.button if button.proto.label == run_button_label]
     assert len(run_buttons) == 1
@@ -951,7 +985,7 @@ def test_app_sampling_and_filter_limits_are_explicit() -> None:
     assert app.ui_text("KR", "sampling_seed") == "sampling-seed"
 
 
-def test_load_and_sample_hf_unfiltered_uses_sequential_limited_scan(
+def test_load_and_sample_hf_unfiltered_uses_seeded_reservoir_limited_scan(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     def rows():
@@ -974,7 +1008,7 @@ def test_load_and_sample_hf_unfiltered_uses_sequential_limited_scan(
             },
             {"sample_size": 3, "sampling_seed": seed, "filter": app.PersonaFilter()},
         )
-        assert sampled.matched_count_before_sample == 3
+        assert sampled.matched_count_before_sample == 10
         assert sampled.sample_size == 3
         return [p.persona_id for p in sampled.rows]
 
@@ -983,8 +1017,8 @@ def test_load_and_sample_hf_unfiltered_uses_sequential_limited_scan(
     seed_999 = ids_for(999)
 
     assert seed_42_a == seed_42_b
-    assert seed_42_a == seed_999
-    assert seed_42_a == ["stream-0", "stream-1", "stream-2"]
+    assert seed_42_a != seed_999
+    assert seed_42_a != ["stream-0", "stream-1", "stream-2"]
 
 
 def test_load_and_sample_hf_filtered_scans_until_audience_count_is_filled(
@@ -1365,7 +1399,7 @@ def test_apptest_mock_end_to_end_worker_report_ui(
         2,
         2,
         42,
-        "filter_then_take_until_sample_size_limited_scan",
+        "filter_then_seeded_reservoir_sample_limited_scan",
         "필터 없음 (전체)",
     )
     if real_db_stat_before is None:

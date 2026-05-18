@@ -417,9 +417,7 @@ def _has_uninput_design_element(result_text: str, design_details: set[str]) -> b
         allowed_keywords: set[str] = set()
     else:
         allowed_keywords = {
-            keyword
-            for detail in design_details
-            for keyword in _DESIGN_KEYWORDS.get(detail, ())
+            keyword for detail in design_details for keyword in _DESIGN_KEYWORDS.get(detail, ())
         }
     for keywords in _DESIGN_KEYWORDS.values():
         for keyword in keywords:

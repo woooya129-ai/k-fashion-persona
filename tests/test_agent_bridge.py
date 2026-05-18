@@ -127,9 +127,47 @@ def test_import_agent_results_accepts_codex_and_claude_wrappers(tmp_path):
     )
 
     assert summary.success_count == 2
-    assert summary.parse_failed_count == 0
+    assert summary.parse_failed_count == 1
     assert (output_dir / "agent-report.md").exists()
     assert (output_dir / "agent-report.csv").exists()
     normalized_text = (output_dir / "normalized-results.jsonl").read_text(encoding="utf-8")
     assert personas[0].persona_id in normalized_text
     assert personas[1].persona_id in normalized_text
+    assert "agent_result_no_json" in normalized_text
+
+
+def test_import_agent_results_counts_manifest_missing_personas(tmp_path):
+    personas = _personas()
+    pack_dir = tmp_path / "agent-pack"
+    write_agent_pack(
+        output_dir=pack_dir,
+        concept=_concept(),
+        personas=personas,
+        price_context=build_price_context(159_000),
+        dataset={"source": "test"},
+        sample={
+            "sample_size": len(personas),
+            "sampling_seed": 42,
+            "matched_count_before_sample": len(personas),
+        },
+    )
+
+    results_dir = pack_dir / "results" / "partial"
+    results_dir.mkdir(parents=True)
+    (results_dir / "one-result.json").write_text(
+        json.dumps(_result(personas[0].persona_id), ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    output_dir = tmp_path / "agent-report"
+    summary = import_agent_results(
+        pack_dir=pack_dir,
+        results_path=results_dir,
+        output_dir=output_dir,
+    )
+
+    assert summary.success_count == 1
+    assert summary.parse_failed_count == 1
+    normalized_text = (output_dir / "normalized-results.jsonl").read_text(encoding="utf-8")
+    assert personas[1].persona_id in normalized_text
+    assert "agent_result_missing" in normalized_text

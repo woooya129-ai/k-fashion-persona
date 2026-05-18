@@ -352,9 +352,7 @@ def test_v0_3_template_metadata_declares_v0_3(prompt_template_v0_3_md: str):
 
 def test_v0_3_template_balances_reaction_dimensions(prompt_template_v0_3_md: str):
     for label in _BALANCED_REACTION_DIMENSIONS:
-        assert label in prompt_template_v0_3_md, (
-            f"v0.3 prompt missing balanced dimension: {label}"
-        )
+        assert label in prompt_template_v0_3_md, f"v0.3 prompt missing balanced dimension: {label}"
 
 
 def test_v0_3_template_keeps_risk_signals_as_sub_checks(prompt_template_v0_3_md: str):

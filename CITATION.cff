@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software or its documented workflow, cite it as below."
 title: "k-fashion-persona: Synthetic Persona Pre-Screening for K-Fashion Concepts"
-version: 0.6.1
+version: 0.7.0
 date-released: 2026-05-15
 type: software
 authors:

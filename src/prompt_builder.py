@@ -1,14 +1,15 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-"""Prompt builder for concept_eval_ko (v0.2 / v0.3).
+"""Prompt builder for concept_eval_ko (v0.2 / v0.3 / v0.4).
 
 lock-in v1.2 §2.1 / public beta v3 prompt rubric:
   prompt_version is derived from the loaded prompt template (allowlist below).
     - "concept_eval_ko_v0_2" — K-fashion pre-screening rubric (7 risk signals).
     - "concept_eval_ko_v0_3" — balanced synthetic persona reaction evaluator.
+    - "concept_eval_ko_v0_4" — v0.3 plus input-grounding safety rules.
   schema_version stays "eval_v0_1" — EvaluationResult schema is unchanged.
 
 cache invalidation contract (lock-in v1.2 §5.3.1):
-  - prompt_version flows into compute_cache_key, so v0.2 and v0.3 cache rows
+  - prompt_version flows into compute_cache_key, so v0.2, v0.3, and v0.4 cache rows
     never collide for the same persona/concept/model tuple.
 
 PM v3 §15 prompt injection defence:
@@ -28,14 +29,17 @@ from src.cache import normalize_concept_text
 
 # Public release default. The actual prompt_version returned by build_prompt
 # is still derived from the loaded template so cache keys stay template-bound.
-PROMPT_VERSION = "concept_eval_ko_v0_3"
+PROMPT_VERSION = "concept_eval_ko_v0_4"
 PROMPT_VERSION_V0_2 = "concept_eval_ko_v0_2"
-PROMPT_VERSION_V0_3 = PROMPT_VERSION
+PROMPT_VERSION_V0_3 = "concept_eval_ko_v0_3"
+PROMPT_VERSION_V0_4 = PROMPT_VERSION
 SCHEMA_VERSION = "eval_v0_1"
 
 # Allowlist of supported prompt versions. Adding a new version requires
 # the lock-in v1.2 §2.3 checklist and a corresponding template file.
-SUPPORTED_PROMPT_VERSIONS: frozenset[str] = frozenset({PROMPT_VERSION_V0_2, PROMPT_VERSION_V0_3})
+SUPPORTED_PROMPT_VERSIONS: frozenset[str] = frozenset(
+    {PROMPT_VERSION_V0_2, PROMPT_VERSION_V0_3, PROMPT_VERSION_V0_4}
+)
 
 # Matches the metadata header: `prompt_version: \`concept_eval_ko_v0_X\``.
 _PROMPT_VERSION_LINE = re.compile(
@@ -144,7 +148,8 @@ class PromptParts:
             [USER_CONCEPT_INPUT], and [SCHEMA_INSTRUCTION] blocks.
         prompt_version: Lock-in identifier derived from the loaded template
             metadata. Must be a member of ``SUPPORTED_PROMPT_VERSIONS``
-            (currently "concept_eval_ko_v0_2" or "concept_eval_ko_v0_3").
+            (currently "concept_eval_ko_v0_2", "concept_eval_ko_v0_3", or
+            "concept_eval_ko_v0_4").
         schema_version: Lock-in identifier — always "eval_v0_1".
     """
 
@@ -191,8 +196,9 @@ def build_prompt(
         concept_text: User-supplied concept description — UNTRUSTED INPUT.
         price_krw: Product price in Korean Won.
         prompt_template_md: Full contents of a supported prompt template
-            (currently prompts/concept_eval_ko_v0_2.md or
-            prompts/concept_eval_ko_v0_3.md). The returned prompt_version is
+            (currently prompts/concept_eval_ko_v0_2.md,
+            prompts/concept_eval_ko_v0_3.md, or
+            prompts/concept_eval_ko_v0_4.md). The returned prompt_version is
             derived from the template's metadata header so cache keys are
             isolated across versions.
 

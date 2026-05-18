@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.7.0 - 2026-05-18
+
+- Added `concept_eval_ko_v0_4` and moved the default prompt template to the new version so cache keys are separated from v0.3.
+- Added input-grounding prompt rules for design details, price, product audience, occasion, and season.
+- Added structured design-detail inputs, style-tone presets, and peer-brand price-position metadata.
+- Added age lower/upper controls with direct numeric inputs for finer panel targeting.
+- Added one-time adjacent age assist when an age filter yields too few personas, with the assist ratio shown in reports.
+- Added deterministic validation flags and a three-line report summary on `AggregateReport` without changing `EvaluationResult`.
+- Added a shared `src/public_data/` foundation for future government/public API connectors.
+- Added KOSIS API call status metadata in reports while preserving snapshot fallback.
+- Updated project version labels to `0.7.0`.
+
 ## v0.6.1 - 2026-05-15
 
 - HF 스트리밍 샘플링에서 제품 성별 필터가 켜져 있으면 100행 제한으로 먼저 자르지 않고, 요청한 패널 수를 채울 수 있도록 필터 통과 행을 계속 읽음.

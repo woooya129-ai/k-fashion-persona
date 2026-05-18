@@ -21,6 +21,7 @@ from src.aggregator import (
     categorize_fashion_risks,
     extract_top_reasons,
     generate_modification_suggestions,
+    generate_validation_flags,
     representative_personas,
 )
 from src.result_parser import EvaluationResult
@@ -624,3 +625,49 @@ class TestAggregateFashionFields:
         assert report.fashion_risks.total_concerns == 0
         assert report.modification_suggestions == []
         assert report.representative_responses == []
+
+
+class TestValidationFlags:
+    def test_generate_validation_flags_detects_price_design_gender_and_occasion(self):
+        results = [
+            _make_result(
+                "p1",
+                main_concerns=[
+                    "299,000원대라면 부담",
+                    "로고 그래픽이 강해 보임",
+                    "여성용으로 보일 수 있음",
+                    "파티 착장에는 애매함",
+                ],
+            )
+        ]
+        flags = generate_validation_flags(
+            results,
+            {
+                "product_price_krw": 159_000,
+                "design_details": ["장식 없음"],
+                "product_audience": "menswear",
+                "occasion": "출근",
+            },
+        )
+        assert flags["price_mismatch_possible"] == ["p1"]
+        assert flags["uninput_design_element_mentioned"] == ["p1"]
+        assert flags["gender_context_mismatch_possible"] == ["p1"]
+        assert flags["occasion_mismatch_possible"] == ["p1"]
+
+    def test_aggregate_populates_validation_flags_and_summary_lines(self):
+        results = [
+            _make_result("p1", main_reasons=["색상이 무난함"], main_concerns=["로고가 부담"])
+        ]
+        report = aggregate(
+            results,
+            {"p1": {"age": 30, "sex": "M", "province": "서울", "occupation": "사무직"}},
+            _make_quality(1),
+            input_snapshot={
+                "product_price_krw": 100_000,
+                "design_details": ["장식 없음"],
+                "product_audience": "menswear",
+                "occasion": "출근",
+            },
+        )
+        assert report.validation_flags["uninput_design_element_mentioned"] == ["p1"]
+        assert len(report.summary_lines) == 3

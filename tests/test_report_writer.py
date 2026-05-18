@@ -206,6 +206,40 @@ class TestRenderMarkdown:
         assert "월평균 가구소득" in md
         assert "개별 페르소나의 실제 소득·자산·구매력을 뜻하지 않습니다." in md
 
+    def test_summary_and_validation_sections_present(self, full_report):
+        md = render_markdown(full_report)
+        assert "## 먼저 볼 요약" in md
+        assert "## 검증 필요 가능성" in md
+
+    def test_sampling_age_assist_diagnostics_present(self):
+        report = aggregate(
+            MOCK_RESULTS[:2],
+            MOCK_PERSONA_ATTRIBUTES,
+            QualityCounts(
+                success=2,
+                parse_failed=0,
+                api_failed=0,
+                total_attempted=2,
+                distribution_included=2,
+            ),
+            input_snapshot={
+                "sample_diagnostics": {
+                    "age_assist_applied": True,
+                    "age_assist_original_matched_count": 2,
+                    "age_assist_expanded_matched_count": 6,
+                    "age_assist_sampled_count": 4,
+                    "age_assist_sampled_pct": 66.7,
+                    "age_assist_underfilled_after_expansion": True,
+                }
+            },
+        )
+
+        md = render_markdown(report)
+
+        assert "## 표본 구성 보조" in md
+        assert "보조 포함 비율" in md
+        assert "66.7% (±5세 확장으로 추가된 페르소나 4명)" in md
+
 
 # ---------------------------------------------------------------------------
 # render_csv
@@ -234,6 +268,35 @@ class TestRenderCsv:
         result = escape_csv_cell("-1")
         assert result == "'-1"
 
+    def test_sampling_age_assist_diagnostics_present(self):
+        report = aggregate(
+            MOCK_RESULTS[:2],
+            MOCK_PERSONA_ATTRIBUTES,
+            QualityCounts(
+                success=2,
+                parse_failed=0,
+                api_failed=0,
+                total_attempted=2,
+                distribution_included=2,
+            ),
+            input_snapshot={
+                "sample_diagnostics": {
+                    "age_assist_applied": True,
+                    "age_assist_original_matched_count": 2,
+                    "age_assist_expanded_matched_count": 6,
+                    "age_assist_sampled_count": 4,
+                    "age_assist_sampled_pct": 66.7,
+                    "age_assist_underfilled_after_expansion": True,
+                }
+            },
+        )
+
+        csv_text = render_csv(report)
+
+        assert "표본구성보조" in csv_text
+        assert "보조 포함 비율" in csv_text
+        assert "66.7% (±5세 확장으로 추가된 페르소나 4명)" in csv_text
+
     def test_formula_injection_plus(self, full_report):
         result = escape_csv_cell("+1")
         assert result == "'+1"
@@ -259,6 +322,11 @@ class TestRenderCsv:
         assert "KOSIS참고통계" in csv_text
         assert "월평균 가구소득" in csv_text
         assert "5,422,000원" in csv_text
+
+    def test_csv_contains_summary_and_validation_rows(self, full_report):
+        csv_text = render_csv(full_report)
+        assert "먼저볼요약" in csv_text
+        assert "검증필요가능성" in csv_text
 
     def test_forbidden_phrase_in_reasons_raises(self):
         # 금지 표현이 EvaluationResult.main_reasons 를 통해 CSV 셀에 들어오면

@@ -242,7 +242,7 @@ __all__ = (
 
 DB_PATH: Path = REPO_ROOT / "cache" / "screener.db"
 PRICING_CONFIG_PATH: Path = REPO_ROOT / "config" / "pricing_config.yaml"
-PROMPT_TEMPLATE_PATH: Path = REPO_ROOT / "prompts" / "concept_eval_ko_v0_3.md"
+PROMPT_TEMPLATE_PATH: Path = REPO_ROOT / "prompts" / "concept_eval_ko_v0_4.md"
 logger = logging.getLogger(__name__)
 
 
@@ -415,6 +415,9 @@ def start_screening(
     st.session_state["active_job_id"] = job_id
     st.session_state["active_run_id"] = run_id
     st.session_state["active_project_name"] = concept["project_name"]
+    input_snapshot = dict(concept)
+    input_snapshot["sample_diagnostics"] = sampled.sampling_diagnostics()
+    st.session_state["active_input_snapshot"] = input_snapshot
     st.session_state["active_price_context"] = price_context
     st.session_state["active_persona_attributes"] = {
         persona.persona_id: _persona_attributes(persona) for persona in sampled.rows
@@ -483,6 +486,7 @@ def _render_job_panel_impl(lang: str) -> None:
             result_rows,
             persona_attributes,
             st.session_state.get("active_price_context"),
+            st.session_state.get("active_input_snapshot"),
         )
     except ValueError as exc:
         st.error(f"리포트 문구 검증 실패: {type(exc).__name__}")

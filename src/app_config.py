@@ -12,6 +12,7 @@ PRODUCT_CARD_FIELD_ORDER: tuple[str, ...] = (
     "fit",
     "material",
     "color",
+    "design_details",
     "season",
     "occasion",
     "style_tone",
@@ -24,6 +25,7 @@ PRODUCT_CARD_FIELD_LABELS_KR: dict[str, str] = {
     "fit": "핏",
     "material": "소재",
     "color": "컬러",
+    "design_details": "디자인 디테일",
     "season": "시즌",
     "occasion": "착용 상황",
     "style_tone": "스타일 톤",
@@ -31,7 +33,34 @@ PRODUCT_CARD_FIELD_LABELS_KR: dict[str, str] = {
     "description": "브랜드 메시지/제품 설명",
 }
 
-APP_VERSION = "0.6.2"
+DESIGN_DETAIL_OPTIONS: tuple[str, ...] = (
+    "그래픽 있음",
+    "패턴 있음",
+    "로고 있음",
+    "자수 있음",
+    "프린트 있음",
+    "워싱/가공 있음",
+    "장식 없음",
+)
+STYLE_TONE_PRESETS: tuple[str, ...] = (
+    "직접 입력",
+    "미니멀",
+    "정돈된 클래식",
+    "캐주얼",
+    "스트릿",
+    "스포티",
+    "페미닌",
+    "워크웨어",
+    "고급감",
+)
+PRICE_POSITION_OPTIONS: tuple[str, ...] = (
+    "모르겠음",
+    "저렴한 편",
+    "비슷한 편",
+    "비싼 편",
+)
+
+APP_VERSION = "0.7.0"
 DEFAULT_PRICE_CONTEXT_VERSION = "kosis_hybrid_2026_v1"
 DEFAULT_TEMPERATURE = 0.3
 MAX_SAMPLE_SIZE = 1_000

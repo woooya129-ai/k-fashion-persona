@@ -33,7 +33,7 @@ APTEST_E2E_FAKE_API_KEY = "fake-apptest-e2e-provider-key-no-real-call"
 
 
 PROMPT_TEMPLATE_PATH = (
-    Path(__file__).resolve().parent.parent / "prompts" / "concept_eval_ko_v0_3.md"
+    Path(__file__).resolve().parent.parent / "prompts" / "concept_eval_ko_v0_4.md"
 )
 APP_PATH = str(Path(__file__).resolve().parent.parent / "src" / "app.py")
 APP_MODULE_SCRIPT = "import src.app as app\napp.main()\n"
@@ -896,7 +896,7 @@ def test_app_source_uses_readable_comfort_tokens_with_targeted_hero_gradient() -
     assert "docs/docs.html" in source
     assert "📄" in source
     assert "woooya129-ai/k-fashion-persona" in source
-    assert "로컬 퍼블릭 베타 · v0.6.2" in source
+    assert "로컬 퍼블릭 베타 · v0.7.0" in source
     assert "설명 ⇄ 도구" not in source
     assert "st.segmented_control" in source
 
@@ -915,7 +915,10 @@ def test_apptest_initial_screen_renders_without_exceptions() -> None:
     ]
     assert len(run_mode_controls) == 1
     assert len(at.selectbox) >= 1
-    assert at.selectbox[0].proto.label == app.ui_text("KR", "model")
+    assert any(
+        selectbox.proto.label == app.ui_text("KR", "model")
+        for selectbox in at.selectbox
+    )
     run_button_label = app.ui_text("KR", "run_button")
     run_buttons = [button for button in at.button if button.proto.label == run_button_label]
     assert len(run_buttons) == 1
@@ -1079,8 +1082,8 @@ def test_load_and_sample_hf_passes_explicit_token(monkeypatch: pytest.MonkeyPatc
     assert captured_kwargs["token"] == "hf_TEST_TOKEN"
 
 
-def test_app_default_prompt_template_is_v0_3() -> None:
-    assert app.PROMPT_TEMPLATE_PATH.name == "concept_eval_ko_v0_3.md"
+def test_app_default_prompt_template_is_v0_4() -> None:
+    assert app.PROMPT_TEMPLATE_PATH.name == "concept_eval_ko_v0_4.md"
     assert app.PROMPT_TEMPLATE_PATH == PROMPT_TEMPLATE_PATH
 
 
@@ -1409,6 +1412,7 @@ def test_product_card_field_order_matches_locked_spec() -> None:
         "fit",
         "material",
         "color",
+        "design_details",
         "season",
         "occasion",
         "style_tone",
@@ -1426,6 +1430,7 @@ def test_canonical_product_card_text_empty_fields_collapse_to_placeholder() -> N
         "핏: 미입력",
         "소재: 미입력",
         "컬러: 미입력",
+        "디자인 디테일: 미입력",
         "시즌: 미입력",
         "착용 상황: 미입력",
         "스타일 톤: 미입력",
@@ -1442,6 +1447,7 @@ def test_canonical_product_card_text_full_fields_render_in_fixed_order() -> None
         "fit": "오버사이즈",
         "material": "메리노 울 100%",
         "color": "차콜",
+        "design_details": ["로고 있음", "자수 있음"],
         "season": "F/W",
         "occasion": "출근복",
         "style_tone": "미니멀",
@@ -1455,6 +1461,7 @@ def test_canonical_product_card_text_full_fields_render_in_fixed_order() -> None
         "핏: 오버사이즈\n"
         "소재: 메리노 울 100%\n"
         "컬러: 차콜\n"
+        "디자인 디테일: 로고 있음, 자수 있음\n"
         "시즌: F/W\n"
         "착용 상황: 출근복\n"
         "스타일 톤: 미니멀\n"
@@ -1470,6 +1477,7 @@ def test_canonical_product_card_text_normalizes_whitespace_and_invisible_chars()
         "fit": "오버사이즈",
         "material": "메리노 울 100%",
         "color": "차콜",
+        "design_details": ["장식 없음"],
         "season": "F/W",
         "occasion": "출근복",
         "style_tone": "미니멀",
@@ -1514,6 +1522,7 @@ def test_concept_hash_is_stable_for_identical_product_card_inputs() -> None:
         "fit": "오버사이즈",
         "material": "메리노 울 100%",
         "color": "차콜",
+        "design_details": ["장식 없음"],
         "season": "F/W",
         "occasion": "출근복",
         "style_tone": "미니멀",
@@ -1544,6 +1553,7 @@ def test_concept_hash_changes_when_product_card_field_changes() -> None:
         "fit": "오버사이즈",
         "material": "메리노 울 100%",
         "color": "차콜",
+        "design_details": ["장식 없음"],
         "season": "F/W",
         "occasion": "출근복",
         "style_tone": "미니멀",
@@ -1561,6 +1571,7 @@ def test_concept_hash_changes_when_product_card_field_changes() -> None:
         ("fit", "슬림"),
         ("material", "코튼 100%"),
         ("color", "아이보리"),
+        ("design_details", ["그래픽 있음"]),
         ("season", "S/S"),
         ("occasion", "주말 캐주얼"),
         ("style_tone", "스트릿"),
@@ -1587,6 +1598,7 @@ def test_apptest_product_card_inputs_render_with_korean_labels() -> None:
         "시즌",
         "착용 상황",
         "스타일 톤",
+        "기타 디자인 디테일",
     )
     rendered_labels = {widget.proto.label for widget in at.text_input}
     for label in expected_labels:

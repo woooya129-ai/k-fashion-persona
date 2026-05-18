@@ -9,6 +9,7 @@ No LLM / HF / DB calls.  Standard library only (collections.Counter).
 - 새 EvaluationResult 필드는 추가하지 않는다 (기존 `main_concerns` / `main_reasons`만 사용).
 """
 
+import os
 import re
 from collections import Counter
 from dataclasses import dataclass, field
@@ -253,6 +254,10 @@ class AggregateReport:
     top_reasons: TopReasons
     sample_warning: str | None  # PM v3 §17.3 표 매핑
 
+    input_snapshot: dict = field(default_factory=dict)
+    validation_flags: dict[str, list[str]] = field(default_factory=dict)
+    summary_lines: list[str] = field(default_factory=list)
+
     # 패션 위험 신호 + 수정 제안 + 대표 페르소나
     fashion_risks: FashionRiskBreakdown = field(
         default_factory=lambda: FashionRiskBreakdown(
@@ -352,6 +357,147 @@ def _occupation_first_word(occupation: str) -> str:
     return occupation.split()[0]
 
 
+_VALIDATION_FLAG_KEYS: tuple[str, ...] = (
+    "price_mismatch_possible",
+    "uninput_design_element_mentioned",
+    "gender_context_mismatch_possible",
+    "occasion_mismatch_possible",
+)
+
+_DESIGN_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "그래픽 있음": ("그래픽",),
+    "패턴 있음": ("패턴",),
+    "로고 있음": ("로고",),
+    "자수 있음": ("자수",),
+    "프린트 있음": ("프린트",),
+    "워싱/가공 있음": ("워싱", "가공"),
+}
+
+_OCCASION_MISMATCH_HINTS: tuple[str, ...] = (
+    "운동",
+    "등산",
+    "파티",
+    "결혼식",
+    "여행",
+    "잠옷",
+)
+
+
+def _validation_flags_enabled() -> bool:
+    return os.environ.get("K_FASHION_VALIDATION_FLAGS", "on").strip().lower() != "off"
+
+
+def _result_text(result: EvaluationResult) -> str:
+    return " ".join(
+        [
+            *result.main_reasons,
+            *result.main_concerns,
+            result.confidence_note,
+        ]
+    )
+
+
+def _compact_digits(value: int) -> set[str]:
+    text = str(value)
+    return {text, f"{value:,}", f"{value // 10_000}만"} if value >= 10_000 else {text}
+
+
+def _has_price_mismatch(result_text: str, input_price: int | None) -> bool:
+    if not input_price:
+        return False
+    if not any(token in result_text for token in ("원", "만원", "천원")):
+        return False
+    if any(token in result_text for token in _compact_digits(input_price)):
+        return False
+    return bool(re.search(r"\d[\d,]*(?:만|천)?원", result_text))
+
+
+def _has_uninput_design_element(result_text: str, design_details: set[str]) -> bool:
+    if "장식 없음" in design_details:
+        allowed_keywords: set[str] = set()
+    else:
+        allowed_keywords = {
+            keyword
+            for detail in design_details
+            for keyword in _DESIGN_KEYWORDS.get(detail, ())
+        }
+    for keywords in _DESIGN_KEYWORDS.values():
+        for keyword in keywords:
+            if keyword in result_text and keyword not in allowed_keywords:
+                return True
+    return False
+
+
+def _has_gender_context_mismatch(result_text: str, product_audience: str | None) -> bool:
+    if product_audience == "womenswear":
+        return any(token in result_text for token in ("남성", "남자", "남성용"))
+    if product_audience == "menswear":
+        return any(token in result_text for token in ("여성", "여자", "여성용"))
+    return False
+
+
+def _has_occasion_mismatch(result_text: str, occasion: str | None) -> bool:
+    if not occasion:
+        return False
+    if any(token in occasion for token in _OCCASION_MISMATCH_HINTS):
+        return False
+    return any(token in result_text for token in _OCCASION_MISMATCH_HINTS)
+
+
+def generate_validation_flags(
+    results: list[EvaluationResult],
+    input_snapshot: dict | None = None,
+) -> dict[str, list[str]]:
+    if not _validation_flags_enabled():
+        return {}
+    snapshot = input_snapshot or {}
+    input_price = snapshot.get("product_price_krw") or snapshot.get("price")
+    try:
+        input_price_int = int(input_price) if input_price else None
+    except (TypeError, ValueError):
+        input_price_int = None
+    design_details = set(snapshot.get("design_details") or ())
+    product_audience = str(snapshot.get("product_audience") or "")
+    occasion = str(snapshot.get("occasion") or "")
+
+    flags: dict[str, list[str]] = {key: [] for key in _VALIDATION_FLAG_KEYS}
+    for result in results:
+        text = _result_text(result)
+        if _has_price_mismatch(text, input_price_int):
+            flags["price_mismatch_possible"].append(result.persona_id)
+        if _has_uninput_design_element(text, design_details):
+            flags["uninput_design_element_mentioned"].append(result.persona_id)
+        if _has_gender_context_mismatch(text, product_audience):
+            flags["gender_context_mismatch_possible"].append(result.persona_id)
+        if _has_occasion_mismatch(text, occasion):
+            flags["occasion_mismatch_possible"].append(result.persona_id)
+    return flags
+
+
+def build_summary_lines(
+    sentiment: SentimentDistribution,
+    top_reasons: TopReasons,
+    validation_flags: dict[str, list[str]],
+) -> list[str]:
+    dominant = max(
+        (
+            ("positive", sentiment.positive, sentiment.positive_pct),
+            ("neutral", sentiment.neutral, sentiment.neutral_pct),
+            ("negative", sentiment.negative, sentiment.negative_pct),
+        ),
+        key=lambda row: (row[1], row[2]),
+    )
+    lines = [f"반응 방향: {dominant[0]} {dominant[1]}명 / {dominant[2]}%"]
+    if top_reasons.positive:
+        reason, count = top_reasons.positive[0]
+        lines.append(f"가장 많이 나온 긍정 이유: {reason} ({count}건)")
+    else:
+        lines.append("가장 많이 나온 긍정 이유: 없음")
+    flag_count = sum(len(ids) for ids in validation_flags.values())
+    lines.append(f"검증 필요 가능성: {flag_count}건")
+    return lines
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -361,6 +507,7 @@ def aggregate(
     results: list[EvaluationResult],
     persona_attributes: dict[str, dict],
     quality_counts: QualityCounts,
+    input_snapshot: dict | None = None,
 ) -> AggregateReport:
     """results는 status=success인 것만. parse_failed / api_failed는 quality_counts로 전달.
 
@@ -461,6 +608,9 @@ def aggregate(
     fashion_risks = categorize_fashion_risks(results)
     modification_suggestions = generate_modification_suggestions(fashion_risks)
     representative_responses = representative_personas(results, persona_attributes)
+    snapshot = dict(input_snapshot or {})
+    validation_flags = generate_validation_flags(results, snapshot)
+    summary_lines = build_summary_lines(sentiment, top_reasons, validation_flags)
 
     return AggregateReport(
         sample_size=n,
@@ -475,6 +625,9 @@ def aggregate(
         segments_price_burden=segments_price_burden,
         top_reasons=top_reasons,
         sample_warning=warning,
+        input_snapshot=snapshot,
+        validation_flags=validation_flags,
+        summary_lines=summary_lines,
         fashion_risks=fashion_risks,
         modification_suggestions=modification_suggestions,
         representative_responses=representative_responses,

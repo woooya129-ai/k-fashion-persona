@@ -20,6 +20,7 @@ from src.app_config import (
     BEGINNER_MODEL_PRIORITY,
     DEFAULT_PRICE_CONTEXT_VERSION,
     DEFAULT_TEMPERATURE,
+    DESIGN_DETAIL_OPTIONS,
     ESTIMATE_ECONOMIC_CONTEXT_TOKENS,
     ESTIMATE_OUTPUT_TOKENS_PER_PERSONA,
     ESTIMATE_PERSONA_TOKENS,
@@ -29,10 +30,12 @@ from src.app_config import (
     KOREA_PROVINCE_OPTIONS,
     MAX_OUTPUT_TOKENS_PER_PERSONA,
     OCCUPATION_KEYWORD_OPTIONS,
+    PRICE_POSITION_OPTIONS,
     PRODUCT_CARD_EMPTY_PLACEHOLDER,
     PRODUCT_CARD_FIELD_LABELS_KR,
     PRODUCT_CARD_FIELD_ORDER,
     RUN_MODE_PRESETS,
+    STYLE_TONE_PRESETS,
 )
 from src.cache import compute_concept_hash, compute_price_context_hash, normalize_concept_text
 from src.cost_estimator import (
@@ -112,6 +115,59 @@ def _product_audience_from_label(lang: str, label: str | None) -> str:
 
 def _sex_filter_for_product_audience(audience: str) -> frozenset[str]:
     return _PRODUCT_AUDIENCE_SEX_FILTER.get(audience, frozenset({"F"}))
+
+
+def _normalize_age_range(age_min: int, age_max: int) -> tuple[int, int]:
+    lower = max(0, min(100, int(age_min)))
+    upper = max(0, min(100, int(age_max)))
+    if lower > upper:
+        lower, upper = upper, lower
+    return lower, upper
+
+
+def _render_age_range_inputs(lang: str, key_prefix: str) -> tuple[int, int]:
+    render_input_section_heading(ui_text(lang, "age"))
+    slider_cols = st.columns(2, gap="small")
+    with slider_cols[0]:
+        age_min_slider = st.slider(
+            ui_text(lang, "age_min"),
+            min_value=0,
+            max_value=100,
+            value=0,
+            step=10,
+            key=f"{key_prefix}_age_min_slider",
+        )
+    with slider_cols[1]:
+        age_max_slider = st.slider(
+            ui_text(lang, "age_max"),
+            min_value=0,
+            max_value=100,
+            value=100,
+            step=10,
+            key=f"{key_prefix}_age_max_slider",
+        )
+
+    number_cols = st.columns(2, gap="small")
+    with number_cols[0]:
+        age_min_direct = st.number_input(
+            ui_text(lang, "age_min_direct"),
+            min_value=0,
+            max_value=100,
+            value=int(age_min_slider),
+            step=1,
+            key=f"{key_prefix}_age_min_direct",
+        )
+    with number_cols[1]:
+        age_max_direct = st.number_input(
+            ui_text(lang, "age_max_direct"),
+            min_value=0,
+            max_value=100,
+            value=int(age_max_slider),
+            step=1,
+            key=f"{key_prefix}_age_max_direct",
+        )
+
+    return _normalize_age_range(int(age_min_direct), int(age_max_direct))
 
 
 def _set_product_audience_selection(lang: str, audience: str) -> None:
@@ -943,6 +999,7 @@ def render_concept_inputs(lang: str) -> dict[str, Any]:
 
     st.subheader(ui_text(lang, "concept_header"))
     _render_product_audience_buttons(lang)
+    product_audience = _current_product_audience(lang)
 
     render_input_section_heading(ui_text(lang, "input_section_basics"))
 
@@ -994,11 +1051,20 @@ def render_concept_inputs(lang: str) -> dict[str, Any]:
         )
 
     with style_col:
-        style_tone = st.text_input(
+        style_tone_preset = st.selectbox(
+            ui_text(lang, "style_tone_preset"),
+            STYLE_TONE_PRESETS,
+            key="kfps_style_tone_preset",
+        )
+        style_tone_custom = st.text_input(
             ui_text(lang, "style_tone"),
             placeholder=ui_text(lang, "style_tone_placeholder"),
             max_chars=80,
             key="kfps_style_tone",
+        )
+        style_tone = (
+            style_tone_custom.strip()
+            or ("" if str(style_tone_preset) == "직접 입력" else str(style_tone_preset))
         )
 
     render_input_section_heading(ui_text(lang, "input_section_product"))
@@ -1029,6 +1095,22 @@ def render_concept_inputs(lang: str) -> dict[str, Any]:
             key="kfps_color",
         )
 
+    design_details: list[str] = []
+    design_cols = st.columns(4, gap="small")
+    for idx, option in enumerate(DESIGN_DETAIL_OPTIONS):
+        if design_cols[idx % 4].checkbox(option, key=f"kfps_design_detail_{idx}"):
+            design_details.append(option)
+    design_other = st.text_input(
+        ui_text(lang, "design_detail_other"),
+        placeholder=ui_text(lang, "design_detail_other_placeholder"),
+        max_chars=120,
+        key="kfps_design_detail_other",
+    )
+    if "장식 없음" in design_details:
+        design_details = ["장식 없음"]
+    elif design_other.strip():
+        design_details.append(design_other.strip())
+
     render_input_section_heading(ui_text(lang, "input_section_target"))
 
     description_col, target_col, run_col = st.columns([1.35, 0.9, 0.9], gap="small")
@@ -1043,6 +1125,11 @@ def render_concept_inputs(lang: str) -> dict[str, Any]:
         )
 
     with target_col:
+        price_position = st.selectbox(
+            ui_text(lang, "price_position"),
+            PRICE_POSITION_OPTIONS,
+            key="kfps_price_position",
+        )
         target_hypothesis = st.text_area(
             ui_text(lang, "target"),
             placeholder=ui_text(lang, "target_placeholder"),
@@ -1062,6 +1149,7 @@ def render_concept_inputs(lang: str) -> dict[str, Any]:
         "fit": fit,
         "material": material,
         "color": color,
+        "design_details": design_details,
         "season": season,
         "occasion": occasion,
         "style_tone": style_tone,
@@ -1074,13 +1162,16 @@ def render_concept_inputs(lang: str) -> dict[str, Any]:
     return {
         "project_name": project_name.strip() or "k-fashion-persona",
         "category": category.strip(),
+        "product_audience": product_audience,
         "product_price_krw": int(product_price_krw),
         "fit": fit.strip(),
         "material": material.strip(),
         "color": color.strip(),
+        "design_details": tuple(design_details),
         "season": season.strip(),
         "occasion": occasion.strip(),
         "style_tone": style_tone.strip(),
+        "price_position": str(price_position),
         "target_hypothesis": target_hypothesis.strip(),
         "description": normalize_concept_text(description),
         "canonical_product_card_text": canonical_text,
@@ -1162,7 +1253,7 @@ def render_sample_inputs(lang: str) -> dict[str, Any]:
 
     product_audience = _current_product_audience(lang)
 
-    age_min, age_max = st.slider(ui_text(lang, "age"), min_value=0, max_value=100, value=(0, 100))
+    age_min, age_max = _render_age_range_inputs(lang, "kfps_sample")
 
     province = st.multiselect(
         ui_text(lang, "province"),
@@ -1409,12 +1500,7 @@ def render_simple_setup(pricing_config: dict[str, ModelPricing], lang: str) -> d
             help=ui_text(lang, "sampling_seed_help"),
         )
 
-        age_min, age_max = st.slider(
-            ui_text(lang, "age"),
-            min_value=0,
-            max_value=100,
-            value=(0, 100),
-        )
+        age_min, age_max = _render_age_range_inputs(lang, "kfps_advanced")
 
         province = st.multiselect(
             ui_text(lang, "province"),
@@ -1536,11 +1622,12 @@ def render_price_context(price_context: dict[str, Any], lang: str) -> None:
         f"기준값: {denom} KRW, 라벨: **{price_context['price_burden_label']}**"
     )
 
+    api_status = price_context.get("api_status", price_context.get("source_mode", "snapshot"))
     st.caption(
         "KOSIS 기준 계층: "
         f"{price_context.get('reference_segment_label', DEFAULT_REFERENCE_SEGMENT_LABEL)}"
         f" · 기간: {price_context.get('period', '')}"
-        f" · 소스: {price_context.get('source_mode', 'snapshot')}"
+        f" · 호출 상태: {api_status}"
     )
 
     for warning in price_context.get("warnings", ()):
@@ -1724,6 +1811,19 @@ def _normalize_card_field(value: Any) -> str:
     return text or PRODUCT_CARD_EMPTY_PLACEHOLDER
 
 
+def _format_design_details(value: Any) -> str:
+    if isinstance(value, str):
+        return _normalize_card_field(value)
+    if not isinstance(value, list | tuple | set):
+        return PRODUCT_CARD_EMPTY_PLACEHOLDER
+    normalized = [
+        normalize_concept_text(str(item))
+        for item in value
+        if normalize_concept_text(str(item))
+    ]
+    return ", ".join(normalized) if normalized else PRODUCT_CARD_EMPTY_PLACEHOLDER
+
+
 def _format_card_price(value: Any) -> str:
 
     try:
@@ -1770,6 +1870,9 @@ def build_canonical_product_card_text(fields: dict[str, Any]) -> str:
 
         if key == "price":
             normalized = _format_card_price(fields.get(key, fields.get("product_price_krw", 0)))
+
+        elif key == "design_details":
+            normalized = _format_design_details(fields.get(key, []))
 
         else:
             normalized = _normalize_card_field(fields.get(key, ""))

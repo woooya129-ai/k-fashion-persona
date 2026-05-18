@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import random
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, replace
 from typing import Any
 
 from src.persona_normalizer import Persona
@@ -118,6 +118,87 @@ class SampleResult:
     matched_count_before_sample: int
     sample_size: int
     sampling_seed: int
+    age_assist_applied: bool = False
+    age_assist_original_matched_count: int = 0
+    age_assist_expanded_matched_count: int = 0
+    age_assist_sampled_count: int = 0
+    age_assist_sampled_pct: float = 0.0
+    age_assist_original_age_min: int | None = None
+    age_assist_original_age_max: int | None = None
+    age_assist_expanded_age_min: int | None = None
+    age_assist_expanded_age_max: int | None = None
+    age_assist_underfilled_after_expansion: bool = False
+
+    def sampling_diagnostics(self) -> dict[str, Any]:
+        """Return serializable sampling diagnostics for reports and UI state."""
+        data = asdict(self)
+        data.pop("rows", None)
+        if not self.age_assist_applied:
+            data["age_assist_original_matched_count"] = self.matched_count_before_sample
+            data["age_assist_expanded_matched_count"] = self.matched_count_before_sample
+        return data
+
+
+def _has_age_filter(filt: PersonaFilter) -> bool:
+    return filt.age_min is not None or filt.age_max is not None
+
+
+def _expand_age_filter(filt: PersonaFilter, years: int = 5) -> PersonaFilter:
+    age_min = None if filt.age_min is None else max(0, filt.age_min - years)
+    age_max = None if filt.age_max is None else filt.age_max + years
+    return replace(filt, age_min=age_min, age_max=age_max)
+
+
+def _should_apply_age_assist(
+    filt: PersonaFilter,
+    matched_count: int,
+    requested_sample_size: int,
+) -> bool:
+    return _has_age_filter(filt) and matched_count * 2 < requested_sample_size
+
+
+def sample_with_age_assist(
+    personas: list[Persona],
+    filt: PersonaFilter,
+    sample_size: int,
+    seed: int,
+) -> SampleResult:
+    """Sample with one-time adjacent age expansion when the age filter is too sparse.
+
+    PLAN.md §4.5A: if the original filter matches less than 50% of the requested
+    sample size, expand the age lower bound by -5 and upper bound by +5 once.
+    """
+    original_matches = apply_filter(personas, filt)
+    original_count = len(original_matches)
+
+    if not _should_apply_age_assist(filt, original_count, sample_size):
+        return sample_to_result(original_matches, sample_size, seed)
+
+    expanded_filter = _expand_age_filter(filt)
+    expanded_matches = apply_filter(personas, expanded_filter)
+    sampled = sample_to_result(expanded_matches, sample_size, seed)
+
+    assisted_sampled_count = sum(1 for persona in sampled.rows if not filt.matches(persona))
+    assisted_sampled_pct = (
+        round((assisted_sampled_count / len(sampled.rows)) * 100, 1) if sampled.rows else 0.0
+    )
+
+    return SampleResult(
+        rows=sampled.rows,
+        matched_count_before_sample=len(expanded_matches),
+        sample_size=sampled.sample_size,
+        sampling_seed=seed,
+        age_assist_applied=True,
+        age_assist_original_matched_count=original_count,
+        age_assist_expanded_matched_count=len(expanded_matches),
+        age_assist_sampled_count=assisted_sampled_count,
+        age_assist_sampled_pct=assisted_sampled_pct,
+        age_assist_original_age_min=filt.age_min,
+        age_assist_original_age_max=filt.age_max,
+        age_assist_expanded_age_min=expanded_filter.age_min,
+        age_assist_expanded_age_max=expanded_filter.age_max,
+        age_assist_underfilled_after_expansion=len(expanded_matches) * 10 < sample_size * 7,
+    )
 
 
 def sample_to_result(

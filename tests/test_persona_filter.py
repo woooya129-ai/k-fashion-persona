@@ -11,6 +11,7 @@ from src.persona_filter import (
     sample_iterable_to_result,
     sample_personas,
     sample_to_result,
+    sample_with_age_assist,
     take_matching_iterable_to_result,
 )
 from src.persona_normalizer import Persona
@@ -239,6 +240,68 @@ class TestSampleToResult:
         result = sample_to_result(SAMPLE_PERSONAS, 3, seed=42)
         ids = [p.persona_id for p in result.rows]
         assert ids == sorted(ids)
+
+
+class TestSampleWithAgeAssist:
+    def test_expands_age_range_once_when_original_matches_below_half(self):
+        personas = [
+            _make("p30a", 30, "F"),
+            _make("p30b", 30, "F"),
+            _make("p25a", 25, "F"),
+            _make("p25b", 25, "F"),
+            _make("p35a", 35, "F"),
+            _make("p35b", 35, "F"),
+            _make("p40", 40, "F"),
+        ]
+
+        result = sample_with_age_assist(
+            personas,
+            PersonaFilter(age_min=30, age_max=30),
+            sample_size=10,
+            seed=42,
+        )
+
+        assert result.age_assist_applied is True
+        assert result.age_assist_original_matched_count == 2
+        assert result.age_assist_expanded_matched_count == 6
+        assert result.age_assist_expanded_age_min == 25
+        assert result.age_assist_expanded_age_max == 35
+        assert {p.persona_id for p in result.rows} == {
+            "p25a",
+            "p25b",
+            "p30a",
+            "p30b",
+            "p35a",
+            "p35b",
+        }
+        assert result.age_assist_sampled_count == 4
+        assert result.age_assist_sampled_pct == pytest.approx(66.7)
+        assert result.age_assist_underfilled_after_expansion is True
+
+    def test_does_not_expand_when_original_matches_at_half(self):
+        personas = [_make(f"p{i}", 30, "F") for i in range(5)] + [_make("near", 25, "F")]
+
+        result = sample_with_age_assist(
+            personas,
+            PersonaFilter(age_min=30, age_max=30),
+            sample_size=10,
+            seed=42,
+        )
+
+        assert result.age_assist_applied is False
+        assert {p.persona_id for p in result.rows} == {f"p{i}" for i in range(5)}
+        assert result.sampling_diagnostics()["age_assist_original_matched_count"] == 5
+
+    def test_does_not_expand_without_age_filter(self):
+        result = sample_with_age_assist(
+            SAMPLE_PERSONAS,
+            PersonaFilter(sex=frozenset({"M"})),
+            sample_size=10,
+            seed=42,
+        )
+
+        assert result.age_assist_applied is False
+        assert {p.persona_id for p in result.rows} == {"p3", "p4"}
 
 
 class TestSampleIterableToResult:

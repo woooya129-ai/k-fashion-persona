@@ -36,6 +36,7 @@ from src.persona_filter import (
     apply_filter,
     sample_iterable_to_result,
     sample_to_result,
+    sample_with_age_assist,
     take_matching_iterable_to_result,
 )
 from src.persona_normalizer import Persona
@@ -651,6 +652,7 @@ def build_run_report(
     result_rows: list[ResultRow],
     persona_attributes: dict[str, dict[str, Any]],
     price_context: dict[str, Any] | None = None,
+    input_snapshot: dict[str, Any] | None = None,
 ) -> RunReport:
 
     parsed_results: list[EvaluationResult] = []
@@ -706,7 +708,7 @@ def build_run_report(
         distribution_included=len(parsed_results),
     )
 
-    report = aggregate(parsed_results, persona_attributes, quality)
+    report = aggregate(parsed_results, persona_attributes, quality, input_snapshot=input_snapshot)
 
     return RunReport(
         report_markdown=render_markdown(report, price_context=price_context),
@@ -741,7 +743,7 @@ def _load_and_sample(
         )
         rows = islice(rows, max_scan_rows)
 
-        personas_iter = normalize_rows_to_personas(rows)
+        personas = list(normalize_rows_to_personas(rows))
 
         sample_func = (
             sample_iterable_to_result
@@ -750,11 +752,21 @@ def _load_and_sample(
         )
 
         sampled = sample_func(
-            personas_iter,
+            iter(personas),
             sample["filter"],
             sample_size,
             sample["sampling_seed"],
         )
+
+        if sampled.sample_size * 2 < sample_size:
+            assisted = sample_with_age_assist(
+                personas,
+                sample["filter"],
+                sample_size,
+                sample["sampling_seed"],
+            )
+            if assisted.age_assist_applied:
+                sampled = assisted
 
         return loaded, sampled
 
@@ -764,8 +776,15 @@ def _load_and_sample(
     personas = list(normalize_rows_to_personas(rows))
 
     filtered = apply_filter(personas, sample["filter"])
-
     sampled = sample_to_result(filtered, sample_size, sample["sampling_seed"])
+    assisted = sample_with_age_assist(
+        personas,
+        sample["filter"],
+        sample_size,
+        sample["sampling_seed"],
+    )
+    if assisted.age_assist_applied:
+        sampled = assisted
 
     return loaded, sampled
 

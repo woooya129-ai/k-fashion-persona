@@ -34,7 +34,7 @@ tags:
 
 # K-fashion 컨셉을 AI 페르소나로 먼저 점검
 
-[![Version](https://img.shields.io/badge/version-0.6.2-0F766E)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.7.0-0F766E)](pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
 [![HF Space](https://img.shields.io/badge/HF%20Space-k--fashion--persona-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/spaces/w00ya/k-fashion-persona)
@@ -45,7 +45,7 @@ tags:
 
 ![k-fashion-persona overview](docs/assets/k-fashion-persona-images.jpeg)
 
-`k-fashion-persona`는 한국 패션 제품 컨셉을 출시 전 단계에서 점검하는 local-first Streamlit 도구입니다. 제품 카드와 필터를 넣으면 합성 페르소나 패널이 관심 이유, 망설임, 가격 부담, 패션 리스크를 Markdown/CSV 리포트로 정리합니다.
+`k-fashion-persona`는 한국 패션 제품 컨셉을 출시 전 단계에서 합성 페르소나 기반 사전 리스크 점검으로 읽는 local-first Streamlit 도구입니다. 제품 카드와 필터를 넣으면 합성 페르소나 패널이 관심 이유, 망설임, 가격 부담, 패션 리스크를 Markdown/CSV 리포트로 정리합니다.
 
 실제 구매율, 매출, 시장점유율을 예측하는 서비스가 아닙니다. 설문, 인터뷰, 판매 데이터 분석 전에 가설을 좁히는 보조 도구입니다.
 
@@ -77,7 +77,15 @@ Nemotron-Personas-Korea는 NVIDIA가 2026년 4월 공개한 CC BY 4.0 한국어 
 ```markdown
 # k-fashion-persona — 합성 패널 분석 리포트
 
+합성 페르소나 기반 사전 리스크 점검 리포트입니다.
+
 > **주의**: 기본 리포트 권장
+
+## 먼저 볼 요약
+
+- 합성 패널 100명 기준 긍정 반응이 80.0%로 우세합니다.
+- 주요 긍정 이유는 오프화이트 컬러와 출근 코디 활용성입니다.
+- 검증 필요 가능성은 소재/관리 부담과 핏 리스크에 집중됩니다.
 
 **프로젝트명**: 출근 셔츠 컨셉
 
@@ -109,6 +117,7 @@ Nemotron-Personas-Korea는 NVIDIA가 2026년 4월 공개한 CC BY 4.0 한국어 
 
 - 기준 계층: 전국 전체
 - 참고 기간: 2024, 2025, 2025_Q4
+- API 호출 상태: snapshot
 - 가격 기준값: 2,136,000원 (연간 환산 의류·신발 지출)
 - 제품 가격 / 기준값: 0.06배 (medium)
 
@@ -125,6 +134,27 @@ Nemotron-Personas-Korea는 NVIDIA가 2026년 4월 공개한 CC BY 4.0 한국어 
 
 > 위 값은 KOSIS/KOSTAT 가구 단위 집계 통계이며, 개별 페르소나의 실제 소득·자산·구매력을 뜻하지 않습니다.
 
+## 입력 기준 요약
+
+| 항목 | 값 |
+|---|---|
+| 디자인 디테일 | 장식 없음 |
+| 동급 브랜드 대비 가격 위치 | 모르겠음 |
+
+> 동급 브랜드 대비 가격 위치는 사용자 자가 입력값이며, LLM 프롬프트에는 전달하지 않습니다.
+
+## 표본 구성 보조
+
+| 항목 | 값 |
+|---|---|
+| 최초 필터 통과 | 100명 |
+| 인접 연령 보조 적용 | 아니오 |
+| 확장 후 필터 통과 | 100명 |
+| 보조 포함 비율 | 0% (±5세 확장으로 추가된 페르소나 0명) |
+| 확장 후 표본 부족 상태 | 아니오 |
+
+> 보조 포함 비율은 선택 연령 범위가 부족할 때 한 번만 인접 연령을 확장해 포함한 합성 페르소나 비율입니다.
+
 ## 결과 품질
 
 | 항목 | 수 |
@@ -133,6 +163,17 @@ Nemotron-Personas-Korea는 NVIDIA가 2026년 4월 공개한 CC BY 4.0 한국어 
 | 파싱 실패 | 0명 |
 | API 실패 | 0명 |
 | 분포 계산 포함 | 100명 |
+
+## 검증 필요 가능성
+
+| 항목 | 건수 |
+|---|---:|
+| 입력 가격 불일치 가능 | 0 |
+| 미입력 디자인 요소 언급 가능 | 0 |
+| 성별 맥락 불일치 가능 | 0 |
+| 착용 상황 불일치 가능 | 7 |
+
+> 이 표는 확정 오류가 아니라 입력과 응답 사이의 검증 필요 가능성을 표시합니다.
 
 ## 가격 부담도 분포
 
@@ -471,9 +512,9 @@ uv run python -m src.agent_bridge import --pack outputs\agent-pack-demo --result
 
 부적절한 사용:
 
-- 실제 구매율 예측
-- 실제 매출 예측
-- 시장점유율 예측
+- 실제 구매 전환 수치 산정
+- 실제 매출 규모 산정
+- 시장점유율 산정
 - 실제 소비자 조사의 대체
 - 출시, 생산, 발주 의사결정의 단독 근거
 

@@ -33,10 +33,10 @@ UI_COPY: dict[str, dict[str, str]] = {
         "api_intro_3": "실행 전 예상 비용 확인 체크 필요",
         "hero_main": "설문 전, 먼저 반응을 읽다",
         "hero_subtext": (
-            "패션 컨셉을 AI 페르소나 패널을 통해 전문 설문이나 "
-            "본조사 전 반응의 흐름을 빠르게 확인합니다."
+            "합성 페르소나 기반 사전 리스크 점검으로 "
+            "전문 설문이나 본조사 전 반응의 흐름을 빠르게 확인합니다."
         ),
-        "hero_eyebrow": "로컬 퍼블릭 베타 · v0.6.2",
+        "hero_eyebrow": "로컬 퍼블릭 베타 · v0.7.0",
         "hero_pill_1": "로컬 실행",
         "hero_pill_2": "원문 저장 없음",
         "hero_pill_3": "리포트 내보내기",
@@ -156,7 +156,11 @@ UI_COPY: dict[str, dict[str, str]] = {
         "occasion": "착용 상황",
         "occasion_placeholder": "예: 출근복, 주말 캐주얼",
         "style_tone": "스타일 톤",
+        "style_tone_preset": "스타일 톤 프리셋",
         "style_tone_placeholder": "예: 미니멀, 고급감",
+        "design_detail_other": "기타 디자인 디테일",
+        "design_detail_other_placeholder": "예: 배색 스티치, 금속 장식",
+        "price_position": "동급 브랜드 대비 가격 위치",
         "target": "타깃 가설",
         "target_placeholder": "예: 20대 후반-30대 초반 직장인 여성",
         "enter_card_title": "ENTER",
@@ -174,6 +178,10 @@ UI_COPY: dict[str, dict[str, str]] = {
         "sample_size": "샘플 수",
         "sample_help": "Advanced에서는 1명 이상 원하는 수를 직접 입력할 수 있어요.",
         "age": "연령",
+        "age_min": "하한 연령",
+        "age_max": "상한 연령",
+        "age_min_direct": "하한 직접 입력",
+        "age_max_direct": "상한 직접 입력",
         "sex": "성별",
         "sampling_seed": "sampling-seed",
         "sampling_seed_help": (
@@ -334,7 +342,7 @@ UI_COPY: dict[str, dict[str, str]] = {
             "Show a fashion concept to an AI persona panel and quickly check reaction flow "
             "before expert surveys or main research."
         ),
-        "hero_eyebrow": "Local public beta · v0.6.2",
+        "hero_eyebrow": "Local public beta · v0.7.0",
         "hero_pill_1": "Local run",
         "hero_pill_2": "No raw concept storage",
         "hero_pill_3": "Report export",
@@ -462,7 +470,11 @@ UI_COPY: dict[str, dict[str, str]] = {
         "occasion": "Occasion",
         "occasion_placeholder": "e.g. office, weekend casual",
         "style_tone": "Style tone",
+        "style_tone_preset": "Style tone preset",
         "style_tone_placeholder": "e.g. minimal, refined",
+        "design_detail_other": "Other design details",
+        "design_detail_other_placeholder": "e.g. contrast stitching, metal detail",
+        "price_position": "Price position vs. peer brands",
         "target": "Target hypothesis",
         "target_placeholder": "e.g. women in their late 20s to early 30s",
         "enter_card_title": "ENTER",
@@ -480,6 +492,10 @@ UI_COPY: dict[str, dict[str, str]] = {
         "sample_size": "Sample size",
         "sample_help": "Advanced accepts any sample size of 1 or more.",
         "age": "Age",
+        "age_min": "Minimum age",
+        "age_max": "Maximum age",
+        "age_min_direct": "Minimum age direct input",
+        "age_max_direct": "Maximum age direct input",
         "sex": "Sex",
         "sampling_seed": "sampling-seed",
         "sampling_seed_help": (

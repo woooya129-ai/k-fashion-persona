@@ -41,6 +41,9 @@ FORBIDDEN_PHRASES: list[str] = [
     "AI 시장조사",
     "실제 고객 반응",
     "이 가격이면 구매 가능",
+    "AI 설문조사",
+    "구매율 예측",
+    "판매 가능성 예측",
     # PM v3 §1 금지 포지셔닝 토큰 (단독 단어 수준)
     "구매율",
     "시장점유율",
@@ -61,6 +64,7 @@ def required_footer_text() -> str:
     """PM v3 §18.3 footer 그대로 반환 — 모든 리포트에 필수."""
     return (
         "본 도구는 합성 페르소나와 LLM 기반의 사전 가설 분석 도구입니다.\n"
+        "합성 페르소나 기반 사전 리스크 점검으로만 사용해야 합니다.\n"
         "실제 소비자 조사, 매출 예측, 법률 자문, 최종 사업 판단을 대체하지 않습니다.\n"
         "Persona dataset: NVIDIA Nemotron-Personas-Korea, CC BY 4.0.\n"
         "Dataset URL: https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea\n"
@@ -134,6 +138,12 @@ _STYLE_COORD_GROUP: tuple[str, ...] = (
     "material_care_burden",
 )
 _HESITATION_GROUP: tuple[str, ...] = ("purchase_hesitation",)
+_VALIDATION_FLAG_LABELS: dict[str, str] = {
+    "price_mismatch_possible": "입력 가격 불일치 가능",
+    "uninput_design_element_mentioned": "미입력 디자인 요소 언급 가능",
+    "gender_context_mismatch_possible": "성별 맥락 불일치 가능",
+    "occasion_mismatch_possible": "착용 상황 불일치 가능",
+}
 
 
 def _format_examples(examples: list[str], max_items: int = 3) -> str:
@@ -325,6 +335,8 @@ def _append_price_context_section(lines: list[str], price_context: dict[str, Any
     lines.append("")
     lines.append(f"- 기준 계층: {price_context.get('reference_segment_label', '전국 전체')}")
     lines.append(f"- 참고 기간: {price_context.get('period', '')}")
+    api_status = price_context.get("api_status", price_context.get("source_mode", "snapshot"))
+    lines.append(f"- API 호출 상태: {api_status}")
     lines.append(
         f"- 가격 기준값: {_format_krw(price_context.get('denominator_krw'))} "
         f"(연간 환산 의류·신발 지출)"
@@ -353,6 +365,91 @@ def _append_price_context_section(lines: list[str], price_context: dict[str, Any
     lines.append("")
 
 
+def _append_input_snapshot_section(lines: list[str], report: AggregateReport) -> None:
+    snapshot = report.input_snapshot
+    if not snapshot:
+        return
+    design_details = snapshot.get("design_details") or ()
+    if isinstance(design_details, str):
+        design_text = design_details
+    else:
+        design_text = ", ".join(str(item) for item in design_details) or "미입력"
+    price_position = str(snapshot.get("price_position") or "모르겠음")
+    lines.append("## 입력 기준 요약")
+    lines.append("")
+    lines.append("| 항목 | 값 |")
+    lines.append("|---|---|")
+    lines.append(f"| 디자인 디테일 | {escape_markdown_table_cell(design_text)} |")
+    lines.append(f"| 동급 브랜드 대비 가격 위치 | {escape_markdown_table_cell(price_position)} |")
+    lines.append("")
+    lines.append(
+        "> 동급 브랜드 대비 가격 위치는 사용자 자가 입력값이며, LLM 프롬프트에는 전달하지 않습니다."
+    )
+    lines.append("")
+
+
+def _append_validation_flags_section(lines: list[str], report: AggregateReport) -> None:
+    lines.append("## 검증 필요 가능성")
+    lines.append("")
+    if not report.validation_flags:
+        lines.append("- 검증 플래그가 비활성화되어 있거나 표시할 신호가 없습니다.")
+        lines.append("")
+        return
+    lines.append("| 항목 | 건수 |")
+    lines.append("|---|---:|")
+    for key, label in _VALIDATION_FLAG_LABELS.items():
+        lines.append(f"| {label} | {len(report.validation_flags.get(key, []))} |")
+    lines.append("")
+    lines.append(
+        "> 이 표는 확정 오류가 아니라 입력과 응답 사이의 검증 필요 가능성을 표시합니다."
+    )
+    lines.append("")
+
+
+def _yes_no(value: Any) -> str:
+    return "예" if bool(value) else "아니오"
+
+
+def _format_pct(value: Any) -> str:
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        numeric = 0.0
+    if numeric.is_integer():
+        return f"{int(numeric)}%"
+    return f"{numeric:.1f}%"
+
+
+def _append_sampling_diagnostics_section(lines: list[str], report: AggregateReport) -> None:
+    diagnostics = report.input_snapshot.get("sample_diagnostics") if report.input_snapshot else None
+    if not isinstance(diagnostics, dict):
+        return
+
+    applied = bool(diagnostics.get("age_assist_applied"))
+    original_count = int(diagnostics.get("age_assist_original_matched_count") or 0)
+    expanded_count = int(diagnostics.get("age_assist_expanded_matched_count") or 0)
+    assist_count = int(diagnostics.get("age_assist_sampled_count") or 0)
+    assist_pct = _format_pct(diagnostics.get("age_assist_sampled_pct"))
+    underfilled = bool(diagnostics.get("age_assist_underfilled_after_expansion"))
+
+    lines.append("## 표본 구성 보조")
+    lines.append("")
+    lines.append("| 항목 | 값 |")
+    lines.append("|---|---|")
+    lines.append(f"| 최초 필터 통과 | {original_count}명 |")
+    lines.append(f"| 인접 연령 보조 적용 | {_yes_no(applied)} |")
+    lines.append(f"| 확장 후 필터 통과 | {expanded_count}명 |")
+    assist_text = f"{assist_pct} (±5세 확장으로 추가된 페르소나 {assist_count}명)"
+    lines.append(f"| 보조 포함 비율 | {assist_text} |")
+    lines.append(f"| 확장 후 표본 부족 상태 | {_yes_no(underfilled)} |")
+    lines.append("")
+    lines.append(
+        "> 보조 포함 비율은 선택 연령 범위가 부족할 때 한 번만 인접 연령을 확장해 포함한 "
+        "합성 페르소나 비율입니다."
+    )
+    lines.append("")
+
+
 def render_markdown(report: AggregateReport, price_context: dict[str, Any] | None = None) -> str:
     """PM v3 §17.1 메인 지표 + §18.2 Main Results 섹션.
 
@@ -369,10 +466,19 @@ def render_markdown(report: AggregateReport, price_context: dict[str, Any] | Non
     # Header
     lines.append("# k-fashion-persona — 합성 패널 분석 리포트")
     lines.append("")
+    lines.append("합성 페르소나 기반 사전 리스크 점검 리포트입니다.")
+    lines.append("")
 
     # Sample warning
     if report.sample_warning:
         lines.append(f"> **주의**: {report.sample_warning}")
+        lines.append("")
+
+    if report.summary_lines:
+        lines.append("## 먼저 볼 요약")
+        lines.append("")
+        for item in report.summary_lines[:3]:
+            lines.append(f"- {item}")
         lines.append("")
 
     # Main metrics
@@ -391,6 +497,8 @@ def render_markdown(report: AggregateReport, price_context: dict[str, Any] | Non
     lines.append("")
 
     _append_price_context_section(lines, price_context)
+    _append_input_snapshot_section(lines, report)
+    _append_sampling_diagnostics_section(lines, report)
 
     # Quality
     lines.append("## 결과 품질")
@@ -402,6 +510,8 @@ def render_markdown(report: AggregateReport, price_context: dict[str, Any] | Non
     lines.append(f"| API 실패 | {q.api_failed}명 |")
     lines.append(f"| 분포 계산 포함 | {q.distribution_included}명 |")
     lines.append("")
+
+    _append_validation_flags_section(lines, report)
 
     # Price burden distribution
     lines.append("## 가격 부담도 분포")
@@ -512,11 +622,64 @@ def render_csv(report: AggregateReport, price_context: dict[str, Any] | None = N
         f"{pb.high_or_above_count}명 / {pb.high_or_above_pct}%",
     )
 
+    for rank, item in enumerate(report.summary_lines[:3], start=1):
+        _row("먼저볼요약", f"line{rank}", item)
+
+    if report.input_snapshot:
+        design_details = report.input_snapshot.get("design_details") or ()
+        if not isinstance(design_details, str):
+            design_details = ", ".join(str(item) for item in design_details)
+        _row("입력기준", "디자인 디테일", design_details or "미입력")
+        _row(
+            "입력기준",
+            "동급 브랜드 대비 가격 위치",
+            report.input_snapshot.get("price_position", "모르겠음"),
+        )
+        diagnostics = report.input_snapshot.get("sample_diagnostics")
+        if isinstance(diagnostics, dict):
+            _row(
+                "표본구성보조",
+                "최초 필터 통과",
+                f"{int(diagnostics.get('age_assist_original_matched_count') or 0)}명",
+            )
+            _row(
+                "표본구성보조",
+                "인접 연령 보조 적용",
+                _yes_no(diagnostics.get("age_assist_applied")),
+            )
+            _row(
+                "표본구성보조",
+                "확장 후 필터 통과",
+                f"{int(diagnostics.get('age_assist_expanded_matched_count') or 0)}명",
+            )
+            _row(
+                "표본구성보조",
+                "보조 포함 비율",
+                (
+                    f"{_format_pct(diagnostics.get('age_assist_sampled_pct'))} "
+                    f"(±5세 확장으로 추가된 페르소나 "
+                    f"{int(diagnostics.get('age_assist_sampled_count') or 0)}명)"
+                ),
+            )
+            _row(
+                "표본구성보조",
+                "확장 후 표본 부족 상태",
+                _yes_no(diagnostics.get("age_assist_underfilled_after_expansion")),
+            )
+
+    for key, label in _VALIDATION_FLAG_LABELS.items():
+        _row("검증필요가능성", label, len(report.validation_flags.get(key, [])))
+
     if price_context:
         _row(
             "KOSIS참고통계", "기준 계층", price_context.get("reference_segment_label", "전국 전체")
         )
         _row("KOSIS참고통계", "참고 기간", price_context.get("period", ""))
+        _row(
+            "KOSIS참고통계",
+            "API 호출 상태",
+            price_context.get("api_status", price_context.get("source_mode", "snapshot")),
+        )
         _row("KOSIS참고통계", "가격 기준값", _format_krw(price_context.get("denominator_krw")))
         _row("KOSIS참고통계", "가격 기준 배수", price_context.get("price_burden_ratio", ""))
         _row("KOSIS참고통계", "가격 부담 라벨", price_context.get("price_burden_label", ""))

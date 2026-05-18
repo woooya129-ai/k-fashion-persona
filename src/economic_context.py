@@ -342,22 +342,27 @@ def build_price_context(
     snapshot_metrics = load_kosis_snapshot(snapshot_path)
     warnings: list[str] = []
     source_mode = "snapshot"
+    api_status = "snapshot"
     all_metrics = list(snapshot_metrics)
 
     if use_api_refresh:
         if not kosis_api_key.strip() or not kosis_api_url.strip():
+            api_status = "missing_api_key"
             warnings.append("KOSIS API 갱신에는 API key와 statisticsData URL이 모두 필요합니다.")
         else:
             try:
                 api_metrics = fetch_kosis_api_metrics(kosis_api_key, kosis_api_url)
             except Exception as exc:  # noqa: BLE001 - UI falls back to snapshot with a warning.
+                api_status = "failed"
                 warnings.append(f"KOSIS API 갱신 실패: {type(exc).__name__}")
             else:
                 if api_metrics:
+                    api_status = "success"
                     source_mode = "api"
                     all_metrics.extend(api_metrics)
                     reference_segment_id = "api_selected"
                 else:
+                    api_status = "failed"
                     warnings.append(
                         "KOSIS API 응답에서 지원하는 통계 항목을 찾지 못해 스냅샷을 사용합니다."
                     )
@@ -377,6 +382,7 @@ def build_price_context(
     return {
         "source": "kosis",
         "source_mode": source_mode,
+        "api_status": api_status,
         "source_name": "; ".join(source_names),
         "source_urls": source_urls,
         "reference_segment_id": reference_segment_id,

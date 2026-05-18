@@ -15,6 +15,7 @@ from src.prompt_builder import (
     PROMPT_VERSION,
     PROMPT_VERSION_V0_2,
     PROMPT_VERSION_V0_3,
+    PROMPT_VERSION_V0_4,
     SCHEMA_VERSION,
     SUPPORTED_PROMPT_VERSIONS,
     PromptParts,
@@ -26,9 +27,10 @@ pytestmark = pytest.mark.no_network
 
 
 PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
-PROMPT_TEMPLATE_PATH = PROMPTS_DIR / "concept_eval_ko_v0_3.md"
+PROMPT_TEMPLATE_PATH = PROMPTS_DIR / "concept_eval_ko_v0_4.md"
 PROMPT_TEMPLATE_V0_2_PATH = PROMPTS_DIR / "concept_eval_ko_v0_2.md"
 PROMPT_TEMPLATE_V0_3_PATH = PROMPTS_DIR / "concept_eval_ko_v0_3.md"
+PROMPT_TEMPLATE_V0_4_PATH = PROMPTS_DIR / "concept_eval_ko_v0_4.md"
 
 
 @pytest.fixture(scope="module")
@@ -39,6 +41,11 @@ def prompt_template_md() -> str:
 @pytest.fixture(scope="module")
 def prompt_template_v0_2_md() -> str:
     return PROMPT_TEMPLATE_V0_2_PATH.read_text(encoding="utf-8")
+
+
+@pytest.fixture(scope="module")
+def prompt_template_v0_3_md() -> str:
+    return PROMPT_TEMPLATE_V0_3_PATH.read_text(encoding="utf-8")
 
 
 @pytest.fixture
@@ -52,6 +59,20 @@ def sample_build_kwargs_v0_2(prompt_template_v0_2_md: str) -> dict:
         "concept_text": "환경친화적 소재를 사용한 미니멀 기본 티셔츠",
         "price_krw": 120_000,
         "prompt_template_md": prompt_template_v0_2_md,
+    }
+
+
+@pytest.fixture
+def sample_build_kwargs_v0_3(prompt_template_v0_3_md: str) -> dict:
+    return {
+        "persona_id": "test-persona-001",
+        "persona_summary": "서울 거주 30대 직장인으로 패션에 관심이 많습니다.",
+        "persona_attributes_text": "32세 / 서울 강남구 / 사무직 / 1인가구",
+        "economic_context_text": "KOSTAT 2025 가격 부담도: medium (0.85배)",
+        "category": "상의",
+        "concept_text": "환경친화적 소재를 사용한 미니멀 기본 티셔츠",
+        "price_krw": 120_000,
+        "prompt_template_md": prompt_template_v0_3_md,
     }
 
 
@@ -81,7 +102,7 @@ def test_build_prompt_returns_prompt_parts(sample_build_kwargs):
 
 def test_build_prompt_version_locked(sample_build_kwargs):
     result = build_prompt(**sample_build_kwargs)
-    assert result.prompt_version == "concept_eval_ko_v0_3"
+    assert result.prompt_version == "concept_eval_ko_v0_4"
     assert result.prompt_version == PROMPT_VERSION
 
 
@@ -309,35 +330,39 @@ _BALANCED_REACTION_DIMENSIONS: tuple[str, ...] = (
 )
 
 
-def test_supported_prompt_versions_contains_v0_2_and_v0_3_only():
+def test_supported_prompt_versions_contains_v0_2_v0_3_and_v0_4_only():
     assert "concept_eval_ko_v0_1" not in SUPPORTED_PROMPT_VERSIONS
     assert "concept_eval_ko_v0_2" in SUPPORTED_PROMPT_VERSIONS
     assert "concept_eval_ko_v0_3" in SUPPORTED_PROMPT_VERSIONS
+    assert "concept_eval_ko_v0_4" in SUPPORTED_PROMPT_VERSIONS
     assert PROMPT_VERSION_V0_2 == "concept_eval_ko_v0_2"
     assert PROMPT_VERSION_V0_3 == "concept_eval_ko_v0_3"
-    assert PROMPT_VERSION == "concept_eval_ko_v0_3"
+    assert PROMPT_VERSION_V0_4 == "concept_eval_ko_v0_4"
+    assert PROMPT_VERSION == "concept_eval_ko_v0_4"
 
 
 def test_v0_3_prompt_template_file_exists():
     assert PROMPT_TEMPLATE_V0_3_PATH.is_file()
 
 
-def test_v0_3_template_metadata_declares_v0_3(prompt_template_md: str):
-    assert "prompt_version: `concept_eval_ko_v0_3`" in prompt_template_md
-    assert "schema_version: `eval_v0_1`" in prompt_template_md
+def test_v0_3_template_metadata_declares_v0_3(prompt_template_v0_3_md: str):
+    assert "prompt_version: `concept_eval_ko_v0_3`" in prompt_template_v0_3_md
+    assert "schema_version: `eval_v0_1`" in prompt_template_v0_3_md
 
 
-def test_v0_3_template_balances_reaction_dimensions(prompt_template_md: str):
+def test_v0_3_template_balances_reaction_dimensions(prompt_template_v0_3_md: str):
     for label in _BALANCED_REACTION_DIMENSIONS:
-        assert label in prompt_template_md, f"v0.3 prompt missing balanced dimension: {label}"
+        assert label in prompt_template_v0_3_md, (
+            f"v0.3 prompt missing balanced dimension: {label}"
+        )
 
 
-def test_v0_3_template_keeps_risk_signals_as_sub_checks(prompt_template_md: str):
+def test_v0_3_template_keeps_risk_signals_as_sub_checks(prompt_template_v0_3_md: str):
     for label in _FASHION_RISK_CATEGORIES:
-        assert label in prompt_template_md, f"v0.3 prompt missing risk sub-check: {label}"
+        assert label in prompt_template_v0_3_md, f"v0.3 prompt missing risk sub-check: {label}"
 
 
-def test_v0_3_template_pins_public_release_boundaries(prompt_template_md: str):
+def test_v0_3_template_pins_public_release_boundaries(prompt_template_v0_3_md: str):
     required_phrases = (
         "local-first",
         "사용자가 자기 API key로 로컬에서 실행",
@@ -348,27 +373,53 @@ def test_v0_3_template_pins_public_release_boundaries(prompt_template_md: str):
         "실제 유행 예측",
     )
     for phrase in required_phrases:
-        assert phrase in prompt_template_md
+        assert phrase in prompt_template_v0_3_md
 
 
-def test_v0_3_template_carries_prompt_injection_defence(prompt_template_md: str):
-    assert "[USER_CONCEPT_INPUT]" in prompt_template_md
-    assert "JSON 이외의 어떤 텍스트도 출력하지 마세요" in prompt_template_md
+def test_v0_3_template_carries_prompt_injection_defence(prompt_template_v0_3_md: str):
+    assert "[USER_CONCEPT_INPUT]" in prompt_template_v0_3_md
+    assert "JSON 이외의 어떤 텍스트도 출력하지 마세요" in prompt_template_v0_3_md
 
 
-def test_build_prompt_v0_3_returns_v0_3_version(sample_build_kwargs):
-    result = build_prompt(**sample_build_kwargs)
+def test_build_prompt_v0_3_returns_v0_3_version(sample_build_kwargs_v0_3):
+    result = build_prompt(**sample_build_kwargs_v0_3)
     assert result.prompt_version == "concept_eval_ko_v0_3"
     assert result.prompt_version == PROMPT_VERSION_V0_3
 
 
 def test_build_prompt_v0_3_developer_block_carries_balanced_dimensions(
-    sample_build_kwargs,
+    sample_build_kwargs_v0_3,
 ):
-    result = build_prompt(**sample_build_kwargs)
+    result = build_prompt(**sample_build_kwargs_v0_3)
     assert result.developer is not None
     for label in _BALANCED_REACTION_DIMENSIONS:
         assert label in result.developer, f"v0.3 developer block missing dimension: {label}"
+
+
+def test_v0_4_prompt_template_file_exists():
+    assert PROMPT_TEMPLATE_V0_4_PATH.is_file()
+
+
+def test_v0_4_template_metadata_declares_v0_4(prompt_template_md: str):
+    assert "prompt_version: `concept_eval_ko_v0_4`" in prompt_template_md
+    assert "schema_version: `eval_v0_1`" in prompt_template_md
+
+
+def test_v0_4_template_adds_input_grounding_rules(prompt_template_md: str):
+    required_phrases = (
+        "없는 디자인 요소",
+        "그래픽, 패턴, 로고, 자수, 프린트, 워싱/가공",
+        "가격과 다른 가격대를 가정하지 마세요",
+        "제품 성별, 착용 상황, 시즌",
+    )
+    for phrase in required_phrases:
+        assert phrase in prompt_template_md
+
+
+def test_build_prompt_v0_4_returns_v0_4_version(sample_build_kwargs):
+    result = build_prompt(**sample_build_kwargs)
+    assert result.prompt_version == "concept_eval_ko_v0_4"
+    assert result.prompt_version == PROMPT_VERSION_V0_4
 
 
 def test_v0_2_prompt_template_file_exists():
@@ -469,17 +520,19 @@ def test_build_prompt_v0_2_injection_text_stays_in_concept_block(
         assert malicious not in result.developer
 
 
-def test_build_prompt_v0_2_and_v0_3_yield_distinct_cache_keys(
-    sample_build_kwargs_v0_2, sample_build_kwargs
+def test_build_prompt_v0_2_v0_3_and_v0_4_yield_distinct_cache_keys(
+    sample_build_kwargs_v0_2, sample_build_kwargs_v0_3, sample_build_kwargs
 ):
     """Same (persona, concept, model) but different prompt_version → different cache_key.
 
-    Anchors the v0.2/v0.3 cache-isolation contract from
+    Anchors the v0.2/v0.3/v0.4 cache-isolation contract from
     the first public release prompt rubric.
     """
     v0_2 = build_prompt(**sample_build_kwargs_v0_2)
-    v0_3 = build_prompt(**sample_build_kwargs)
+    v0_3 = build_prompt(**sample_build_kwargs_v0_3)
+    v0_4 = build_prompt(**sample_build_kwargs)
     assert v0_2.prompt_version != v0_3.prompt_version
+    assert v0_3.prompt_version != v0_4.prompt_version
 
     common_kwargs = {
         "persona_id": "test-persona-001",
@@ -492,7 +545,10 @@ def test_build_prompt_v0_2_and_v0_3_yield_distinct_cache_keys(
     }
     cache_key_v0_2 = compute_cache_key(prompt_version=v0_2.prompt_version, **common_kwargs)
     cache_key_v0_3 = compute_cache_key(prompt_version=v0_3.prompt_version, **common_kwargs)
+    cache_key_v0_4 = compute_cache_key(prompt_version=v0_4.prompt_version, **common_kwargs)
     assert cache_key_v0_2 != cache_key_v0_3
+    assert cache_key_v0_2 != cache_key_v0_4
+    assert cache_key_v0_3 != cache_key_v0_4
 
 
 def test_build_prompt_rejects_template_without_version_header():

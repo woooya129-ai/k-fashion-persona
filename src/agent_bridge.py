@@ -31,7 +31,7 @@ from src.prompt_builder import PROMPT_VERSION, SCHEMA_VERSION
 from src.result_parser import EvaluationResult, validate_evaluation_payload
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-PROMPT_TEMPLATE_PATH = REPO_ROOT / "prompts" / "concept_eval_ko_v0_3.md"
+PROMPT_TEMPLATE_PATH = REPO_ROOT / "prompts" / "concept_eval_ko_v0_4.md"
 AGENT_BRIDGE_VERSION = "agent-pack-v0_1"
 MANIFEST_NAME = "manifest.json"
 EVALUATION_RESULT_KEYS: frozenset[str] = frozenset(

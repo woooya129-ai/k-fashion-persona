@@ -74,6 +74,7 @@ def test_kosis_snapshot_context_includes_income_and_asset_metrics():
 
     assert context["source"] == "kosis"
     assert context["source_mode"] == "snapshot"
+    assert context["api_status"] == "snapshot"
     assert context["denominator_krw"] == 2_136_000
     assert context["price_burden_ratio"] == pytest.approx(159_000 / 2_136_000)
     assert context["price_burden_label"] == "medium"
@@ -103,6 +104,7 @@ def test_kosis_api_refresh_without_key_or_url_falls_back_to_snapshot():
     context = build_price_context(159_000, use_api_refresh=True)
 
     assert context["source_mode"] == "snapshot"
+    assert context["api_status"] == "missing_api_key"
     assert context["warnings"] == (
         "KOSIS API 갱신에는 API key와 statisticsData URL이 모두 필요합니다.",
     )

@@ -4,14 +4,15 @@
 
 - 작성자: PM
 - 기준 소스: `update-PLAN.md`
-- 현재 코드 버전: `0.6.2` (`pyproject.toml`, `src/app_config.py:34`)
+- 현재 코드 버전: `0.7.0` (`pyproject.toml`, `src/app_config.py`)
 - 다음 릴리스: `0.7.0` → `0.7.1` (분리 슬라이스) → `0.8.0` → `0.9.0`
-- 문서 상태: 승인 대기 (Approved-by: TBD)
+- 문서 상태: v0.7.0 완료 감사 반영
 
 ## 문서 변경 이력 (PLAN.md 자체 버전)
 
 | 문서 버전 | 일자 | 변경 |
 |---|---|---|
+| PLAN v1.1 | 2026-05-18 | v0.7.0 구현 상태 감사 후 현재 버전 표기와 릴리스 체크리스트를 실제 완료 상태로 갱신. |
 | PLAN v1.0 | 2026-05-18 | `update-PLAN.md` 평가·보강 후 정식 PLAN으로 승격. 4 load-bearing 결정 박음(스키마 잠금, prompt_version bump, public_data 분담, 머지 시퀀스). v0.7.1 슬라이스 분리. |
 
 ---
@@ -535,32 +536,32 @@ update-PLAN.md의 우선순위를 PM 결정에 맞춰 정리. v0.7.0 범위만.
 
 ### 9.1 v0.7.0
 
-- [ ] `pyproject.toml` 버전 `0.7.0`
-- [ ] `src/app_config.py` `APP_VERSION = "0.7.0"`
-- [ ] `src/ui/copy.py` `hero_eyebrow` 버전 갱신
-- [ ] README 버전 배지 `0.7.0`
-- [ ] `docs/README-ENG.md` 버전 배지 `0.7.0`
-- [ ] `docs/CHANGELOG.md`에 `v0.7.0` 항목 추가
-- [ ] `prompts/concept_eval_ko_v0_4.md` 신규 추가
-- [ ] `src/prompt_builder.py` `PROMPT_VERSION = "concept_eval_ko_v0_4"`, `SUPPORTED_PROMPT_VERSIONS` 갱신
-- [ ] `src/aggregator.py` `AggregateReport.validation_flags` 추가
-- [ ] `src/result_parser.py` `EvaluationResult` 무변경 확인
-- [ ] `K_FASHION_VALIDATION_FLAGS` 환경변수 처리 추가
-- [ ] 리포트 푸터 한계 문구 4곳 노출 (grep ≥4)
-- [ ] forbidden phrase 추가 (`AI 설문조사`, `구매율 예측`, `판매 가능성 예측`)
-- [ ] 패널 분포 UI 확인 (성별/연령/직업/지역/실제 샘플 수 + 보조 확장 비율)
-- [ ] 연령 범위 슬라이더/직접 입력 동기화 확인
-- [ ] 디자인 디테일 체크박스 7개 + 자유 입력 + "장식 없음" 구조화
-- [ ] 동급 브랜드 가격 위치 입력 (리포트 표시 전용, 프롬프트 미전달)
-- [ ] 정부/공공 API 공통 기반 추가 (`src/public_data/`)
-- [ ] KOSIS OpenAPI 확장 (economic_context)
-- [ ] API 실패 시 앱 실행과 리포트 생성 유지 확인 (fixture)
-- [ ] API 출처/기준일/호출 상태 리포트 표시 확인
-- [ ] WS-9 이미지 보조 설계 문서 작성 (`docs/design/image-concept-assist.md`)
-- [ ] 회귀 테스트 §4.7 통과
-- [ ] 리포트 예시 최신화
-- [ ] GitHub `main` push
-- [ ] HF Space 업로드 및 README 렌더 확인 (콘텐츠 기준)
+- [x] `pyproject.toml` 버전 `0.7.0`
+- [x] `src/app_config.py` `APP_VERSION = "0.7.0"`
+- [x] `src/ui/copy.py` `hero_eyebrow` 버전 갱신
+- [x] README 버전 배지 `0.7.0`
+- [x] `docs/README-ENG.md` 버전 배지 `0.7.0`
+- [x] `docs/CHANGELOG.md`에 `v0.7.0` 항목 추가
+- [x] `prompts/concept_eval_ko_v0_4.md` 신규 추가
+- [x] `src/prompt_builder.py` `PROMPT_VERSION = "concept_eval_ko_v0_4"`, `SUPPORTED_PROMPT_VERSIONS` 갱신
+- [x] `src/aggregator.py` `AggregateReport.validation_flags` 추가
+- [x] `src/result_parser.py` `EvaluationResult` 무변경 확인
+- [x] `K_FASHION_VALIDATION_FLAGS` 환경변수 처리 추가
+- [x] 리포트 푸터 한계 문구 4곳 노출 (grep ≥4)
+- [x] forbidden phrase 추가 (`AI 설문조사`, `구매율 예측`, `판매 가능성 예측`)
+- [x] 패널 분포 UI 확인 (성별/연령/직업/지역/실제 샘플 수 + 보조 확장 비율)
+- [x] 연령 범위 슬라이더/직접 입력 동기화 확인
+- [x] 디자인 디테일 체크박스 7개 + 자유 입력 + "장식 없음" 구조화
+- [x] 동급 브랜드 가격 위치 입력 (리포트 표시 전용, 프롬프트 미전달)
+- [x] 정부/공공 API 공통 기반 추가 (`src/public_data/`)
+- [x] KOSIS OpenAPI 확장 (economic_context)
+- [x] API 실패 시 앱 실행과 리포트 생성 유지 확인 (fixture)
+- [x] API 출처/기준일/호출 상태 리포트 표시 확인
+- [x] WS-9 이미지 보조 설계 문서 작성 (`docs/design/image-concept-assist.md`)
+- [x] 회귀 테스트 §4.7 통과
+- [x] 리포트 예시 최신화
+- [x] GitHub `main` push
+- [x] HF Space 업로드 및 README 렌더 확인 (콘텐츠 기준)
 
 ### 9.2 v0.7.1 (행안부 슬라이스)
 

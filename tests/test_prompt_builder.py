@@ -549,6 +549,14 @@ def test_build_prompt_v0_2_v0_3_and_v0_4_yield_distinct_cache_keys(
     assert cache_key_v0_3 != cache_key_v0_4
 
 
+def test_v0_4_prompt_documents_v0_4_cache_invalidation(prompt_template_md: str):
+    assert "prompt_version 만 `concept_eval_ko_v0_4`" in prompt_template_md
+    assert "`prompt_version` 을 `concept_eval_ko_v0_4` 로 상향" in prompt_template_md
+    assert "v0.3 결과는 v0.4 캐시에 재사용되지 않는다" in prompt_template_md
+    assert "`prompt_version` 을 `concept_eval_ko_v0_3` 으로 상향" not in prompt_template_md
+    assert "v0.2 결과는 v0.3 캐시에 재사용되지 않는다" not in prompt_template_md
+
+
 def test_build_prompt_rejects_template_without_version_header():
     bad_template = "## System\n\n패션 평가자입니다.\n\n## Developer\n\n컨텍스트.\n"
     with pytest.raises(ValueError, match="prompt_version"):

@@ -227,6 +227,42 @@ class TestRenderMarkdown:
         assert "## 먼저 볼 요약" in md
         assert "## 검증 필요 가능성" in md
 
+    def test_validation_section_hidden_when_feature_flag_off(self, monkeypatch):
+        monkeypatch.setenv("K_FASHION_VALIDATION_FLAGS", "off")
+        report = aggregate(
+            [
+                EvaluationResult(
+                    persona_id="p1",
+                    sentiment="neutral",
+                    interest_score=5,
+                    price_burden="medium",
+                    main_reasons=[],
+                    main_concerns=["로고가 부담"],
+                    confidence_note="합성 페르소나 기준.",
+                )
+            ],
+            {"p1": {"age": 30, "sex": "M", "province": "서울", "occupation": "사무직"}},
+            QualityCounts(
+                success=1,
+                parse_failed=0,
+                api_failed=0,
+                total_attempted=1,
+                distribution_included=1,
+            ),
+            input_snapshot={
+                "design_details": ["장식 없음"],
+                "product_audience": "menswear",
+                "occasion": "출근",
+            },
+        )
+
+        md = render_markdown(report)
+        csv_text = render_csv(report)
+
+        assert report.validation_flags == {}
+        assert "## 검증 필요 가능성" not in md
+        assert "검증필요가능성" not in csv_text
+
     def test_sampling_age_assist_diagnostics_present(self):
         report = aggregate(
             MOCK_RESULTS[:2],

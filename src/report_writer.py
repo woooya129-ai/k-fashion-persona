@@ -13,6 +13,7 @@ No LLM / HF / DB calls.
 
 import csv
 import html
+import os
 import re
 from io import StringIO
 from pathlib import Path
@@ -403,10 +404,12 @@ def _append_input_snapshot_section(lines: list[str], report: AggregateReport) ->
 
 
 def _append_validation_flags_section(lines: list[str], report: AggregateReport) -> None:
+    if os.environ.get("K_FASHION_VALIDATION_FLAGS", "on").strip().lower() == "off":
+        return
     lines.append("## 검증 필요 가능성")
     lines.append("")
     if not report.validation_flags:
-        lines.append("- 검증 플래그가 비활성화되어 있거나 표시할 신호가 없습니다.")
+        lines.append("- 표시할 검증 필요 신호가 없습니다.")
         lines.append("")
         return
     lines.append("| 항목 | 건수 |")
@@ -679,8 +682,9 @@ def render_csv(report: AggregateReport, price_context: dict[str, Any] | None = N
                 _yes_no(diagnostics.get("age_assist_underfilled_after_expansion")),
             )
 
-    for key, label in _VALIDATION_FLAG_LABELS.items():
-        _row("검증필요가능성", label, len(report.validation_flags.get(key, [])))
+    if os.environ.get("K_FASHION_VALIDATION_FLAGS", "on").strip().lower() != "off":
+        for key, label in _VALIDATION_FLAG_LABELS.items():
+            _row("검증필요가능성", label, len(report.validation_flags.get(key, [])))
 
     if price_context:
         _row(

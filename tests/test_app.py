@@ -1504,6 +1504,50 @@ def test_canonical_product_card_text_full_fields_render_in_fixed_order() -> None
     )
 
 
+def test_age_range_direct_and_slider_helpers_sync_session_state() -> None:
+    rendering.st.session_state.clear()
+    rendering.st.session_state["age_min_slider"] = 30
+
+    rendering._sync_age_direct_from_slider("age_min_slider", "age_min_direct")  # noqa: SLF001
+    assert rendering.st.session_state["age_min_direct"] == 30
+
+    rendering.st.session_state["age_min_direct"] = 37
+    rendering._sync_age_slider_from_direct("age_min_direct", "age_min_slider")  # noqa: SLF001
+    assert rendering.st.session_state["age_min_slider"] == 40
+    assert rendering._normalize_age_range(80, 20) == (20, 80)  # noqa: SLF001
+    assert rendering._normalize_age_range(-5, 130) == (0, 100)  # noqa: SLF001
+
+
+def test_price_position_is_report_only_and_not_prompted(
+    all_mock_personas: list[dict],
+    concept: dict,
+    model: dict,
+    price_context: dict,
+    hashes: dict[str, str],
+) -> None:
+    personas = [normalize_persona(all_mock_personas[0], 0)]
+    assert personas[0] is not None
+    concept_with_price_position = {
+        **concept,
+        "price_position": "동급 브랜드보다 높은 편",
+    }
+
+    payloads = app.build_persona_payloads(
+        personas=personas,  # type: ignore[arg-type]
+        concept=concept_with_price_position,
+        model=model,
+        price_context=price_context,
+        hashes=hashes,
+        prompt_template_md=PROMPT_TEMPLATE_PATH.read_text(encoding="utf-8"),
+    )
+
+    payload_text = json.dumps(payloads[0]["prompt"], ensure_ascii=False)
+    metadata_text = json.dumps(payloads[0]["cache_metadata"], ensure_ascii=False)
+    assert "동급 브랜드보다 높은 편" not in payload_text
+    assert "price_position" not in payload_text
+    assert "동급 브랜드보다 높은 편" not in metadata_text
+
+
 def test_canonical_product_card_text_normalizes_whitespace_and_invisible_chars() -> None:
     base = {
         "category": "니트웨어",

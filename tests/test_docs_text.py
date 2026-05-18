@@ -1,3 +1,4 @@
+import re
 import tomllib
 from pathlib import Path
 
@@ -127,3 +128,63 @@ def test_project_version_matches_pyproject():
 
     assert f"version-{version}" in readme
     assert f"version-{version}" in readme_en
+
+
+def test_release_version_metadata_is_aligned():
+    pyproject = tomllib.loads(_read("pyproject.toml"))
+    version = pyproject["project"]["version"]
+    uv_match = re.search(
+        r'\[\[package\]\]\nname = "k-fashion-persona"\nversion = "([^"]+)"',
+        _read("uv.lock"),
+    )
+    assert uv_match is not None
+
+    assert f'APP_VERSION = "{version}"' in _read("src/app_config.py")
+    assert f"version: {version}" in _read("CITATION.cff")
+    assert uv_match.group(1) == version
+    assert f"v{version}" in _read("docs/CHANGELOG.md")
+    assert f"v{version}" in _read("docs/docs.html")
+    assert f"v{version}" in _read("src/ui/copy.py")
+
+
+def test_user_docs_and_default_prompt_avoid_forbidden_public_claim_phrases():
+    text = "\n".join(
+        [
+            _doc_text(),
+            _read("prompts/concept_eval_ko_v0_4.md"),
+        ]
+    )
+    blocked = (
+        "AI 설문조사",
+        "구매 가능성",
+        "구매율 예측",
+        "판매 가능성 예측",
+        "구매율",
+        "시장점유율",
+        "지불의향",
+    )
+    for phrase in blocked:
+        assert phrase not in text
+
+
+def test_positioning_phrase_is_grepable_on_release_surfaces():
+    phrase = "합성 페르소나 기반 사전 리스크 점검"
+    text = "\n".join(
+        [
+            _read("README.md"),
+            _read("src/ui/copy.py"),
+            _read("src/report_writer.py"),
+            _read("docs/docs.html"),
+        ]
+    )
+
+    assert text.count(phrase) >= 4
+
+
+def test_image_concept_assist_is_documented_as_design_only():
+    text = _read("docs/design/image-concept-assist.md")
+
+    assert "not implemented in v0.7.0" in text
+    assert "Default state: OFF" in text
+    assert "Do not send the image to every persona evaluation call." in text
+    assert "call image analysis API once" in text

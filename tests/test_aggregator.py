@@ -654,6 +654,56 @@ class TestValidationFlags:
         assert flags["gender_context_mismatch_possible"] == ["p1"]
         assert flags["occasion_mismatch_possible"] == ["p1"]
 
+    def test_generate_validation_flags_keeps_negative_cases_empty(self):
+        results = [
+            _make_result(
+                "p1",
+                main_reasons=["159,000원 가격과 로고 디테일이 입력과 맞음"],
+                main_concerns=["출근 상황에서 실제 핏 확인 필요"],
+            )
+        ]
+        flags = generate_validation_flags(
+            results,
+            {
+                "product_price_krw": 159_000,
+                "design_details": ["로고 있음"],
+                "product_audience": "menswear",
+                "occasion": "출근",
+            },
+        )
+        assert flags == {
+            "price_mismatch_possible": [],
+            "uninput_design_element_mentioned": [],
+            "gender_context_mismatch_possible": [],
+            "occasion_mismatch_possible": [],
+        }
+
+    def test_generate_validation_flags_can_be_disabled_with_env(self, monkeypatch):
+        monkeypatch.setenv("K_FASHION_VALIDATION_FLAGS", "off")
+        results = [
+            _make_result(
+                "p1",
+                main_concerns=[
+                    "299,000원대라면 부담",
+                    "로고 그래픽이 강해 보임",
+                    "여성용으로 보일 수 있음",
+                    "파티 착장에는 애매함",
+                ],
+            )
+        ]
+
+        flags = generate_validation_flags(
+            results,
+            {
+                "product_price_krw": 159_000,
+                "design_details": ["장식 없음"],
+                "product_audience": "menswear",
+                "occasion": "출근",
+            },
+        )
+
+        assert flags == {}
+
     def test_aggregate_populates_validation_flags_and_summary_lines(self):
         results = [
             _make_result("p1", main_reasons=["색상이 무난함"], main_concerns=["로고가 부담"])

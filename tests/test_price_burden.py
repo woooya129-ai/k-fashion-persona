@@ -129,6 +129,46 @@ def test_parse_kosis_api_metrics_converts_unit_to_krw():
     assert parsed[0].period == "2025_Q4"
 
 
+def test_parse_kosis_api_metrics_converts_online_shopping_million_krw():
+    parsed = parse_kosis_api_metrics(
+        [
+            {
+                "TBL_NM": "온라인쇼핑동향조사",
+                "C1_NM": "상품군별",
+                "C2_NM": "의복",
+                "DT": "123.4",
+                "UNIT_NM": "백만원",
+                "PRD_DE": "2025_Q4",
+            }
+        ]
+    )
+
+    assert len(parsed) == 1
+    assert parsed[0].metric == "online_shopping_clothing_transaction_krw"
+    assert parsed[0].value_krw == 123_400_000
+    assert parsed[0].unit == "KRW"
+
+
+def test_parse_kosis_api_metrics_preserves_consumer_price_index_unit():
+    parsed = parse_kosis_api_metrics(
+        [
+            {
+                "TBL_NM": "소비자물가지수",
+                "C1_NM": "의류 및 신발",
+                "ITM_NM": "소비자물가지수",
+                "DT": "112.3",
+                "UNIT_NM": "2020=100",
+                "PRD_DE": "2025_Q4",
+            }
+        ]
+    )
+
+    assert len(parsed) == 1
+    assert parsed[0].metric == "consumer_price_index_clothing_footwear"
+    assert parsed[0].value_krw == 112.3
+    assert parsed[0].unit == "2020=100"
+
+
 def test_validate_kosis_statistics_data_url_accepts_official_url():
     url = "https://kosis.kr/openapi/statisticsData.do?method=getList"
 

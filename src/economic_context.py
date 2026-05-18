@@ -37,6 +37,11 @@ KOSTAT_2025_ANNUAL_CLOTHING_KRW: int = KOSTAT_2025_ANNUAL_CLOTHING_FOOTWEAR_KRW
 MetricKey = Literal[
     "annualized_clothing_footwear_spend_krw",
     "monthly_clothing_footwear_spend_krw",
+    "consumer_price_index_clothing_footwear",
+    "online_shopping_clothing_transaction_krw",
+    "online_shopping_footwear_transaction_krw",
+    "online_shopping_bag_transaction_krw",
+    "online_shopping_fashion_accessory_transaction_krw",
     "monthly_household_income_krw",
     "monthly_disposable_income_krw",
     "household_assets_krw",
@@ -49,6 +54,11 @@ MetricKey = Literal[
 REFERENCE_METRIC_LABELS: dict[str, str] = {
     "annualized_clothing_footwear_spend_krw": "연간 환산 의류·신발 지출",
     "monthly_clothing_footwear_spend_krw": "월평균 의류·신발 지출",
+    "consumer_price_index_clothing_footwear": "의류·신발 소비자물가지수",
+    "online_shopping_clothing_transaction_krw": "온라인쇼핑 의복 거래액",
+    "online_shopping_footwear_transaction_krw": "온라인쇼핑 신발 거래액",
+    "online_shopping_bag_transaction_krw": "온라인쇼핑 가방 거래액",
+    "online_shopping_fashion_accessory_transaction_krw": "온라인쇼핑 패션용품 거래액",
     "monthly_household_income_krw": "월평균 가구소득",
     "monthly_disposable_income_krw": "월평균 처분가능소득",
     "household_assets_krw": "평균 가구자산",
@@ -59,6 +69,11 @@ REFERENCE_METRIC_LABELS: dict[str, str] = {
 }
 
 _API_METRIC_KEYWORDS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("online_shopping_clothing_transaction_krw", ("온라인", "의복")),
+    ("online_shopping_footwear_transaction_krw", ("온라인", "신발")),
+    ("online_shopping_bag_transaction_krw", ("온라인", "가방")),
+    ("online_shopping_fashion_accessory_transaction_krw", ("온라인", "패션")),
+    ("consumer_price_index_clothing_footwear", ("소비자물가지수", "의류", "신발")),
     ("annualized_clothing_footwear_spend_krw", ("연간", "의류", "신발")),
     ("monthly_clothing_footwear_spend_krw", ("의류", "신발")),
     ("monthly_disposable_income_krw", ("처분가능", "소득")),
@@ -76,9 +91,10 @@ class KosisMetric:
     segment_label: str
     metric: str
     period: str
-    value_krw: int
+    value_krw: float
     source_name: str
     source_url: str
+    unit: str = "KRW"
     note: str = ""
 
 
@@ -125,9 +141,10 @@ def load_kosis_snapshot(path: Path = KOSIS_SNAPSHOT_PATH) -> list[KosisMetric]:
                 segment_label=str(row["segment_label"]),
                 metric=str(row["metric"]),
                 period=str(row["period"]),
-                value_krw=int(float(row["value_krw"])),
+                value_krw=float(row["value_krw"]),
                 source_name=str(row["source_name"]),
                 source_url=str(row["source_url"]),
+                unit=str(row.get("unit", "KRW") or "KRW"),
                 note=str(row.get("note", "")),
             )
             for row in reader
@@ -205,11 +222,19 @@ def _unit_multiplier(unit_name: str) -> int:
     text = unit_name.lower()
     if "억원" in text:
         return 100_000_000
+    if "백만원" in text:
+        return 1_000_000
     if "만원" in text:
         return 10_000
     if "천원" in text:
         return 1_000
     return 1
+
+
+def _metric_unit(metric: str, unit_name: str) -> str:
+    if metric == "consumer_price_index_clothing_footwear":
+        return unit_name.strip() or "index"
+    return "KRW"
 
 
 def _detect_metric_name(row: dict[str, Any]) -> str | None:
@@ -260,7 +285,11 @@ def parse_kosis_api_metrics(rows: list[dict[str, Any]]) -> list[KosisMetric]:
         if metric is None or raw_value is None:
             continue
         unit = str(row.get("UNIT_NM", ""))
-        value_krw = int(round(raw_value * _unit_multiplier(unit)))
+        normalized_unit = _metric_unit(metric, unit)
+        if normalized_unit == "KRW":
+            value = int(round(raw_value * _unit_multiplier(unit)))
+        else:
+            value = raw_value
         segment_label = _api_segment_label(row)
         parsed.append(
             KosisMetric(
@@ -268,9 +297,10 @@ def parse_kosis_api_metrics(rows: list[dict[str, Any]]) -> list[KosisMetric]:
                 segment_label=segment_label,
                 metric=metric,
                 period=str(row.get("PRD_DE", "")),
-                value_krw=value_krw,
+                value_krw=value,
                 source_name=str(row.get("TBL_NM", "KOSIS statisticsData API")),
                 source_url="https://kosis.kr/openapi/statisticsData.do",
+                unit=normalized_unit,
                 note="KOSIS API refresh",
             )
         )
@@ -397,7 +427,9 @@ def build_price_context(
                 "metric": row.metric,
                 "label": REFERENCE_METRIC_LABELS.get(row.metric, row.metric),
                 "period": row.period,
+                "value": row.value_krw,
                 "value_krw": row.value_krw,
+                "unit": row.unit,
                 "source_name": row.source_name,
                 "note": row.note,
             }

@@ -9,7 +9,7 @@
 - Added one-time adjacent age assist when an age filter yields too few personas, with the assist ratio shown in reports.
 - Added deterministic validation flags and a three-line report summary on `AggregateReport` without changing `EvaluationResult`.
 - Added a shared `src/public_data/` foundation for future government/public API connectors.
-- Added KOSIS API call status metadata in reports while preserving snapshot fallback.
+- Added KOSIS API call status metadata and broader KOSIS metric parsing for CPI and online fashion transaction rows while preserving snapshot fallback.
 - Updated project version labels to `0.7.0`.
 
 ## v0.6.1 - 2026-05-15

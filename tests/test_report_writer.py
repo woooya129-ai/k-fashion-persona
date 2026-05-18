@@ -206,6 +206,22 @@ class TestRenderMarkdown:
         assert "월평균 가구소득" in md
         assert "개별 페르소나의 실제 소득·자산·구매력을 뜻하지 않습니다." in md
 
+    def test_kosis_non_krw_metric_is_not_formatted_as_won(self, full_report, sample_price_context):
+        sample_price_context["metric_rows"].append(
+            {
+                "label": "의류·신발 소비자물가지수",
+                "value": 112.3,
+                "unit": "2020=100",
+                "period": "2025_Q4",
+                "source_name": "소비자물가지수",
+            }
+        )
+
+        md = render_markdown(full_report, price_context=sample_price_context)
+
+        assert "| 의류·신발 소비자물가지수 | 112.3 2020=100 |" in md
+        assert "| 의류·신발 소비자물가지수 | 112원 |" not in md
+
     def test_summary_and_validation_sections_present(self, full_report):
         md = render_markdown(full_report)
         assert "## 먼저 볼 요약" in md

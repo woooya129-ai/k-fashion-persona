@@ -328,6 +328,20 @@ def _format_krw(value: object) -> str:
         return str(value)
 
 
+def _format_kosis_metric_value(row: dict[str, Any]) -> str:
+    unit = str(row.get("unit") or "KRW")
+    value = row.get("value", row.get("value_krw"))
+    if unit == "KRW":
+        return _format_krw(value)
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        formatted = str(value)
+    else:
+        formatted = f"{numeric:g}"
+    return formatted if unit.lower() in {"index", "지수"} else f"{formatted} {unit}"
+
+
 def _append_price_context_section(lines: list[str], price_context: dict[str, Any] | None) -> None:
     if not price_context:
         return
@@ -353,7 +367,7 @@ def _append_price_context_section(lines: list[str], price_context: dict[str, Any
         for row in rows[:8]:
             lines.append(
                 f"| {escape_markdown_table_cell(row.get('label', row.get('metric', '')))} | "
-                f"{escape_markdown_table_cell(_format_krw(row.get('value_krw')))} | "
+                f"{escape_markdown_table_cell(_format_kosis_metric_value(row))} | "
                 f"{escape_markdown_table_cell(row.get('period', ''))} | "
                 f"{escape_markdown_table_cell(row.get('source_name', ''))} |"
             )
@@ -688,7 +702,7 @@ def render_csv(report: AggregateReport, price_context: dict[str, Any] | None = N
                 "KOSIS참고통계_항목",
                 str(row.get("label", row.get("metric", ""))),
                 (
-                    f"{_format_krw(row.get('value_krw'))} | {row.get('period', '')} | "
+                    f"{_format_kosis_metric_value(row)} | {row.get('period', '')} | "
                     f"{row.get('source_name', '')}"
                 ),
             )

@@ -48,10 +48,18 @@ env/
 # Local-only Claude advisor notes
 claude-advisor/
 sandbox/
+comment/
+.local-notes/
 
 # Local assistant/editor state
 .claude/
 .obsidian/
+
+# Codex agent team configuration (local-only)
+AGENTS.md
+.codex/
+.agents/
+scripts/automation/check_codex_team_config.py
 
 # Editor and temporary files
 .vscode/

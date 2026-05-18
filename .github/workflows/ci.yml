@@ -62,3 +62,11 @@ jobs:
 
       - name: Pytest
         run: python -m pytest -q --basetemp .pytest_tmp -p no:cacheprovider
+
+      - name: Codex team config check
+        run: |
+          if [ -f scripts/automation/check_codex_team_config.py ] && [ -d .codex/agents ]; then
+            python scripts/automation/check_codex_team_config.py
+          else
+            echo "Codex team config not present in repo (intentional - tracked locally only). Skipping."
+          fi

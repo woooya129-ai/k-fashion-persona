@@ -1,6 +1,0 @@
-# Project-scoped Codex team settings.
-# Keep one child-agent layer only. Deeper nesting raises cost and makes work harder to audit.
-
-[agents]
-max_threads = 6
-max_depth = 1

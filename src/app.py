@@ -78,8 +78,15 @@ from src.orchestrator import (
 from src.persona_filter import PersonaFilter, filter_summary
 from src.pricing_config import load_pricing_config
 from src.prompt_builder import PROMPT_VERSION, SCHEMA_VERSION, detect_injection_keywords
+from src.public_data import PublicDataCache
+from src.public_data.population import MOIS_POPULATION_API_URL_VAR, build_population_context
 from src.report_writer import required_footer_text
-from src.secrets_loader import get_kosis_api_key, get_provider_key, load_secrets_from_env_path
+from src.secrets_loader import (
+    get_datagokr_service_key,
+    get_kosis_api_key,
+    get_provider_key,
+    load_secrets_from_env_path,
+)
 from src.ui.rendering import (
     _current_ui_state,
     _default_model_alias,
@@ -244,6 +251,7 @@ DB_PATH: Path = REPO_ROOT / "cache" / "screener.db"
 PRICING_CONFIG_PATH: Path = REPO_ROOT / "config" / "pricing_config.yaml"
 PROMPT_TEMPLATE_PATH: Path = REPO_ROOT / "prompts" / "concept_eval_ko_v0_4.md"
 logger = logging.getLogger(__name__)
+_POPULATION_CONTEXT_CACHE = PublicDataCache()
 
 
 def _configure_logging() -> None:
@@ -344,6 +352,27 @@ def _load_and_sample(
     )
 
 
+def make_population_context(sample: dict[str, Any], sampled: Any | None = None) -> dict[str, Any]:
+    filt = sample.get("filter")
+    if not isinstance(filt, PersonaFilter):
+        return build_population_context(use_api_refresh=True, cache=_POPULATION_CONTEXT_CACHE)
+    age_min = filt.age_min
+    age_max = filt.age_max
+    if sampled is not None and bool(getattr(sampled, "age_assist_applied", False)):
+        age_min = getattr(sampled, "age_assist_expanded_age_min", age_min)
+        age_max = getattr(sampled, "age_assist_expanded_age_max", age_max)
+    return build_population_context(
+        age_min=age_min,
+        age_max=age_max,
+        sex=filt.sex,
+        provinces=filt.province,
+        use_api_refresh=True,
+        service_key=get_datagokr_service_key() or "",
+        api_url=os.environ.get(MOIS_POPULATION_API_URL_VAR, ""),
+        cache=_POPULATION_CONTEXT_CACHE,
+    )
+
+
 def start_screening(
     concept: dict[str, Any],
     dataset: dict[str, Any],
@@ -363,6 +392,7 @@ def start_screening(
     if not sampled.rows:
         st.error("필터 조건에 맞는 페르소나가 0명이에요.")
         return
+    population_context = make_population_context(sample, sampled)
 
     prompt_template_md = PROMPT_TEMPLATE_PATH.read_text(encoding="utf-8")
     payloads = build_persona_payloads(
@@ -419,6 +449,7 @@ def start_screening(
     input_snapshot["sample_diagnostics"] = sampled.sampling_diagnostics()
     st.session_state["active_input_snapshot"] = input_snapshot
     st.session_state["active_price_context"] = price_context
+    st.session_state["active_population_context"] = population_context
     st.session_state["active_persona_attributes"] = {
         persona.persona_id: _persona_attributes(persona) for persona in sampled.rows
     }
@@ -487,6 +518,7 @@ def _render_job_panel_impl(lang: str) -> None:
             persona_attributes,
             st.session_state.get("active_price_context"),
             st.session_state.get("active_input_snapshot"),
+            st.session_state.get("active_population_context"),
         )
     except ValueError as exc:
         st.error(f"리포트 문구 검증 실패: {type(exc).__name__}")

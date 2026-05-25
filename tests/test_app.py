@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from streamlit.testing.v1 import AppTest
@@ -20,6 +21,7 @@ from src.data_loader import LoadedDataset
 from src.db import get_connection, init_db
 from src.job_manager import create_job, load_job
 from src.llm_client import LLMRawResponse
+from src.persona_filter import PersonaFilter
 from src.persona_normalizer import normalize_persona
 from src.result_parser import EvaluationResult
 from src.worker import WorkerInput, run_worker
@@ -55,6 +57,27 @@ def _read_app_sources() -> str:
 
 def _run_app() -> AppTest:
     return AppTest.from_file(APP_PATH).run(timeout=10)
+
+
+def test_make_population_context_uses_age_assist_expanded_range() -> None:
+    sample = {
+        "filter": PersonaFilter(
+            age_min=25,
+            age_max=34,
+            sex={"F"},
+            province={"서울"},
+        )
+    }
+    sampled = SimpleNamespace(
+        age_assist_applied=True,
+        age_assist_expanded_age_min=20,
+        age_assist_expanded_age_max=39,
+    )
+
+    context = app.make_population_context(sample, sampled)
+
+    assert context["target_age_range"] == "20-39"
+    assert context["target_age_bucket_basis"] == ("20-29", "30-39")
 
 
 def _api_key_inputs(at: AppTest):
@@ -933,7 +956,7 @@ def test_app_source_uses_readable_comfort_tokens_with_targeted_hero_gradient() -
     assert "docs/docs.html" in source
     assert "📄" in source
     assert "woooya129-ai/k-fashion-persona" in source
-    assert "로컬 퍼블릭 베타 · v0.7.0" in source
+    assert "로컬 퍼블릭 베타 · v0.7.1" in source
     assert "설명 ⇄ 도구" not in source
     assert "st.segmented_control" in source
 
@@ -942,7 +965,7 @@ def test_apptest_initial_screen_renders_without_exceptions() -> None:
     at = _run_app()
 
     assert len(at.exception) == 0
-    assert len(at.toggle) == 2
+    assert len(at.toggle) == 3
     assert at.toggle[0].proto.label == "Language"
     assert at.toggle[1].proto.label == "Theme"
     run_mode_controls = [

@@ -29,8 +29,6 @@ from src.aggregator import (
 # PM v3 §2.3 금지 표현 매트릭스
 #
 # 주의: bare "예측" 또는 bare "정확한"은 포함하지 않는다.
-#  → PM v3 §18.3 footer가 "매출 예측"을 포함하므로
-#    bare 토큰을 금지하면 모든 리포트가 ValueError를 일으킨다.
 #  → compound phrase 단위로 금지한다.
 # ---------------------------------------------------------------------------
 
@@ -45,6 +43,10 @@ FORBIDDEN_PHRASES: list[str] = [
     "AI 설문조사",
     "구매율 예측",
     "판매 가능성 예측",
+    "수요 예측",
+    "매출 예측",
+    "판매량 예측",
+    "점수 보정",
     # PM v3 §1 금지 포지셔닝 토큰 (단독 단어 수준)
     "구매율",
     "시장점유율",
@@ -66,14 +68,16 @@ def required_footer_text() -> str:
     return (
         "본 도구는 합성 페르소나와 LLM 기반의 사전 가설 분석 도구입니다.\n"
         "합성 페르소나 기반 사전 리스크 점검으로만 사용해야 합니다.\n"
-        "실제 소비자 조사, 매출 예측, 법률 자문, 최종 사업 판단을 대체하지 않습니다.\n"
+        "실제 소비자 조사, 실제 판매 성과 판단, 법률 자문, 최종 사업 판단을 대체하지 않습니다.\n"
         "Persona dataset: NVIDIA Nemotron-Personas-Korea, CC BY 4.0.\n"
         "Dataset URL: https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea\n"
         "CC BY 4.0: https://creativecommons.org/licenses/by/4.0/\n"
         "k-fashion-persona.\n"
-        "Public statistics context uses Statistics Korea (KOSTAT) / KOSIS household "
-        "clothing-footwear spending, income, and asset statistics; it does not infer "
-        "individual income or assets.\n"
+        "Public statistics context uses KOSIS/KOSTAT household clothing-footwear "
+        "spending, income, and asset statistics; it does not infer individual income "
+        "or assets.\n"
+        "MOIS resident-registration population context is aggregate public statistics; "
+        "it does not infer individual demand.\n"
         "Built with Codex and Claude Code.\n"
         f"Contact: {CONTACT_DISPLAY}"
     )
@@ -329,6 +333,13 @@ def _format_krw(value: object) -> str:
         return str(value)
 
 
+def _format_persons(value: object) -> str:
+    try:
+        return f"{int(value):,}명"
+    except (TypeError, ValueError):
+        return str(value)
+
+
 def _format_kosis_metric_value(row: dict[str, Any]) -> str:
     unit = str(row.get("unit") or "KRW")
     value = row.get("value", row.get("value_krw"))
@@ -343,6 +354,69 @@ def _format_kosis_metric_value(row: dict[str, Any]) -> str:
     return formatted if unit.lower() in {"index", "지수"} else f"{formatted} {unit}"
 
 
+def _format_public_metric_value(row: dict[str, Any]) -> str:
+    value = row.get("value", "")
+    unit = str(row.get("unit") or "").lower()
+    if unit in {"persons", "person"}:
+        return _format_persons(value)
+    if unit in {"households", "household"}:
+        try:
+            return f"{int(value):,}가구"
+        except (TypeError, ValueError):
+            return str(value)
+    if unit == "count":
+        try:
+            return f"{int(value):,}개"
+        except (TypeError, ValueError):
+            return str(value)
+    if unit == "percent":
+        return f"{value}%"
+    if unit == "celsius":
+        return f"{value}℃"
+    if unit == "mm":
+        return f"{value}mm"
+    if unit == "mps":
+        return f"{value}m/s"
+    if unit == "code":
+        return str(value)
+    return str(value) if not unit else f"{value} {unit}"
+
+
+def _price_denominator_note(price_context: dict[str, Any]) -> str:
+    for row in price_context.get("metric_rows", []):
+        if row.get("metric") == "annualized_clothing_footwear_spend_krw":
+            note = str(row.get("note") or "").strip()
+            if note:
+                return note
+    return "연간 환산 의류·신발 지출"
+
+
+def _segment_counts_text(rows: list[Any], total: int) -> str:
+    if not rows:
+        return f"합성 패널 {total}명"
+    return ", ".join(f"{row.segment_label} {row.n}명" for row in rows[:6])
+
+
+def _population_mois_value_text(population_context: dict[str, Any], axis: str) -> str:
+    if axis == "age":
+        basis = population_context.get("target_age_bucket_basis_label", "all")
+        return (
+            f"{_format_persons(population_context.get('target_age_population'))} "
+            f"({population_context.get('target_age_population_pct', 0)}%, "
+            f"10세 버킷 {basis})"
+        )
+    if axis == "sex":
+        return (
+            f"{population_context.get('target_sex_label', 'all')} "
+            f"{_format_persons(population_context.get('target_sex_population'))} "
+            f"({population_context.get('target_sex_population_pct', 0)}%)"
+        )
+    return (
+        f"{_format_persons(population_context.get('target_region_population'))} "
+        f"(전국 대비 {population_context.get('target_region_population_pct', 0)}%)"
+    )
+
+
 def _append_price_context_section(lines: list[str], price_context: dict[str, Any] | None) -> None:
     if not price_context:
         return
@@ -354,7 +428,7 @@ def _append_price_context_section(lines: list[str], price_context: dict[str, Any
     lines.append(f"- API 호출 상태: {api_status}")
     lines.append(
         f"- 가격 기준값: {_format_krw(price_context.get('denominator_krw'))} "
-        f"(연간 환산 의류·신발 지출)"
+        f"({_price_denominator_note(price_context)})"
     )
     lines.append(
         f"- 제품 가격 / 기준값: {price_context.get('price_burden_ratio', 0):.2f}배 "
@@ -376,6 +450,80 @@ def _append_price_context_section(lines: list[str], price_context: dict[str, Any
     lines.append(
         "> 위 값은 KOSIS/KOSTAT 가구 단위 집계 통계이며, "
         "개별 페르소나의 실제 소득·자산·구매력을 뜻하지 않습니다."
+    )
+    lines.append("")
+
+
+def _append_population_context_section(
+    lines: list[str],
+    report: AggregateReport,
+    population_context: dict[str, Any] | None,
+) -> None:
+    if not population_context:
+        return
+
+    lines.append("## MOIS 주민등록 인구 참고 통계")
+    lines.append("")
+    lines.append(f"- 기준 지역: {population_context.get('reference_region_label', '전국')}")
+    lines.append(f"- 기준 기간: {population_context.get('period', '')}")
+    source_url = population_context.get("source_url", "")
+    if source_url:
+        lines.append(f"- 출처 URL: {source_url}")
+    lines.append(f"- API 호출 상태: {population_context.get('api_status', 'snapshot')}")
+    age_population = _format_persons(population_context.get("target_age_population"))
+    lines.append(
+        f"- 선택 연령 버킷 기준 인구: {age_population} "
+        f"({population_context.get('target_age_population_pct', 0)}%, "
+        f"10세 버킷 {population_context.get('target_age_bucket_basis_label', 'all')})"
+    )
+    lines.append(
+        f"- 선택 성별 인구: {population_context.get('target_sex_label', 'all')} "
+        f"{_format_persons(population_context.get('target_sex_population'))} "
+        f"({population_context.get('target_sex_population_pct', 0)}%)"
+    )
+    lines.append(
+        f"- 선택 지역 인구: {_format_persons(population_context.get('target_region_population'))} "
+        f"(전국 대비 {population_context.get('target_region_population_pct', 0)}%)"
+    )
+    lines.append("")
+    lines.append("| 참고 축 | 합성 패널 기준 | MOIS 선택 조건 주변비율 |")
+    lines.append("|---|---|---|")
+    age_panel = escape_markdown_table_cell(
+        _segment_counts_text(report.segments_age, report.sample_size)
+    )
+    sex_panel = escape_markdown_table_cell(
+        _segment_counts_text(report.segments_sex, report.sample_size)
+    )
+    region_panel = escape_markdown_table_cell(
+        _segment_counts_text(report.segments_province, report.sample_size)
+    )
+    age_mois = escape_markdown_table_cell(_population_mois_value_text(population_context, "age"))
+    sex_mois = escape_markdown_table_cell(_population_mois_value_text(population_context, "sex"))
+    region_mois = escape_markdown_table_cell(
+        _population_mois_value_text(population_context, "region")
+    )
+    lines.append(f"| 연령 | {age_panel} | {age_mois} |")
+    lines.append(f"| 성별 | {sex_panel} | {sex_mois} |")
+    lines.append(f"| 지역 | {region_panel} | {region_mois} |")
+    rows = population_context.get("metric_rows", [])
+    if rows:
+        lines.append("")
+        lines.append("| 항목 | 값 | 기준 기간 | 출처 |")
+        lines.append("|---|---:|---|---|")
+        for row in rows[:8]:
+            lines.append(
+                f"| {escape_markdown_table_cell(row.get('label', ''))} | "
+                f"{escape_markdown_table_cell(_format_persons(row.get('value')))} | "
+                f"{escape_markdown_table_cell(row.get('period', ''))} | "
+                f"{escape_markdown_table_cell(row.get('source_name', ''))} |"
+            )
+    for warning in population_context.get("warnings", ()):
+        lines.append(f"- 참고 통계 주의: {warning}")
+    lines.append("")
+    lines.append(
+        "> "
+        + str(population_context.get("population_scope_note") or "")
+        + " 합성 패널의 실제 구매 의향이나 구매력을 추정하지 않습니다."
     )
     lines.append("")
 
@@ -465,7 +613,11 @@ def _append_sampling_diagnostics_section(lines: list[str], report: AggregateRepo
     lines.append("")
 
 
-def render_markdown(report: AggregateReport, price_context: dict[str, Any] | None = None) -> str:
+def render_markdown(
+    report: AggregateReport,
+    price_context: dict[str, Any] | None = None,
+    population_context: dict[str, Any] | None = None,
+) -> str:
     """PM v3 §17.1 메인 지표 + §18.2 Main Results 섹션.
 
     모든 표현은 '합성 패널 N명 기준'으로 시작.
@@ -512,6 +664,7 @@ def render_markdown(report: AggregateReport, price_context: dict[str, Any] | Non
     lines.append("")
 
     _append_price_context_section(lines, price_context)
+    _append_population_context_section(lines, report, population_context)
     _append_input_snapshot_section(lines, report)
     _append_sampling_diagnostics_section(lines, report)
 
@@ -600,7 +753,11 @@ def render_markdown(report: AggregateReport, price_context: dict[str, Any] | Non
 # ---------------------------------------------------------------------------
 
 
-def render_csv(report: AggregateReport, price_context: dict[str, Any] | None = None) -> str:
+def render_csv(
+    report: AggregateReport,
+    price_context: dict[str, Any] | None = None,
+    population_context: dict[str, Any] | None = None,
+) -> str:
     """평면화된 표: section, key, value 컬럼.
 
     formula injection 방어: 모든 셀에 대해 첫 글자가 = / + / - / @ / \\t / \\r 면 ' prefix.
@@ -696,7 +853,14 @@ def render_csv(report: AggregateReport, price_context: dict[str, Any] | None = N
             "API 호출 상태",
             price_context.get("api_status", price_context.get("source_mode", "snapshot")),
         )
-        _row("KOSIS참고통계", "가격 기준값", _format_krw(price_context.get("denominator_krw")))
+        _row(
+            "KOSIS참고통계",
+            "가격 기준값",
+            (
+                f"{_format_krw(price_context.get('denominator_krw'))} "
+                f"({_price_denominator_note(price_context)})"
+            ),
+        )
         _row("KOSIS참고통계", "가격 기준 배수", price_context.get("price_burden_ratio", ""))
         _row("KOSIS참고통계", "가격 부담 라벨", price_context.get("price_burden_label", ""))
         for row in price_context.get("metric_rows", [])[:8]:
@@ -708,6 +872,80 @@ def render_csv(report: AggregateReport, price_context: dict[str, Any] | None = N
                     f"{row.get('source_name', '')}"
                 ),
             )
+
+    if population_context:
+        _row(
+            "MOIS주민등록인구",
+            "기준 지역",
+            population_context.get("reference_region_label", "전국"),
+        )
+        _row("MOIS주민등록인구", "기준 기간", population_context.get("period", ""))
+        _row("MOIS주민등록인구", "출처 URL", population_context.get("source_url", ""))
+        _row("MOIS주민등록인구", "API 호출 상태", population_context.get("api_status", "snapshot"))
+        _row(
+            "MOIS주민등록인구",
+            "선택 연령 버킷 기준 인구",
+            _format_persons(population_context.get("target_age_population")),
+        )
+        _row(
+            "MOIS주민등록인구",
+            "선택 연령 버킷",
+            population_context.get("target_age_bucket_basis_label", "all"),
+        )
+        _row(
+            "MOIS주민등록인구",
+            "선택 연령 범위 비율",
+            f"{population_context.get('target_age_population_pct', 0)}%",
+        )
+        _row(
+            "MOIS주민등록인구",
+            "선택 성별 인구",
+            _format_persons(population_context.get("target_sex_population")),
+        )
+        _row(
+            "MOIS주민등록인구",
+            "선택 지역 인구",
+            _format_persons(population_context.get("target_region_population")),
+        )
+        _row(
+            "MOIS주민등록인구_패널비교",
+            "연령",
+            (
+                f"합성 패널: {_segment_counts_text(report.segments_age, report.sample_size)} | "
+                f"MOIS: {_population_mois_value_text(population_context, 'age')}"
+            ),
+        )
+        _row(
+            "MOIS주민등록인구_패널비교",
+            "성별",
+            (
+                f"합성 패널: {_segment_counts_text(report.segments_sex, report.sample_size)} | "
+                f"MOIS: {_population_mois_value_text(population_context, 'sex')}"
+            ),
+        )
+        _row(
+            "MOIS주민등록인구_패널비교",
+            "지역",
+            (
+                "합성 패널: "
+                f"{_segment_counts_text(report.segments_province, report.sample_size)} | "
+                f"MOIS: {_population_mois_value_text(population_context, 'region')}"
+            ),
+        )
+        _row(
+            "MOIS주민등록인구",
+            "해석 주의",
+            population_context.get("population_scope_note", ""),
+        )
+        for row in population_context.get("metric_rows", [])[:8]:
+            _row(
+                "MOIS주민등록인구_항목",
+                str(row.get("label", "")),
+                f"{_format_persons(row.get('value'))} | {row.get('period', '')} | "
+                f"{row.get('source_name', '')}",
+            )
+        for warning in population_context.get("warnings", ()):
+            _row("MOIS주민등록인구_주의", "fallback", warning)
 
     # Quality
     _row("결과품질", "성공", q.success)
@@ -802,6 +1040,8 @@ def write_report_files(
     output_dir: Path,
     project_name: str,
     job_id: str,
+    price_context: dict[str, Any] | None = None,
+    population_context: dict[str, Any] | None = None,
 ) -> tuple[Path, Path]:
     """output_dir/{project_slug}/{job_id}.md, .csv 작성.
 
@@ -832,8 +1072,16 @@ def write_report_files(
     md_path = target_dir / f"{job_id}.md"
     csv_path = target_dir / f"{job_id}.csv"
 
-    md_content = render_markdown(report)
-    csv_content = render_csv(report)
+    md_content = render_markdown(
+        report,
+        price_context=price_context,
+        population_context=population_context,
+    )
+    csv_content = render_csv(
+        report,
+        price_context=price_context,
+        population_context=population_context,
+    )
 
     md_path.write_text(md_content, encoding="utf-8")
     # csv_content already starts with ﻿ BOM — use plain utf-8 to avoid double BOM

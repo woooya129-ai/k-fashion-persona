@@ -996,6 +996,11 @@ def render_secrets_status(lang: str) -> None:
             ("Qwen", status.qwen_present, ui_text(lang, "provider_key_help")),
             ("HF Token", status.hf_token_present, ui_text(lang, "hf_status_help")),
             ("KOSIS", status.kosis_api_key_present, ui_text(lang, "kosis_status_help")),
+            (
+                "data.go.kr",
+                status.datagokr_service_key_present,
+                ui_text(lang, "datagokr_status_help"),
+            ),
         )
 
         cards = []

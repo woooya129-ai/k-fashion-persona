@@ -56,12 +56,57 @@ def sample_price_context() -> dict:
         "price_burden_label": "medium",
         "metric_rows": [
             {
+                "metric": "annualized_clothing_footwear_spend_krw",
+                "label": "연간 환산 의류·신발 지출",
+                "value_krw": 2_136_000,
+                "unit": "KRW",
+                "period": "2025_Q4",
+                "source_name": "2025년 4/4분기 가계동향조사 결과",
+                "note": "월평균 의류·신발 지출 178,000원을 12개월로 환산",
+            },
+            {
                 "label": "월평균 가구소득",
                 "value_krw": 5_422_000,
                 "period": "2025_Q4",
                 "source_name": "2025년 4/4분기 가계동향조사 결과",
+            },
+        ],
+    }
+
+
+@pytest.fixture()
+def sample_population_context() -> dict:
+    return {
+        "reference_region_label": "서울특별시",
+        "period": "2026-04",
+        "source_url": "https://jumin.mois.go.kr/agePpltStus.do",
+        "api_status": "snapshot",
+        "target_age_range": "25-34",
+        "target_age_bucket_basis": ("20-29", "30-39"),
+        "target_age_bucket_basis_label": "20-29, 30-39",
+        "target_age_population": 2_706_940,
+        "target_age_population_pct": 29.1,
+        "target_sex_label": "F",
+        "target_sex_population": 4_821_211,
+        "target_sex_population_pct": 51.9,
+        "target_region_population": 9_298_673,
+        "target_region_population_pct": 18.2,
+        "metric_rows": [
+            {
+                "label": "selected age-range population",
+                "value": 2_706_940,
+                "unit": "persons",
+                "period": "2026-04",
+                "source_name": "MOIS resident registration population",
+                "source_url": "https://jumin.mois.go.kr/agePpltStus.do",
+                "note": "10-year MOIS buckets: 20-29, 30-39",
             }
         ],
+        "population_scope_note": (
+            "MOIS 주민등록 인구는 주민등록 기준 집계 통계입니다. "
+            "MOIS 비교값은 성별, 연령, 지역을 모두 교차한 값이 아니라 주변분포입니다."
+        ),
+        "warnings": ("API 갱신 미사용, 스냅샷 사용: MOIS API key or endpoint is missing.",),
     }
 
 
@@ -77,7 +122,9 @@ class TestRequiredFooterText:
 
     def test_exact_match_line2(self):
         footer = required_footer_text()
-        expected = "실제 소비자 조사, 매출 예측, 법률 자문, 최종 사업 판단을 대체하지 않습니다."
+        expected = (
+            "실제 소비자 조사, 실제 판매 성과 판단, 법률 자문, 최종 사업 판단을 대체하지 않습니다."
+        )
         assert expected in footer
 
     def test_data_source_line(self):
@@ -89,8 +136,9 @@ class TestRequiredFooterText:
     def test_attribution_and_obfuscated_contact_line(self):
         footer = required_footer_text()
         assert "k-fashion-persona." in footer
-        assert "income, and asset statistics" in footer
+        assert "KOSIS/KOSTAT household" in footer
         assert "it does not infer individual income or assets." in footer
+        assert "MOIS resident-registration population context" in footer
         assert "Built with Codex and Claude Code." in footer
         assert "Contact: woooya129 [at] gmail [dot] com" in footer
         assert "woooya129@gmail.com" not in footer
@@ -138,6 +186,14 @@ class TestAssertSafePhrasing:
     def test_forbidden_phrase_구매율_raises(self):
         with pytest.raises(ValueError, match="금지 표현"):
             assert_safe_phrasing("구매율 80%")
+
+    @pytest.mark.parametrize(
+        "phrase",
+        ["수요 예측", "매출 예측", "판매량 예측", "점수 보정"],
+    )
+    def test_v080_public_context_forbidden_phrases_raise(self, phrase):
+        with pytest.raises(ValueError, match="금지 표현"):
+            assert_safe_phrasing(f"상권 데이터로 {phrase}을 제공합니다.")
 
     def test_forbidden_phrase_이_제품을_산다_raises(self):
         with pytest.raises(ValueError, match="금지 표현"):
@@ -204,6 +260,7 @@ class TestRenderMarkdown:
         md = render_markdown(full_report, price_context=sample_price_context)
         assert "## KOSIS 참고 통계" in md
         assert "월평균 가구소득" in md
+        assert "월평균 의류·신발 지출 178,000원을 12개월로 환산" in md
         assert "개별 페르소나의 실제 소득·자산·구매력을 뜻하지 않습니다." in md
 
     def test_kosis_non_krw_metric_is_not_formatted_as_won(self, full_report, sample_price_context):
@@ -226,6 +283,16 @@ class TestRenderMarkdown:
         md = render_markdown(full_report)
         assert "## 먼저 볼 요약" in md
         assert "## 검증 필요 가능성" in md
+
+    def test_population_context_section_present(self, full_report, sample_population_context):
+        md = render_markdown(full_report, population_context=sample_population_context)
+        assert "## MOIS 주민등록 인구 참고 통계" in md
+        assert "서울특별시" in md
+        assert "2,706,940명" in md
+        assert "10세 버킷 20-29, 30-39" in md
+        assert "| 참고 축 | 합성 패널 기준 | MOIS 선택 조건 주변비율 |" in md
+        assert "API 갱신 미사용, 스냅샷 사용" in md
+        assert "성별, 연령, 지역을 모두 교차한 값이 아니라" in md
 
     def test_validation_section_hidden_when_feature_flag_off(self, monkeypatch):
         monkeypatch.setenv("K_FASHION_VALIDATION_FLAGS", "off")
@@ -374,11 +441,22 @@ class TestRenderCsv:
         assert "KOSIS참고통계" in csv_text
         assert "월평균 가구소득" in csv_text
         assert "5,422,000원" in csv_text
+        assert "월평균 의류·신발 지출 178,000원을 12개월로 환산" in csv_text
 
     def test_csv_contains_summary_and_validation_rows(self, full_report):
         csv_text = render_csv(full_report)
         assert "먼저볼요약" in csv_text
         assert "검증필요가능성" in csv_text
+
+    def test_csv_contains_population_context(self, full_report, sample_population_context):
+        csv_text = render_csv(full_report, population_context=sample_population_context)
+        assert "MOIS주민등록인구" in csv_text
+        assert "서울특별시" in csv_text
+        assert "2,706,940명" in csv_text
+        assert "MOIS주민등록인구_패널비교" in csv_text
+        assert "MOIS주민등록인구_주의" in csv_text
+        assert "API 갱신 미사용, 스냅샷 사용" in csv_text
+        assert "20-29, 30-39" in csv_text
 
     def test_forbidden_phrase_in_reasons_raises(self):
         # 금지 표현이 EvaluationResult.main_reasons 를 통해 CSV 셀에 들어오면

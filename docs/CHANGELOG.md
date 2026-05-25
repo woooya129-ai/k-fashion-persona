@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.7.1 - 2026-05-19
+
+- Added a MOIS resident-registration population connector under `src/public_data/population/`.
+- Added an April 2026 population snapshot fallback so reports still build without a `data.go.kr` key.
+- Added report and CSV population context for selected age range, sex, and province filters.
+- Clarified that MOIS age values use overlapping 10-year buckets and marginal distributions, not sex-age-region cross-tab estimates.
+- Aggregated lower administrative MOIS API rows to province-level report context.
+- Added MOIS/data.go.kr attribution to third-party notices and kept CSV fallback warnings.
+- Added `DATAGOKR_SERVICE_KEY` detection for optional data.go.kr API refresh.
+- Updated project version labels to `0.7.1`.
+
 ## v0.7.0 - 2026-05-18
 
 - Added `concept_eval_ko_v0_4` and moved the default prompt template to the new version so cache keys are separated from v0.3.

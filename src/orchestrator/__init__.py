@@ -660,6 +660,7 @@ def build_run_report(
     persona_attributes: dict[str, dict[str, Any]],
     price_context: dict[str, Any] | None = None,
     input_snapshot: dict[str, Any] | None = None,
+    population_context: dict[str, Any] | None = None,
 ) -> RunReport:
 
     parsed_results: list[EvaluationResult] = []
@@ -718,8 +719,16 @@ def build_run_report(
     report = aggregate(parsed_results, persona_attributes, quality, input_snapshot=input_snapshot)
 
     return RunReport(
-        report_markdown=render_markdown(report, price_context=price_context),
-        report_csv=render_csv(report, price_context=price_context),
+        report_markdown=render_markdown(
+            report,
+            price_context=price_context,
+            population_context=population_context,
+        ),
+        report_csv=render_csv(
+            report,
+            price_context=price_context,
+            population_context=population_context,
+        ),
         quality=quality,
     )
 

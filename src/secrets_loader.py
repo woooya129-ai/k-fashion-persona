@@ -32,6 +32,7 @@ DEEPSEEK_KEY_VAR = "DEEPSEEK_API_KEY"
 QWEN_KEY_VAR = "QWEN_API_KEY"
 HF_TOKEN_VAR = "HF_TOKEN"
 KOSIS_API_KEY_VAR = "KOSIS_API_KEY"
+DATAGOKR_SERVICE_KEY_VAR = "DATAGOKR_SERVICE_KEY"
 REQUIRE_USER_PROVIDER_KEY_VAR = "KFPS_REQUIRE_USER_PROVIDER_KEY"
 
 _TRUE_VALUES = {"1", "true", "yes", "on"}
@@ -51,6 +52,7 @@ class LoadedSecretsStatus:
     deepseek_present: bool = False
     qwen_present: bool = False
     kosis_api_key_present: bool = False
+    datagokr_service_key_present: bool = False
 
 
 def load_secrets_from_env_path(env_path: Path = SECRETS_ENV_PATH) -> LoadedSecretsStatus:
@@ -78,6 +80,7 @@ def load_secrets_from_env_path(env_path: Path = SECRETS_ENV_PATH) -> LoadedSecre
         deepseek_present=provider_env_allowed and bool(os.environ.get(DEEPSEEK_KEY_VAR)),
         qwen_present=provider_env_allowed and bool(os.environ.get(QWEN_KEY_VAR)),
         kosis_api_key_present=bool(os.environ.get(KOSIS_API_KEY_VAR)),
+        datagokr_service_key_present=bool(os.environ.get(DATAGOKR_SERVICE_KEY_VAR)),
     )
 
 
@@ -130,6 +133,11 @@ def get_hf_token() -> str | None:
 
 def get_kosis_api_key() -> str | None:
     val = os.environ.get(KOSIS_API_KEY_VAR)
+    return val if val else None
+
+
+def get_datagokr_service_key() -> str | None:
+    val = os.environ.get(DATAGOKR_SERVICE_KEY_VAR)
     return val if val else None
 
 

@@ -26,9 +26,10 @@ If any dataset sample, transformed row, generated persona text, or derived
 artifact is later added to the public repository, update this section with the
 exact file path, transformation method, and change statement before release.
 
-## Statistics Korea / KOSIS
+## KOSIS / KOSTAT Public Statistics
 
-- Provider: Statistics Korea (KOSTAT), via KOSIS public statistics
+- Provider: KOSIS / KOSTAT public statistics. Current public-data portal
+  metadata may list the KOSIS API provider as National Data Office.
 - Use in this project: report and prompt context based on household clothing
   and footwear spending, household income, disposable income, assets, debt, and
   net assets
@@ -40,6 +41,31 @@ exact file path, transformation method, and change statement before release.
     https://www.korea.kr/briefing/policyBriefingView.do?newsId=156746265
   - 2025 household finance and welfare public briefing:
     https://www.korea.kr/news/policyNewsView.do?newsId=156733201
+
+## MOIS Resident-Registration Population
+
+- Provider: Ministry of the Interior and Safety (MOIS), via the resident
+  registration population statistics page and data.go.kr OpenAPI.
+- Use in this project: report-only aggregate population context for selected
+  age-bucket, sex, and province filters.
+- Not used for: score weighting, market sizing, individual demand inference,
+  or individual purchasing-power inference.
+- Data bundled in this repository: Yes, as `data/public/mois_population_context.csv`
+- Snapshot period: 2026-04.
+- Source pages used:
+  - MOIS resident-registration population statistics:
+    https://jumin.mois.go.kr/agePpltStus.do
+  - data.go.kr OpenAPI `15108072`:
+    https://www.data.go.kr/data/15108072/openapi.do
+- Operational notes observed on the public-data portal: JSON/XML API, free use,
+  development traffic limit shown as 10,000, and no explicit use restriction.
+- Scope note: resident-registration population includes residents,
+  registration-unknown residents, and overseas Koreans in the resident
+  registration system; foreigners are excluded.
+- Granularity note: the OpenAPI can expose lower administrative rows
+  such as city/county/district and neighborhood rows. This project aggregates
+  those rows to province level before reporting.
+
 
 ## Direct Python Dependencies
 

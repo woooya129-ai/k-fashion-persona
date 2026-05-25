@@ -36,7 +36,7 @@ UI_COPY: dict[str, dict[str, str]] = {
             "합성 페르소나 기반 사전 리스크 점검으로 "
             "전문 설문이나 본조사 전 반응의 흐름을 빠르게 확인합니다."
         ),
-        "hero_eyebrow": "로컬 퍼블릭 베타 · v0.7.0",
+        "hero_eyebrow": "로컬 퍼블릭 베타 · v0.7.1",
         "hero_pill_1": "로컬 실행",
         "hero_pill_2": "원문 저장 없음",
         "hero_pill_3": "리포트 내보내기",
@@ -230,6 +230,9 @@ UI_COPY: dict[str, dict[str, str]] = {
         "kosis_status_help": (
             "KOSIS 통계자료 API 갱신용 KEY 상태예요. 스냅샷만 쓸 때는 없어도 돼요."
         ),
+        "datagokr_status_help": (
+            "data.go.kr serviceKey 상태예요. 행안부 인구 통계는 키가 없으면 스냅샷을 사용해요."
+        ),
         "price_context_header": "가격 맥락",
         "price_context_caption": "가격 맥락 참고 지표이며 실제 구매력을 뜻하지 않아요.",
         "cost_header": "비용 / 시간 사전 추정",
@@ -342,7 +345,7 @@ UI_COPY: dict[str, dict[str, str]] = {
             "Show a fashion concept to an AI persona panel and quickly check reaction flow "
             "before expert surveys or main research."
         ),
-        "hero_eyebrow": "Local public beta · v0.7.0",
+        "hero_eyebrow": "Local public beta · v0.7.1",
         "hero_pill_1": "Local run",
         "hero_pill_2": "No raw concept storage",
         "hero_pill_3": "Report export",
@@ -549,6 +552,9 @@ UI_COPY: dict[str, dict[str, str]] = {
         ),
         "kosis_status_help": (
             "KOSIS statisticsData API key status. Not needed when using the snapshot only."
+        ),
+        "datagokr_status_help": (
+            "data.go.kr serviceKey status. MOIS population context falls back to the snapshot."
         ),
         "price_context_header": "Price context",
         "price_context_caption": "This is context only, not real purchasing power.",

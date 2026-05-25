@@ -2,7 +2,7 @@
 
 ## Check K-fashion Concepts With AI Personas First
 
-[![Version](https://img.shields.io/badge/version-0.7.0-0F766E)](../pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.7.1-0F766E)](../pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
 [![HF Space](https://img.shields.io/badge/HF%20Space-k--fashion--persona-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/spaces/w00ya/k-fashion-persona)
@@ -94,7 +94,9 @@ DEEPSEEK_API_KEY=
 QWEN_API_KEY=
 HF_TOKEN=
 KOSIS_API_KEY=
+DATAGOKR_SERVICE_KEY=
 KOSIS_STATISTICS_DATA_URL=
+MOIS_POPULATION_API_URL=
 ```
 
 ## Codex / Claude Code Subscription Mode
@@ -152,7 +154,6 @@ Notes:
 - Default loading: Hugging Face `datasets` streaming
 - Default scan: up to 3000 rows sequentially per run to fill matching personas
 
-Income, assets, and clothing-footwear spending are not inferred from individual personas. Price-burden context comes from the committed KOSTAT/KOSIS public-statistics snapshot at `data/public/kosis_household_context.csv`. If you enter a KOSIS API key and `statisticsData` URL, the app tries that response first and falls back to the snapshot if refresh fails.
 
 ## Recommended Specs
 
@@ -188,7 +189,7 @@ Inappropriate use:
 - Synthetic persona reactions can differ from real buying behavior.
 - The dataset is not built specifically for fashion purchase research.
 - Images, lookbooks, fit photos, and body measurements are not included by default.
-- KOSIS/KOSTAT values are household-level aggregate statistics, not individual persona economics.
+- KOSIS/KOSTAT values are household-level aggregate statistics, and MOIS values are resident-registration aggregate statistics. They are not individual persona economics or purchasing power.
 - Final decisions should combine real research, sales data, and expert review.
 
 ## License And Attribution
@@ -196,7 +197,7 @@ Inappropriate use:
 - Code license: GNU AGPL-3.0-only
 - Persona dataset: NVIDIA Nemotron-Personas-Korea
 - Dataset license: CC BY 4.0 attribution applies
-- Statistics context: KOSTAT / KOSIS public statistics
+- Statistics context: KOSIS/KOSTAT public statistics, MOIS resident-registration population statistics
 - Full notices: [LICENSE](../LICENSE), [NOTICE](legal/NOTICE.md), [THIRD_PARTY_NOTICES](legal/THIRD_PARTY_NOTICES.md)
 - Citation format: [CITATION.cff](../CITATION.cff)
 - Methodology: [docs/legal/METHODOLOGY_AND_RIGHTS.md](legal/METHODOLOGY_AND_RIGHTS.md)

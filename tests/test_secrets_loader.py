@@ -10,6 +10,7 @@ import pytest
 
 from src.secrets_loader import (
     ANTHROPIC_KEY_VAR,
+    DATAGOKR_SERVICE_KEY_VAR,
     DEEPSEEK_KEY_VAR,
     GOOGLE_KEY_VAR,
     GROQ_KEY_VAR,
@@ -19,6 +20,7 @@ from src.secrets_loader import (
     QWEN_KEY_VAR,
     REQUIRE_USER_PROVIDER_KEY_VAR,
     LoadedSecretsStatus,
+    get_datagokr_service_key,
     get_hf_token,
     get_kosis_api_key,
     get_provider_key,
@@ -43,6 +45,7 @@ def isolate_env(monkeypatch: pytest.MonkeyPatch):
         QWEN_KEY_VAR,
         HF_TOKEN_VAR,
         KOSIS_API_KEY_VAR,
+        DATAGOKR_SERVICE_KEY_VAR,
         REQUIRE_USER_PROVIDER_KEY_VAR,
     ):
         monkeypatch.delenv(var, raising=False)
@@ -59,6 +62,7 @@ class TestLoadSecretsFromEnvPath:
         assert status.anthropic_present is False
         assert status.hf_token_present is False
         assert status.kosis_api_key_present is False
+        assert status.datagokr_service_key_present is False
 
     def test_env_present_after_load(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv(OPENAI_KEY_VAR, "fake-openai-key-for-test")
@@ -75,6 +79,7 @@ class TestLoadSecretsFromEnvPath:
         monkeypatch.setenv(OPENAI_KEY_VAR, "fake-openai-key-for-test")
         monkeypatch.setenv(HF_TOKEN_VAR, "fake-hf-token")
         monkeypatch.setenv(KOSIS_API_KEY_VAR, "fake-kosis-key")
+        monkeypatch.setenv(DATAGOKR_SERVICE_KEY_VAR, "fake-datagokr-key")
         env_path = tmp_path / "fake.env"
         env_path.write_text("# placeholder\n", encoding="utf-8")
 
@@ -83,6 +88,7 @@ class TestLoadSecretsFromEnvPath:
         assert status.openai_present is False
         assert status.hf_token_present is True
         assert status.kosis_api_key_present is True
+        assert status.datagokr_service_key_present is True
 
     def test_returned_status_does_not_contain_actual_key(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -168,6 +174,15 @@ class TestGetKosisApiKey:
 
     def test_missing(self):
         assert get_kosis_api_key() is None
+
+
+class TestGetDataGoKrServiceKey:
+    def test_present(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv(DATAGOKR_SERVICE_KEY_VAR, "fake-datagokr-key")
+        assert get_datagokr_service_key() == "fake-datagokr-key"
+
+    def test_missing(self):
+        assert get_datagokr_service_key() is None
 
 
 class TestRedactForLog:

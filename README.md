@@ -34,7 +34,7 @@ tags:
 
 # K-fashion 컨셉을 AI 페르소나로 먼저 점검
 
-[![Version](https://img.shields.io/badge/version-0.7.0-0F766E)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.7.1-0F766E)](pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
 [![HF Space](https://img.shields.io/badge/HF%20Space-k--fashion--persona-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/spaces/w00ya/k-fashion-persona)
@@ -355,14 +355,15 @@ Nemotron-Personas-Korea는 NVIDIA가 2026년 4월 공개한 CC BY 4.0 한국어 
 ---
 
 본 도구는 합성 페르소나와 LLM 기반의 사전 가설 분석 도구입니다.
-실제 소비자 조사, 매출 예측, 법률 자문, 최종 사업 판단을 대체하지 않습니다.
+실제 소비자 조사, 실제 판매 성과 판단, 법률 자문, 최종 사업 판단을 대체하지 않습니다.
 모델 성능에 따라 한국어 품질, JSON 안정성, 분석 깊이가 달라질 수 있습니다.
 Persona dataset: NVIDIA Nemotron-Personas-Korea, CC BY 4.0.
 Dataset URL: https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea
 CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
 This beta uses the creator's personal paid Gemini 3.1 Flash-Lite API; API charges are billed to the creator. Google documentation states paid API requests and responses are not used to improve products. Do not include personal, sensitive, or trade-secret information.
 k-fashion-persona.
-Public statistics context uses Statistics Korea (KOSTAT) / KOSIS household clothing-footwear spending, income, and asset statistics; it does not infer individual income or assets.
+Public statistics context uses KOSIS/KOSTAT household clothing-footwear spending, income, and asset statistics; it does not infer individual income or assets.
+MOIS resident-registration population context is aggregate public statistics; it does not infer individual demand.
 Built with Codex and Claude Code.
 Contact: woooya129 [at] gmail [dot] com
 ```
@@ -429,7 +430,9 @@ DEEPSEEK_API_KEY=
 QWEN_API_KEY=
 HF_TOKEN=
 KOSIS_API_KEY=
+DATAGOKR_SERVICE_KEY=
 KOSIS_STATISTICS_DATA_URL=
+MOIS_POPULATION_API_URL=
 ```
 
 ## 구독형 Codex / Claude Code
@@ -487,7 +490,6 @@ uv run python -m src.agent_bridge import --pack outputs\agent-pack-demo --result
 - 기본 로딩: Hugging Face `datasets` streaming
 - 기본 scan: 실행마다 최대 3000행까지 순차 scan해서 조건에 맞는 패널을 채움
 
-소득, 자산, 의류·신발 지출은 개별 페르소나에서 추정하지 않습니다. 리포트의 가격 부담 참고값은 KOSTAT/KOSIS 공개 통계 스냅샷 `data/public/kosis_household_context.csv`를 사용합니다. KOSIS API key와 `statisticsData` URL을 입력하면 실행 시 해당 응답을 먼저 참고하고, 실패하면 스냅샷으로 fallback합니다.
 
 ## 권장 사양
 
@@ -523,7 +525,7 @@ uv run python -m src.agent_bridge import --pack outputs\agent-pack-demo --result
 - 합성 페르소나 반응은 실제 소비자 행동과 다를 수 있습니다.
 - 데이터셋은 패션 구매 전용 데이터가 아닙니다.
 - 이미지, 룩북, 착용 사진, 체형 정보는 기본 평가에 포함되지 않습니다.
-- KOSIS/KOSTAT 값은 가구 단위 집계 통계이며, 개별 페르소나의 실제 경제 상태가 아닙니다.
+- KOSIS/KOSTAT 값은 가구 단위 집계 통계이며, MOIS 값은 주민등록 기준 집계 통계입니다. 개별 페르소나의 실제 경제 상태나 구매력을 뜻하지 않습니다.
 - 최종 판단은 실제 조사, 판매 데이터, 전문가 검토와 함께 해야 합니다.
 
 ## 라이선스와 출처
@@ -531,7 +533,7 @@ uv run python -m src.agent_bridge import --pack outputs\agent-pack-demo --result
 - 코드 라이선스: GNU AGPL-3.0-only
 - 기본 페르소나 데이터셋: NVIDIA Nemotron-Personas-Korea
 - 데이터셋 라이선스: CC BY 4.0 attribution
-- 통계 컨텍스트: KOSTAT / KOSIS 공개 통계
+- 통계 컨텍스트: KOSIS/KOSTAT 공개 통계, MOIS 주민등록 인구 통계
 - 전체 고지: [LICENSE](LICENSE), [NOTICE](docs/legal/NOTICE.md), [THIRD_PARTY_NOTICES](docs/legal/THIRD_PARTY_NOTICES.md)
 - 인용 형식: [CITATION.cff](CITATION.cff)
 - 방법론: [docs/legal/METHODOLOGY_AND_RIGHTS.md](docs/legal/METHODOLOGY_AND_RIGHTS.md)

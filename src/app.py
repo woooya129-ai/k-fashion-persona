@@ -79,12 +79,23 @@ from src.persona_filter import PersonaFilter, filter_summary
 from src.pricing_config import load_pricing_config
 from src.prompt_builder import PROMPT_VERSION, SCHEMA_VERSION, detect_injection_keywords
 from src.public_data import PublicDataCache
+from src.public_data.commercial import SBDC_COMMERCIAL_API_URL_VAR, build_commercial_context
 from src.public_data.population import MOIS_POPULATION_API_URL_VAR, build_population_context
+from src.public_data.spatial import SGIS_SPATIAL_API_URL_VAR, build_spatial_context
+from src.public_data.weather import (
+    KMA_FORECAST_NX_VAR,
+    KMA_FORECAST_NY_VAR,
+    KMA_WEATHER_API_URL_VAR,
+    build_weather_context,
+)
 from src.report_writer import required_footer_text
 from src.secrets_loader import (
     get_datagokr_service_key,
+    get_kma_apihub_auth_key,
     get_kosis_api_key,
     get_provider_key,
+    get_sgis_consumer_key,
+    get_sgis_consumer_secret,
     load_secrets_from_env_path,
 )
 from src.ui.rendering import (
@@ -234,6 +245,7 @@ __all__ = (
     "load_result_rows",
     "load_secrets_from_env_path",
     "main",
+    "make_public_contexts",
     "make_cached_evaluator_async",
     "make_cached_sync_evaluator",
     "make_hashes",
@@ -252,6 +264,9 @@ PRICING_CONFIG_PATH: Path = REPO_ROOT / "config" / "pricing_config.yaml"
 PROMPT_TEMPLATE_PATH: Path = REPO_ROOT / "prompts" / "concept_eval_ko_v0_4.md"
 logger = logging.getLogger(__name__)
 _POPULATION_CONTEXT_CACHE = PublicDataCache()
+_SPATIAL_CONTEXT_CACHE = PublicDataCache()
+_COMMERCIAL_CONTEXT_CACHE = PublicDataCache()
+_WEATHER_CONTEXT_CACHE = PublicDataCache()
 
 
 def _configure_logging() -> None:
@@ -373,6 +388,48 @@ def make_population_context(sample: dict[str, Any], sampled: Any | None = None) 
     )
 
 
+def _int_env(name: str) -> int | None:
+    value = os.environ.get(name, "").strip()
+    if not value:
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        return None
+
+
+def make_public_contexts(concept: dict[str, Any], sample: dict[str, Any]) -> dict[str, Any]:
+    filt = sample.get("filter")
+    provinces = tuple(getattr(filt, "province", ()) if isinstance(filt, PersonaFilter) else ())
+    return {
+        "spatial": build_spatial_context(
+            provinces=provinces,
+            use_api_refresh=True,
+            consumer_key=get_sgis_consumer_key() or "",
+            consumer_secret=get_sgis_consumer_secret() or "",
+            api_url=os.environ.get(SGIS_SPATIAL_API_URL_VAR, ""),
+            cache=_SPATIAL_CONTEXT_CACHE,
+        ),
+        "commercial": build_commercial_context(
+            concept=concept,
+            provinces=provinces,
+            use_api_refresh=True,
+            service_key=get_datagokr_service_key() or "",
+            api_url=os.environ.get(SBDC_COMMERCIAL_API_URL_VAR, ""),
+            cache=_COMMERCIAL_CONTEXT_CACHE,
+        ),
+        "weather": build_weather_context(
+            concept=concept,
+            nx=_int_env(KMA_FORECAST_NX_VAR),
+            ny=_int_env(KMA_FORECAST_NY_VAR),
+            use_api_refresh=True,
+            auth_key=get_kma_apihub_auth_key() or "",
+            api_url=os.environ.get(KMA_WEATHER_API_URL_VAR, ""),
+            cache=_WEATHER_CONTEXT_CACHE,
+        ),
+    }
+
+
 def start_screening(
     concept: dict[str, Any],
     dataset: dict[str, Any],
@@ -393,6 +450,7 @@ def start_screening(
         st.error("필터 조건에 맞는 페르소나가 0명이에요.")
         return
     population_context = make_population_context(sample, sampled)
+    public_contexts = make_public_contexts(concept, sample)
 
     prompt_template_md = PROMPT_TEMPLATE_PATH.read_text(encoding="utf-8")
     payloads = build_persona_payloads(
@@ -450,6 +508,7 @@ def start_screening(
     st.session_state["active_input_snapshot"] = input_snapshot
     st.session_state["active_price_context"] = price_context
     st.session_state["active_population_context"] = population_context
+    st.session_state["active_public_contexts"] = public_contexts
     st.session_state["active_persona_attributes"] = {
         persona.persona_id: _persona_attributes(persona) for persona in sampled.rows
     }
@@ -519,6 +578,7 @@ def _render_job_panel_impl(lang: str) -> None:
             st.session_state.get("active_price_context"),
             st.session_state.get("active_input_snapshot"),
             st.session_state.get("active_population_context"),
+            st.session_state.get("active_public_contexts"),
         )
     except ValueError as exc:
         st.error(f"리포트 문구 검증 실패: {type(exc).__name__}")

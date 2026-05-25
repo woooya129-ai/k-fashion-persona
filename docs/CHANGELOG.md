@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+- Documented the v0.9.0 KCA T-Price and BOK ECOS candidate review with a
+  detailed-report-only exposure policy.
+- Count every file in Agent Pack result directories during import so non-JSON
+  result artifacts are not silently undercounted.
+
+## v0.8.0 - 2026-05-19
+
+- Added optional SGIS spatial, SBDC commercial-area, and KMA weather report-only context connectors.
+- Added report and CSV sections for SGIS, commercial-area, and weather context with provider, source URL, status, period, and units.
+- Added failure/no-key/no-context fixture coverage so optional API failures do not block baseline reports.
+- Added image-based concept-description assist boundaries: default OFF, one image, one analyzer call per image digest, text-only handoff.
+- Added a code-level guard that rejects raw image context in persona evaluation payloads.
+- Added forbidden phrase regressions for public-context misuse wording such as demand, revenue, sales-volume, or score-adjustment prediction.
+- Updated project version labels to `0.8.0`.
+
 ## v0.7.1 - 2026-05-19
 
 - Added a MOIS resident-registration population connector under `src/public_data/population/`.

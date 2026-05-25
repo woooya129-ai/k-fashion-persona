@@ -118,6 +118,7 @@ def test_import_agent_results_accepts_codex_and_claude_wrappers(tmp_path):
         encoding="utf-8",
     )
     (results_dir / "bad.txt").write_text("not json", encoding="utf-8")
+    (results_dir / "bad.md").write_text("not json either", encoding="utf-8")
 
     output_dir = tmp_path / "agent-report"
     summary = import_agent_results(
@@ -127,7 +128,7 @@ def test_import_agent_results_accepts_codex_and_claude_wrappers(tmp_path):
     )
 
     assert summary.success_count == 2
-    assert summary.parse_failed_count == 1
+    assert summary.parse_failed_count == 2
     assert (output_dir / "agent-report.md").exists()
     assert (output_dir / "agent-report.csv").exists()
     normalized_text = (output_dir / "normalized-results.jsonl").read_text(encoding="utf-8")

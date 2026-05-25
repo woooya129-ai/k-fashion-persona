@@ -36,7 +36,7 @@ UI_COPY: dict[str, dict[str, str]] = {
             "합성 페르소나 기반 사전 리스크 점검으로 "
             "전문 설문이나 본조사 전 반응의 흐름을 빠르게 확인합니다."
         ),
-        "hero_eyebrow": "로컬 퍼블릭 베타 · v0.7.1",
+        "hero_eyebrow": "로컬 퍼블릭 베타 · v0.8.0",
         "hero_pill_1": "로컬 실행",
         "hero_pill_2": "원문 저장 없음",
         "hero_pill_3": "리포트 내보내기",
@@ -163,6 +163,25 @@ UI_COPY: dict[str, dict[str, str]] = {
         "price_position": "동급 브랜드 대비 가격 위치",
         "target": "타깃 가설",
         "target_placeholder": "예: 20대 후반-30대 초반 직장인 여성",
+        "image_assist_toggle": "이미지 기반 컨셉 설명 보조",
+        "image_assist_help": (
+            "기본 OFF. 켠 경우 이미지 1장으로 설명 초안만 만들고 평가에는 확정 텍스트만 써요."
+        ),
+        "image_assist_upload": "컨셉 이미지 1장",
+        "image_assist_upload_help": (
+            "PNG, JPG, JPEG, WEBP 1장만 사용해요. 원본 이미지는 저장하지 않아요."
+        ),
+        "image_assist_notice": (
+            "이미지는 설명 초안 생성에만 쓰고, 페르소나 평가 루프에는 반복 전송하지 않아요. "
+            "민감한 출시 전 디자인은 올리지 마세요."
+        ),
+        "image_assist_button": "설명 초안 만들기",
+        "image_assist_unavailable": (
+            "이미지 분석 연결이 설정되지 않았어요. 기존 텍스트 입력으로 진행해 주세요."
+        ),
+        "image_assist_failed": "이미지 설명 초안 생성 실패",
+        "image_assist_done": "설명 초안을 입력란에 넣었어요. 실행 전 직접 확인해 주세요.",
+        "image_assist_reused": "같은 이미지의 기존 설명 초안을 다시 넣었어요.",
         "enter_card_title": "ENTER",
         "enter_card_subtitle": "",
         "enter_card_body": (
@@ -233,6 +252,10 @@ UI_COPY: dict[str, dict[str, str]] = {
         "datagokr_status_help": (
             "data.go.kr serviceKey 상태예요. 행안부 인구 통계는 키가 없으면 스냅샷을 사용해요."
         ),
+        "sgis_status_help": (
+            "SGIS S-Open API consumer key/secret 상태예요. 없으면 공간 통계를 건너뛰어요."
+        ),
+        "kma_status_help": "기상청 API허브 authKey 상태예요. 없으면 날씨 참고값을 건너뛰어요.",
         "price_context_header": "가격 맥락",
         "price_context_caption": "가격 맥락 참고 지표이며 실제 구매력을 뜻하지 않아요.",
         "cost_header": "비용 / 시간 사전 추정",
@@ -345,7 +368,7 @@ UI_COPY: dict[str, dict[str, str]] = {
             "Show a fashion concept to an AI persona panel and quickly check reaction flow "
             "before expert surveys or main research."
         ),
-        "hero_eyebrow": "Local public beta · v0.7.1",
+        "hero_eyebrow": "Local public beta · v0.8.0",
         "hero_pill_1": "Local run",
         "hero_pill_2": "No raw concept storage",
         "hero_pill_3": "Report export",
@@ -480,6 +503,22 @@ UI_COPY: dict[str, dict[str, str]] = {
         "price_position": "Price position vs. peer brands",
         "target": "Target hypothesis",
         "target_placeholder": "e.g. women in their late 20s to early 30s",
+        "image_assist_toggle": "Image-based concept description assist",
+        "image_assist_help": (
+            "Default OFF. When enabled, one image can draft description text; only confirmed "
+            "text is used for screening."
+        ),
+        "image_assist_upload": "One concept image",
+        "image_assist_upload_help": "PNG, JPG, JPEG, or WEBP. The original image is not stored.",
+        "image_assist_notice": (
+            "The image is used only to draft text and is not resent through the persona loop. "
+            "Do not upload sensitive pre-launch designs."
+        ),
+        "image_assist_button": "Draft description",
+        "image_assist_unavailable": "Image analysis is not configured. Continue with text input.",
+        "image_assist_failed": "Image draft failed",
+        "image_assist_done": "Draft text was placed in the input. Review it before running.",
+        "image_assist_reused": "Reused the existing draft for the same image.",
         "enter_card_title": "ENTER",
         "enter_card_subtitle": "",
         "enter_card_body": (
@@ -556,6 +595,10 @@ UI_COPY: dict[str, dict[str, str]] = {
         "datagokr_status_help": (
             "data.go.kr serviceKey status. MOIS population context falls back to the snapshot."
         ),
+        "sgis_status_help": (
+            "SGIS S-Open API consumer key/secret status. Spatial context is skipped without it."
+        ),
+        "kma_status_help": "KMA API Hub authKey status. Weather context is skipped without it.",
         "price_context_header": "Price context",
         "price_context_caption": "This is context only, not real purchasing power.",
         "cost_header": "Cost / time estimate",

@@ -15,15 +15,21 @@ from src.secrets_loader import (
     GOOGLE_KEY_VAR,
     GROQ_KEY_VAR,
     HF_TOKEN_VAR,
+    KMA_APIHUB_AUTH_KEY_VAR,
     KOSIS_API_KEY_VAR,
     OPENAI_KEY_VAR,
     QWEN_KEY_VAR,
     REQUIRE_USER_PROVIDER_KEY_VAR,
+    SGIS_CONSUMER_KEY_VAR,
+    SGIS_CONSUMER_SECRET_VAR,
     LoadedSecretsStatus,
     get_datagokr_service_key,
     get_hf_token,
+    get_kma_apihub_auth_key,
     get_kosis_api_key,
     get_provider_key,
+    get_sgis_consumer_key,
+    get_sgis_consumer_secret,
     load_secrets_from_env_path,
     provider_env_fallback_allowed,
     redact_for_log,
@@ -46,6 +52,9 @@ def isolate_env(monkeypatch: pytest.MonkeyPatch):
         HF_TOKEN_VAR,
         KOSIS_API_KEY_VAR,
         DATAGOKR_SERVICE_KEY_VAR,
+        SGIS_CONSUMER_KEY_VAR,
+        SGIS_CONSUMER_SECRET_VAR,
+        KMA_APIHUB_AUTH_KEY_VAR,
         REQUIRE_USER_PROVIDER_KEY_VAR,
     ):
         monkeypatch.delenv(var, raising=False)
@@ -63,6 +72,9 @@ class TestLoadSecretsFromEnvPath:
         assert status.hf_token_present is False
         assert status.kosis_api_key_present is False
         assert status.datagokr_service_key_present is False
+        assert status.sgis_consumer_key_present is False
+        assert status.sgis_consumer_secret_present is False
+        assert status.kma_apihub_auth_key_present is False
 
     def test_env_present_after_load(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv(OPENAI_KEY_VAR, "fake-openai-key-for-test")
@@ -80,6 +92,9 @@ class TestLoadSecretsFromEnvPath:
         monkeypatch.setenv(HF_TOKEN_VAR, "fake-hf-token")
         monkeypatch.setenv(KOSIS_API_KEY_VAR, "fake-kosis-key")
         monkeypatch.setenv(DATAGOKR_SERVICE_KEY_VAR, "fake-datagokr-key")
+        monkeypatch.setenv(SGIS_CONSUMER_KEY_VAR, "fake-sgis-key")
+        monkeypatch.setenv(SGIS_CONSUMER_SECRET_VAR, "fake-sgis-secret")
+        monkeypatch.setenv(KMA_APIHUB_AUTH_KEY_VAR, "fake-kma-key")
         env_path = tmp_path / "fake.env"
         env_path.write_text("# placeholder\n", encoding="utf-8")
 
@@ -89,6 +104,9 @@ class TestLoadSecretsFromEnvPath:
         assert status.hf_token_present is True
         assert status.kosis_api_key_present is True
         assert status.datagokr_service_key_present is True
+        assert status.sgis_consumer_key_present is True
+        assert status.sgis_consumer_secret_present is True
+        assert status.kma_apihub_auth_key_present is True
 
     def test_returned_status_does_not_contain_actual_key(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -183,6 +201,28 @@ class TestGetDataGoKrServiceKey:
 
     def test_missing(self):
         assert get_datagokr_service_key() is None
+
+
+class TestGetSgisCredentials:
+    def test_present(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv(SGIS_CONSUMER_KEY_VAR, "fake-sgis-key")
+        monkeypatch.setenv(SGIS_CONSUMER_SECRET_VAR, "fake-sgis-secret")
+
+        assert get_sgis_consumer_key() == "fake-sgis-key"
+        assert get_sgis_consumer_secret() == "fake-sgis-secret"
+
+    def test_missing(self):
+        assert get_sgis_consumer_key() is None
+        assert get_sgis_consumer_secret() is None
+
+
+class TestGetKmaApiHubAuthKey:
+    def test_present(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv(KMA_APIHUB_AUTH_KEY_VAR, "fake-kma-key")
+        assert get_kma_apihub_auth_key() == "fake-kma-key"
+
+    def test_missing(self):
+        assert get_kma_apihub_auth_key() is None
 
 
 class TestRedactForLog:

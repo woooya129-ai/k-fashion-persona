@@ -66,6 +66,100 @@ exact file path, transformation method, and change statement before release.
   such as city/county/district and neighborhood rows. This project aggregates
   those rows to province level before reporting.
 
+## SGIS S-Open API Spatial Statistics
+
+- Provider: SGIS / KOSTAT.
+- Source page: https://sgis.mods.go.kr/contents/shortcut/shortcut_06.jsp
+- Official-source check: 2026-05-19. The SGIS page lists S-Open API guidance
+  and API key application under the public SGIS service.
+- Use in this project: optional report-only aggregate spatial context for
+  selected province-level filters.
+- Not used for: persona sampling changes, prompt cache-key changes, score
+  weighting, or individual demand inference.
+- Data bundled in this repository: No.
+- Credential contract: `SGIS_CONSUMER_KEY`, `SGIS_CONSUMER_SECRET`, and an
+  optional reviewed `SGIS_SPATIAL_API_URL`.
+
+## SBDC Commercial-Area Information API
+
+- Provider: 소상공인시장진흥공단, via data.go.kr.
+- Source page: https://www.data.go.kr/data/15012005/openapi.do
+- Official-source check: 2026-05-19. The data.go.kr page lists REST API,
+  JSON/XML format, free use, and no explicit use restriction on the metadata
+  visible at check time.
+- Use in this project: optional report-only aggregate commercial-area industry
+  counts/distribution for selected region and offline-context inputs.
+- Not used for: direct inference of demand, sales, revenue, or individual
+  purchasing behavior.
+- Data bundled in this repository: No.
+- Raw-field policy: store names, addresses, coordinates, and other raw
+  business-location fields are not written into reports.
+- Credential contract: `DATAGOKR_SERVICE_KEY` and an optional reviewed
+  `SBDC_COMMERCIAL_API_URL`.
+
+## KMA APIHub Weather Context
+
+- Provider: Korea Meteorological Administration (KMA), via APIHub.
+- Source page: https://apihub.kma.go.kr/apiList.do?seqApi=10
+- Supplemental data.go.kr page: https://www.data.go.kr/data/15084084/openapi.do
+- Official-source check: 2026-05-19. The APIHub page lists short-term forecast,
+  ultra-short forecast/nowcast, grid coordinates, and `authKey` authentication
+  examples.
+- Use in this project: optional report-only weather/season context for
+  weather-sensitive product inputs.
+- Not used for: persona score adjustment, direct concept fitness decisions, or
+  individual demand inference.
+- Data bundled in this repository: No.
+- Credential contract: `KMA_APIHUB_AUTH_KEY`, optional reviewed
+  `KMA_WEATHER_API_URL`, and `KMA_FORECAST_NX`/`KMA_FORECAST_NY` grid values.
+
+## KCA T-Price Consumer Goods Price Candidate
+
+- Provider: Korea Consumer Agency (KCA), via T-Price / data.go.kr.
+- Source pages:
+  - data.go.kr OpenAPI `3043385`:
+    https://www.data.go.kr/data/3043385/openapi.do
+  - data.go.kr file/API `15083256`:
+    https://www.data.go.kr/data/15083256/fileData.do
+- Official-source check: 2026-05-19. The OpenAPI page lists REST/XML, free
+  use, development traffic 2,000, real-time update, and attribution terms
+  with possible third-party rights. The file/API page lists CSV source data
+  with JSON/XML auto-conversion, monthly update, free use, and no explicit
+  use restriction at check time.
+- Use in this project: candidate only for future detailed report-only
+  living-price context.
+- Not used for: product price validation, apparel price comparison, persona
+  scoring, sales or purchase inference, or prompt conditioning.
+- Data bundled in this repository: No.
+- Candidate policy: prefer the monthly `15083256` JSON/XML auto-conversion
+  path if implemented. Treat the legacy REST/XML path as a backup candidate
+  until HTTPS/auth behavior is verified.
+- Raw-field policy: individual product names, store names, and raw item prices
+  must not appear in the default report. Future detailed reports may show only
+  aggregate living-price context with source, period, and unit.
+
+## BOK ECOS Macro Context Candidate
+
+- Provider: Bank of Korea (BOK), via ECOS Open API.
+- Source pages:
+  - ECOS Open API: https://ecos.bok.or.kr/api/
+  - Official sample JSON:
+    https://ecos.bok.or.kr/api/KeyStatisticList/sample/json/kr/1/10
+  - BOK economic statistics work overview:
+    https://www.bok.or.kr/portal/submain/submain/sts.do?menuNo=201659
+- Official-source check: 2026-05-19. The official sample response exposes
+  macro rows with `CLASS_NAME`, `KEYSTAT_NAME`, `DATA_VALUE`, `CYCLE`, and
+  `UNIT_NAME`. Local verification of the sample endpoint on 2026-05-19 showed
+  exchange-rate rows whose `UNIT_NAME` was `원`.
+- Use in this project: candidate only for future detailed report-only macro
+  context such as price level, rate, exchange-rate, and sentiment background.
+- Not used for: persona scoring, demand prediction, sales prediction, or
+  product-level price validation.
+- Data bundled in this repository: No.
+- Candidate policy: preserve ECOS `UNIT_NAME` and `CYCLE` exactly. Do not force
+  KRW conversion. Publicly accessible official evidence for cost, quota, and
+  raw-data redistribution terms was insufficient at check time, so raw ECOS
+  snapshots must not be committed.
 
 ## Direct Python Dependencies
 

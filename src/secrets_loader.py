@@ -33,6 +33,9 @@ QWEN_KEY_VAR = "QWEN_API_KEY"
 HF_TOKEN_VAR = "HF_TOKEN"
 KOSIS_API_KEY_VAR = "KOSIS_API_KEY"
 DATAGOKR_SERVICE_KEY_VAR = "DATAGOKR_SERVICE_KEY"
+SGIS_CONSUMER_KEY_VAR = "SGIS_CONSUMER_KEY"
+SGIS_CONSUMER_SECRET_VAR = "SGIS_CONSUMER_SECRET"
+KMA_APIHUB_AUTH_KEY_VAR = "KMA_APIHUB_AUTH_KEY"
 REQUIRE_USER_PROVIDER_KEY_VAR = "KFPS_REQUIRE_USER_PROVIDER_KEY"
 
 _TRUE_VALUES = {"1", "true", "yes", "on"}
@@ -53,6 +56,9 @@ class LoadedSecretsStatus:
     qwen_present: bool = False
     kosis_api_key_present: bool = False
     datagokr_service_key_present: bool = False
+    sgis_consumer_key_present: bool = False
+    sgis_consumer_secret_present: bool = False
+    kma_apihub_auth_key_present: bool = False
 
 
 def load_secrets_from_env_path(env_path: Path = SECRETS_ENV_PATH) -> LoadedSecretsStatus:
@@ -81,6 +87,9 @@ def load_secrets_from_env_path(env_path: Path = SECRETS_ENV_PATH) -> LoadedSecre
         qwen_present=provider_env_allowed and bool(os.environ.get(QWEN_KEY_VAR)),
         kosis_api_key_present=bool(os.environ.get(KOSIS_API_KEY_VAR)),
         datagokr_service_key_present=bool(os.environ.get(DATAGOKR_SERVICE_KEY_VAR)),
+        sgis_consumer_key_present=bool(os.environ.get(SGIS_CONSUMER_KEY_VAR)),
+        sgis_consumer_secret_present=bool(os.environ.get(SGIS_CONSUMER_SECRET_VAR)),
+        kma_apihub_auth_key_present=bool(os.environ.get(KMA_APIHUB_AUTH_KEY_VAR)),
     )
 
 
@@ -138,6 +147,21 @@ def get_kosis_api_key() -> str | None:
 
 def get_datagokr_service_key() -> str | None:
     val = os.environ.get(DATAGOKR_SERVICE_KEY_VAR)
+    return val if val else None
+
+
+def get_sgis_consumer_key() -> str | None:
+    val = os.environ.get(SGIS_CONSUMER_KEY_VAR)
+    return val if val else None
+
+
+def get_sgis_consumer_secret() -> str | None:
+    val = os.environ.get(SGIS_CONSUMER_SECRET_VAR)
+    return val if val else None
+
+
+def get_kma_apihub_auth_key() -> str | None:
+    val = os.environ.get(KMA_APIHUB_AUTH_KEY_VAR)
     return val if val else None
 
 

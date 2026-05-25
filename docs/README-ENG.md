@@ -2,7 +2,7 @@
 
 ## Check K-fashion Concepts With AI Personas First
 
-[![Version](https://img.shields.io/badge/version-0.7.1-0F766E)](../pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.8.0-0F766E)](../pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
 [![HF Space](https://img.shields.io/badge/HF%20Space-k--fashion--persona-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/spaces/w00ya/k-fashion-persona)
@@ -95,6 +95,9 @@ QWEN_API_KEY=
 HF_TOKEN=
 KOSIS_API_KEY=
 DATAGOKR_SERVICE_KEY=
+SGIS_CONSUMER_KEY=
+SGIS_CONSUMER_SECRET=
+KMA_APIHUB_AUTH_KEY=
 KOSIS_STATISTICS_DATA_URL=
 MOIS_POPULATION_API_URL=
 ```
@@ -154,6 +157,7 @@ Notes:
 - Default loading: Hugging Face `datasets` streaming
 - Default scan: up to 3000 rows sequentially per run to fill matching personas
 
+Income, assets, and clothing-footwear spending are not inferred from individual personas. Price-burden context comes from the committed KOSTAT/KOSIS public-statistics snapshot at `data/public/kosis_household_context.csv`. If you enter a KOSIS API key and `statisticsData` URL, the app tries that response first and falls back to the snapshot if refresh fails. Population context comes from the MOIS snapshot at `data/public/mois_population_context.csv`; with `DATAGOKR_SERVICE_KEY` and `MOIS_POPULATION_API_URL`, the app tries data.go.kr first. v0.8.0 SGIS spatial, SBDC commercial-area, and KMA weather context are optional report-only sections and refresh only when `SGIS_SPATIAL_API_URL`, `SBDC_COMMERCIAL_API_URL`, `KMA_WEATHER_API_URL`, `KMA_FORECAST_NX`, and `KMA_FORECAST_NY` are configured.
 
 ## Recommended Specs
 

@@ -54,6 +54,9 @@ jobs:
       - name: Ruff format check
         run: ruff format src tests --check
 
+      - name: Diff whitespace check
+        run: git diff --check
+
       - name: Bandit security scan
         run: bandit -q -c pyproject.toml -r src
 

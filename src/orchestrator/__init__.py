@@ -48,6 +48,15 @@ logger = logging.getLogger(__name__)
 ResultRow = dict[str, Any]
 EvaluatorResult = dict[str, Any]
 SyncEvaluator = Callable[[dict], EvaluatorResult]
+_IMAGE_CONTEXT_KEYS = frozenset(
+    {
+        "image_bytes",
+        "image_b64",
+        "uploaded_image",
+        "vision_raw_response",
+        "image_assist_raw_response",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -161,6 +170,17 @@ def build_persona_payloads(
     hashes: dict[str, str],
     prompt_template_md: str,
 ) -> list[dict[str, Any]]:
+
+    leaked_image_keys = [
+        key
+        for key in _IMAGE_CONTEXT_KEYS
+        if key in concept and concept.get(key) not in (None, "", (), [], {})
+    ]
+    if leaked_image_keys:
+        raise ValueError(
+            "Image assist data must not be passed into persona evaluation payloads: "
+            + ", ".join(sorted(leaked_image_keys))
+        )
 
     payloads: list[dict[str, Any]] = []
 
@@ -661,6 +681,7 @@ def build_run_report(
     price_context: dict[str, Any] | None = None,
     input_snapshot: dict[str, Any] | None = None,
     population_context: dict[str, Any] | None = None,
+    public_contexts: dict[str, Any] | None = None,
 ) -> RunReport:
 
     parsed_results: list[EvaluationResult] = []
@@ -723,11 +744,13 @@ def build_run_report(
             report,
             price_context=price_context,
             population_context=population_context,
+            public_contexts=public_contexts,
         ),
         report_csv=render_csv(
             report,
             price_context=price_context,
             population_context=population_context,
+            public_contexts=public_contexts,
         ),
         quality=quality,
     )

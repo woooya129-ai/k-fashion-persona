@@ -80,6 +80,32 @@ def test_make_population_context_uses_age_assist_expanded_range() -> None:
     assert context["target_age_bucket_basis"] == ("20-29", "30-39")
 
 
+def test_make_public_contexts_without_optional_env_does_not_call_network(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    for name in (
+        "SGIS_CONSUMER_KEY",
+        "SGIS_CONSUMER_SECRET",
+        "DATAGOKR_SERVICE_KEY",
+        "KMA_APIHUB_AUTH_KEY",
+        "SGIS_SPATIAL_API_URL",
+        "SBDC_COMMERCIAL_API_URL",
+        "KMA_WEATHER_API_URL",
+        "KMA_FORECAST_NX",
+        "KMA_FORECAST_NY",
+    ):
+        monkeypatch.delenv(name, raising=False)
+
+    sample = {"filter": PersonaFilter(province={"서울"})}
+    concept = {"category": "겨울 아우터", "season": "F/W", "occasion": "오프라인 팝업 매장"}
+
+    contexts = app.make_public_contexts(concept, sample)
+
+    assert contexts["spatial"]["api_status"] == "not_used"
+    assert contexts["commercial"]["api_status"] == "not_used"
+    assert contexts["weather"]["api_status"] == "not_used"
+
+
 def _api_key_inputs(at: AppTest):
     return [
         widget
@@ -232,6 +258,27 @@ def test_build_persona_payloads_confines_concept_to_prompt(
         payload["cache_metadata"],
         ensure_ascii=False,
     )
+
+
+def test_build_persona_payloads_rejects_image_assist_raw_context(
+    all_mock_personas: list[dict],
+    concept: dict,
+    model: dict,
+    price_context: dict,
+    hashes: dict[str, str],
+) -> None:
+    personas = [normalize_persona(all_mock_personas[0], 0)]
+    assert personas[0] is not None
+
+    with pytest.raises(ValueError, match="Image assist data"):
+        app.build_persona_payloads(
+            personas=personas,  # type: ignore[arg-type]
+            concept={**concept, "uploaded_image": b"raw-image-bytes"},
+            model=model,
+            price_context=price_context,
+            hashes=hashes,
+            prompt_template_md=PROMPT_TEMPLATE_PATH.read_text(encoding="utf-8"),
+        )
 
 
 def test_build_persona_payloads_preserves_non_krw_kosis_units(
@@ -848,6 +895,15 @@ def test_app_source_has_no_unsafe_html_or_direct_asyncio_run() -> None:
     assert "@st.fragment(run_every=1)" in source
 
 
+def test_rendering_source_keeps_image_assist_default_off_and_single_upload() -> None:
+    source = (Path(__file__).resolve().parent.parent / "src" / "ui" / "rendering.py").read_text(
+        encoding="utf-8"
+    )
+    assert 'key="kfps_image_assist_enabled"' in source
+    assert "value=False" in source
+    assert "accept_multiple_files=False" in source
+
+
 def test_app_source_uses_readable_comfort_tokens_with_targeted_hero_gradient() -> None:
     source = _read_app_sources()
     assert "Pretendard" in source
@@ -956,7 +1012,7 @@ def test_app_source_uses_readable_comfort_tokens_with_targeted_hero_gradient() -
     assert "docs/docs.html" in source
     assert "📄" in source
     assert "woooya129-ai/k-fashion-persona" in source
-    assert "로컬 퍼블릭 베타 · v0.7.1" in source
+    assert "로컬 퍼블릭 베타 · v0.8.0" in source
     assert "설명 ⇄ 도구" not in source
     assert "st.segmented_control" in source
 

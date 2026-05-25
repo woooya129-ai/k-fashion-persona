@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import html
 import io
 import json
@@ -54,6 +55,11 @@ from src.economic_context import (
     KOSTAT_2025_ANNUAL_CLOTHING_KRW,
     build_price_context,
     kosis_segment_options,
+)
+from src.image_assist import (
+    configured_image_analyzer_from_env,
+    image_assist_concept_update,
+    make_image_concept_draft,
 )
 from src.persona_filter import PersonaFilter
 from src.pricing_config import ModelPricing, get_model_pricing
@@ -1001,6 +1007,16 @@ def render_secrets_status(lang: str) -> None:
                 status.datagokr_service_key_present,
                 ui_text(lang, "datagokr_status_help"),
             ),
+            (
+                "SGIS",
+                status.sgis_consumer_key_present and status.sgis_consumer_secret_present,
+                ui_text(lang, "sgis_status_help"),
+            ),
+            (
+                "KMA",
+                status.kma_apihub_auth_key_present,
+                ui_text(lang, "kma_status_help"),
+            ),
         )
 
         cards = []
@@ -1029,6 +1045,68 @@ def render_secrets_status(lang: str) -> None:
             )
 
         st.html(f'<div class="kfps-secret-status-grid">{"".join(cards)}</div>')
+
+
+def _render_image_concept_assist(lang: str) -> None:
+    enabled = st.toggle(
+        ui_text(lang, "image_assist_toggle"),
+        value=False,
+        key="kfps_image_assist_enabled",
+        help=ui_text(lang, "image_assist_help"),
+    )
+    if not enabled:
+        return
+
+    uploaded = st.file_uploader(
+        ui_text(lang, "image_assist_upload"),
+        type=["png", "jpg", "jpeg", "webp"],
+        accept_multiple_files=False,
+        key="kfps_image_assist_upload",
+        help=ui_text(lang, "image_assist_upload_help"),
+    )
+    st.caption(ui_text(lang, "image_assist_notice"))
+    if not st.button(
+        ui_text(lang, "image_assist_button"),
+        key="kfps_image_assist_button",
+        use_container_width=True,
+        disabled=uploaded is None,
+    ):
+        return
+    if uploaded is None:
+        return
+
+    image_bytes = uploaded.getvalue()
+    image_digest = hashlib.sha256(image_bytes).hexdigest()
+    if st.session_state.get("kfps_image_assist_last_digest") == image_digest:
+        draft = str(st.session_state.get("kfps_image_assist_draft") or "")
+        if draft:
+            st.session_state["kfps_concept_description"] = draft
+            st.info(ui_text(lang, "image_assist_reused"))
+        return
+
+    analyzer = st.session_state.get("kfps_image_assist_analyzer")
+    if not callable(analyzer):
+        analyzer = configured_image_analyzer_from_env()
+    if not callable(analyzer):
+        st.warning(ui_text(lang, "image_assist_unavailable"))
+        return
+
+    try:
+        draft = make_image_concept_draft(
+            image_bytes=image_bytes,
+            mime_type=str(getattr(uploaded, "type", "") or ""),
+            current_description=str(st.session_state.get("kfps_concept_description") or ""),
+            analyzer=analyzer,
+        )
+    except ValueError as exc:
+        st.warning(f"{ui_text(lang, 'image_assist_failed')}: {type(exc).__name__}")
+        return
+
+    update = image_assist_concept_update(draft)
+    st.session_state["kfps_image_assist_last_digest"] = image_digest
+    st.session_state["kfps_image_assist_draft"] = update["description"]
+    st.session_state["kfps_concept_description"] = update["description"]
+    st.success(ui_text(lang, "image_assist_done"))
 
 
 def render_concept_inputs(lang: str) -> dict[str, Any]:
@@ -1151,6 +1229,7 @@ def render_concept_inputs(lang: str) -> dict[str, Any]:
     description_col, target_col, run_col = st.columns([1.35, 0.9, 0.9], gap="small")
 
     with description_col:
+        _render_image_concept_assist(lang)
         description = st.text_area(
             ui_text(lang, "concept_text"),
             placeholder=ui_text(lang, "concept_placeholder"),

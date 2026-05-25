@@ -78,6 +78,8 @@ def required_footer_text() -> str:
         "or assets.\n"
         "MOIS resident-registration population context is aggregate public statistics; "
         "it does not infer individual demand.\n"
+        "SGIS, SBDC commercial-area, and KMA weather contexts are optional public "
+        "statistics references; they do not adjust persona scores.\n"
         "Built with Codex and Claude Code.\n"
         f"Contact: {CONTACT_DISPLAY}"
     )
@@ -528,6 +530,59 @@ def _append_population_context_section(
     lines.append("")
 
 
+def _iter_public_contexts(public_contexts: dict[str, Any] | None) -> list[dict[str, Any]]:
+    if not public_contexts:
+        return []
+    ordered = []
+    for key in ("spatial", "commercial", "weather"):
+        value = public_contexts.get(key)
+        if isinstance(value, dict):
+            ordered.append(value)
+    for key, value in public_contexts.items():
+        if key not in {"spatial", "commercial", "weather"} and isinstance(value, dict):
+            ordered.append(value)
+    return ordered
+
+
+def _append_public_context_sections(
+    lines: list[str],
+    public_contexts: dict[str, Any] | None,
+) -> None:
+    for context in _iter_public_contexts(public_contexts):
+        title = str(context.get("title") or context.get("source_name") or "공공데이터 참고")
+        lines.append(f"## {title}")
+        lines.append("")
+        lines.append(f"- 제공기관: {context.get('provider', '')}")
+        lines.append(f"- 기준 지역/격자: {context.get('reference_region_label', '전국')}")
+        lines.append(f"- 기준 기간/시각: {context.get('period', '')}")
+        lines.append(f"- API 호출 상태: {context.get('api_status', 'not_used')}")
+        source_url = context.get("source_url", "")
+        if source_url:
+            lines.append(f"- 출처 URL: {source_url}")
+        rows = context.get("metric_rows", [])
+        if rows:
+            lines.append("")
+            lines.append("| 항목 | 값 | 기준 기간/시각 | 출처 | 비고 |")
+            lines.append("|---|---:|---|---|---|")
+            for row in rows[:10]:
+                lines.append(
+                    f"| {escape_markdown_table_cell(row.get('label', ''))} | "
+                    f"{escape_markdown_table_cell(_format_public_metric_value(row))} | "
+                    f"{escape_markdown_table_cell(row.get('period', ''))} | "
+                    f"{escape_markdown_table_cell(row.get('source_name', ''))} | "
+                    f"{escape_markdown_table_cell(row.get('note', ''))} |"
+                )
+        for warning in context.get("warnings", ()):
+            lines.append(f"- 참고 통계 주의: {warning}")
+        lines.append("")
+        lines.append(
+            "> "
+            + str(context.get("context_note") or "공공 통계 참고값입니다.")
+            + " 기본 합성 패널 평가와 분리해 해석해야 합니다."
+        )
+        lines.append("")
+
+
 def _append_input_snapshot_section(lines: list[str], report: AggregateReport) -> None:
     snapshot = report.input_snapshot
     if not snapshot:
@@ -617,6 +672,7 @@ def render_markdown(
     report: AggregateReport,
     price_context: dict[str, Any] | None = None,
     population_context: dict[str, Any] | None = None,
+    public_contexts: dict[str, Any] | None = None,
 ) -> str:
     """PM v3 §17.1 메인 지표 + §18.2 Main Results 섹션.
 
@@ -665,6 +721,7 @@ def render_markdown(
 
     _append_price_context_section(lines, price_context)
     _append_population_context_section(lines, report, population_context)
+    _append_public_context_sections(lines, public_contexts)
     _append_input_snapshot_section(lines, report)
     _append_sampling_diagnostics_section(lines, report)
 
@@ -757,6 +814,7 @@ def render_csv(
     report: AggregateReport,
     price_context: dict[str, Any] | None = None,
     population_context: dict[str, Any] | None = None,
+    public_contexts: dict[str, Any] | None = None,
 ) -> str:
     """평면화된 표: section, key, value 컬럼.
 
@@ -947,6 +1005,27 @@ def render_csv(
         for warning in population_context.get("warnings", ()):
             _row("MOIS주민등록인구_주의", "fallback", warning)
 
+    for context in _iter_public_contexts(public_contexts):
+        title = str(context.get("title") or context.get("source_name") or "공공데이터참고")
+        section = f"공공컨텍스트_{title}"
+        _row(section, "제공기관", context.get("provider", ""))
+        _row(section, "기준 지역/격자", context.get("reference_region_label", "전국"))
+        _row(section, "기준 기간/시각", context.get("period", ""))
+        _row(section, "API 호출 상태", context.get("api_status", "not_used"))
+        _row(section, "출처 URL", context.get("source_url", ""))
+        _row(section, "해석 주의", context.get("context_note", ""))
+        for row in context.get("metric_rows", [])[:10]:
+            _row(
+                f"{section}_항목",
+                str(row.get("label", "")),
+                (
+                    f"{_format_public_metric_value(row)} | {row.get('period', '')} | "
+                    f"{row.get('source_name', '')} | {row.get('note', '')}"
+                ),
+            )
+        for warning in context.get("warnings", ()):
+            _row(f"{section}_주의", "fallback", warning)
+
     # Quality
     _row("결과품질", "성공", q.success)
     _row("결과품질", "파싱 실패", q.parse_failed)
@@ -1042,6 +1121,7 @@ def write_report_files(
     job_id: str,
     price_context: dict[str, Any] | None = None,
     population_context: dict[str, Any] | None = None,
+    public_contexts: dict[str, Any] | None = None,
 ) -> tuple[Path, Path]:
     """output_dir/{project_slug}/{job_id}.md, .csv 작성.
 
@@ -1076,11 +1156,13 @@ def write_report_files(
         report,
         price_context=price_context,
         population_context=population_context,
+        public_contexts=public_contexts,
     )
     csv_content = render_csv(
         report,
         price_context=price_context,
         population_context=population_context,
+        public_contexts=public_contexts,
     )
 
     md_path.write_text(md_content, encoding="utf-8")

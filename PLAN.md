@@ -4,14 +4,18 @@
 
 - 작성자: PM
 - 기준 소스: `update-PLAN.md`
-- 현재 코드 버전: `0.7.0` (`pyproject.toml`, `src/app_config.py`)
-- 다음 릴리스: `0.7.0` → `0.7.1` (분리 슬라이스) → `0.8.0` → `0.9.0`
-- 문서 상태: v0.7.0 완료 감사 반영
+- 현재 코드 버전: `0.8.0` (`pyproject.toml`, `src/app_config.py`)
+- 다음 릴리스: `0.9.0`
+- 문서 상태: v0.9.0 후보 재검토와 상세 리포트 정책 확정 반영
 
 ## 문서 변경 이력 (PLAN.md 자체 버전)
 
 | 문서 버전 | 일자 | 변경 |
 |---|---|---|
+| PLAN v1.5 | 2026-05-19 | v0.9.0 참가격/ECOS 후보 재검토, 상세 리포트 전용 노출 정책, connector 구현 비범위 명시. |
+| PLAN v1.4 | 2026-05-19 | v0.8.0 SGIS/상권/기상 connector, report-only 섹션, 이미지 설명 보조 경계, 버전 표기 반영. |
+| PLAN v1.3 | 2026-05-19 | v0.8.0 SGIS/상권/기상/이미지 보조 슬라이스를 공식 API 근거 기준으로 상세화. |
+| PLAN v1.2 | 2026-05-19 | v0.7.1 행안부 주민등록 인구 참고 통계 슬라이스 반영. |
 | PLAN v1.1 | 2026-05-18 | v0.7.0 구현 상태 감사 후 현재 버전 표기와 릴리스 체크리스트를 실제 완료 상태로 갱신. |
 | PLAN v1.0 | 2026-05-18 | `update-PLAN.md` 평가·보강 후 정식 PLAN으로 승격. 4 load-bearing 결정 박음(스키마 잠금, prompt_version bump, public_data 분담, 머지 시퀀스). v0.7.1 슬라이스 분리. |
 
@@ -37,11 +41,11 @@
 | G5 | "오해 문구 없다"는 **측정 불가 DoD** | WS-0 완료 기준이 주관적 | grep-able DoD로 재정의 (§4.0) |
 | G6 | "표본 부족 시 인접 연령 보조 포함" **임계값 미정** | 발동 조건/확장폭/표시 방식이 모호 | 임계값: 필터 통과 < 요청 샘플 50%, 확장폭: ±5세, 리포트에 보조 포함 비율 표시 (§4.5A) |
 | G7 | "동급 브랜드 가격 위치" 입력의 **사용처 미정** | 프롬프트로 전달이면 D 트랙(WS-6) 의존, 리포트 표시만이면 B 트랙(WS-2/3) 의존 | **리포트 표시만**. 프롬프트에는 전달하지 않음(LLM 환각 위험 회피). §4.5 참고 |
-| G8 | **API 키 부재 시 동작** 회귀 테스트 미정 | HF Space에 키 없는 경우 fallback 경로가 깨지면 공개 데모가 죽음 | KOSIS/행안부 모두 `MISSING_API_KEY → snapshot fallback → 리포트에 "참고 통계 미사용" 표시`를 fixture 테스트로 못박음 (§4.7) |
+| G8 | **API 키 부재 시 동작** 회귀 테스트 미정 | HF Space에 키 없는 경우 fallback 경로가 깨지면 공개 데모가 죽음 | KOSIS/행안부 모두 `MISSING_API_KEY → snapshot fallback → 리포트에 "API 갱신 미사용/실패, 스냅샷 사용" 표시`를 fixture 테스트로 못박음 (§4.7) |
 | G9 | **롤백/feature flag 정책** 미정 | 검증 플래그가 노이즈 폭증 시 사용성 저하 | 환경변수 `K_FASHION_VALIDATION_FLAGS=on|off`(기본 on)로 끌 수 있게. §4.8 참고 |
-| G10 | 행안부 API **인증 방식 차이** 미반영 | KOSIS는 URL `serviceKey` param, 행안부는 공공데이터포털 발급 키. 공통 connector가 일률 가정하면 깨짐 | `src/public_data/` connector 추상화에 **인증 어댑터** 인터페이스를 두고 KOSIS/행안부 각각 구현 (§4.10) |
+| G10 | 행안부 API **인증 방식 차이** 미반영 | KOSIS는 `apiKey` param, 행안부/data.go.kr은 `serviceKey` param. 공통 connector가 일률 가정하면 깨짐 | `src/public_data/` connector 추상화에 **인증 어댑터** 인터페이스를 두고 KOSIS/행안부 각각 구현 (§4.10) |
 | G11 | WS-7 QA **fixture/회귀 케이스 수 미정** | "테스트 여러 개"는 측정 불가 | 최소 케이스 목록을 §4.7에 명시 |
-| G12 | WS-11(행안부) **v0.7.0 동시 진행 리스크** | KOSIS 확장 + 공통 기반 + 행안부 신규 API + UI 패널 분포까지 한 릴리스에 묶으면 일정 리스크 큼 | **v0.7.1로 분리** — 행안부 API + 패널 분포 비교를 별도 슬라이스 (§3) |
+| G12 | WS-11(행안부) **v0.7.0 동시 진행 리스크** | KOSIS 확장 + 공통 기반 + 행안부 신규 API + UI 패널 참고값까지 한 릴리스에 묶으면 일정 리스크 큼 | **v0.7.1로 분리** — 행안부 API + 패널 주변비율 참고를 별도 슬라이스 (§3) |
 
 ### 0.3 PM 결정 (update-PLAN 대비 변경)
 
@@ -161,7 +165,7 @@
 **포함**:
 
 - WS-11 행안부 주민등록 인구 API 연결 (Track E)
-- 연령/성별/지역 인구 분포 비교 섹션을 리포트에 추가
+- 연령/성별/지역 기준으로 합성 패널 분포와 MOIS 선택 조건 주변비율 참고 섹션을 리포트에 추가
 - 인증 어댑터 패턴 확립 (KOSIS와 다른 인증 방식 흡수)
 
 **제외**:
@@ -172,7 +176,7 @@
 **완료 기준**:
 
 - 행안부 API 키 부재 시도 앱 실행 유지
-- 선택 연령 범위와 전체 인구 기준 분포가 같은 리포트 표에 표시됨
+- 선택 연령 버킷, 성별, 지역의 합성 패널 분포와 MOIS 선택 조건 주변비율이 같은 리포트 표에 표시됨
 - 리포트에 인구 API 호출 상태(성공/실패), 출처, 기준일 표시
 
 ### 3.3 v0.8.0 — 컨텍스트 확장
@@ -181,15 +185,41 @@
 
 **포함**:
 
-- WS-12 SGIS S-Open API (지역 입력 있을 때만)
-- 소상공인 상가(상권)정보 API (지역 입력 있을 때만)
-- 기상청 단기예보/기상자료 API (시즌성 상품일 때만)
-- WS-9 이미지 기반 컨셉 설명 보조 **구현** (토글 OFF 기본, 1회 호출 보장)
+- WS-12A SGIS S-Open API: 지역 입력이 있고 전국 타깃이 아닐 때만 사용
+- WS-12B 소상공인시장진흥공단 상가(상권)정보 API: 지역 입력이 있고 상권/오프라인 맥락이 필요한 경우만 사용
+- WS-12C 기상청 단기예보/기상자료 API: 시즌성 상품이거나 날씨 민감 카테고리일 때만 사용
+- WS-9B 이미지 기반 컨셉 설명 보조 **구현**: 토글 OFF 기본, 1회 호출 보장, 평가 루프와 분리
 
 **완료 기준**:
 
 - 모든 신규 API가 "참고 섹션"으로만 등장
+- API 키 부재, API 실패, 지원 안 되는 지역/시즌 조건에서도 기본 분석과 리포트 생성이 유지됨
+- SGIS는 `accessToken`, data.go.kr은 `serviceKey`, 기상청 API허브는 `authKey`로 인증 경계를 분리함
+- 리포트에는 출처 URL, 제공기관, 호출 상태, 기준 시점, 단위가 표시됨
 - 이미지 보조: 페르소나 평가 호출마다 이미지를 보내는 구조가 코드 레벨에서 불가능 (호출 경계 가드 + 테스트)
+
+**공식 API 근거와 기본 정책**:
+
+| 슬라이스 | 공식 출처 | 인증 | 기본 호출 조건 | 리포트 사용 |
+|---|---|---|---|---|
+| SGIS 공간 통계 | SGIS S-Open API / 개발자지원센터 | `accessToken` | 시도/시군구 등 지역 입력이 있을 때 | 지역 인구·사업체·생활업종 맥락 참고 |
+| 상가(상권)정보 | 공공데이터포털 `소상공인시장진흥공단_상가(상권)정보_API` | `serviceKey` | 지역 입력 + 오프라인 판매/상권 맥락이 있을 때 | 관련 업종 수/분포 참고. 수요·매출 예측 금지 |
+| 기상/단기예보 | 기상청 API허브 또는 공공데이터포털 `기상청_단기예보 조회서비스` | `authKey` 또는 `serviceKey` | 시즌성·날씨 민감 상품일 때 | 날씨/기온/강수 맥락 참고. 반응 점수 보정 금지 |
+| 이미지 설명 보조 | 선택 LLM vision API | provider key | 사용자가 토글 ON + 이미지 1장 확인 후 | 컨셉 설명 초안 생성만. 페르소나 평가 입력은 확정 텍스트만 |
+
+공식 출처 재확인(2026-05-19):
+
+- SGIS S-Open API: https://sgis.mods.go.kr/contents/shortcut/shortcut_06.jsp
+- 소상공인시장진흥공단 상가(상권)정보 API: https://www.data.go.kr/data/15012005/openapi.do
+- 기상청 API허브 단기예보/격자자료: https://apihub.kma.go.kr/apiList.do?seqApi=10
+- 기상청 단기예보 조회서비스(data.go.kr 보조): https://www.data.go.kr/data/15084084/openapi.do
+
+**v0.8.0 비목표**:
+
+- 지도 기반 UI
+- 상권 데이터로 수요, 매출, 구매율 추정
+- 날씨 데이터로 페르소나 점수 직접 보정
+- 이미지 자체를 100명 페르소나 평가 루프에 반복 전송
 
 ### 3.4 v0.9.0 — 거시 맥락
 
@@ -200,10 +230,34 @@
 - WS-13 한국소비자원 참가격 API
 - 한국은행 ECOS API
 
+**이번 PLAN 완료 범위**:
+
+- 공식 출처 기준 후보 재검토와 노출 정책 확정까지.
+- 참가격/ECOS connector, UI 토글, fixture 테스트 구현은 v0.9.0 실제 구현 슬라이스에서 진행.
+
+공식 출처 확인일: 2026-05-19.
+
+| 후보 | 공식 근거 | 판정 | 구현 정책 |
+|---|---|---|---|
+| 한국소비자원 참가격 | 공공데이터포털 `3043385` 생필품 가격 정보 OpenAPI, `15083256` 생필품 가격 정보 파일/API | 후순위 보류 | 생필품 중심이라 K-Fashion 의류 가격 검증처럼 보일 위험이 큼. 구현 시 `15083256` 월간 JSON/XML 자동변환 API를 1순위 후보로 두고, legacy REST/XML API는 HTTPS/auth 검증 뒤 보조 후보로만 사용. |
+| 한국은행 ECOS | ECOS Open API, `KeyStatisticList` 공식 sample JSON, 한국은행 경제통계업무 소개 | 조건부 채택 | 소비심리, 물가, 금리, 환율 같은 시장 배경만 상세 리포트 전용으로 사용. `UNIT_NAME`과 `CYCLE`을 그대로 보존하고 KRW 변환을 강제하지 않음. 비용, quota, 원자료 재배포 조건은 공개 근거 불충분이므로 raw snapshot 저장 금지. |
+
+**상세 리포트 정책**:
+
+- 기본 리포트에는 생활물가/거시경제 데이터를 표시하지 않는다.
+- 상세 리포트 토글이 켜진 경우에만 Markdown은 `<details>` 접힘 섹션으로, CSV는 `상세전용_생활물가참고`/`상세전용_거시경제참고` 섹션 prefix로 노출한다.
+- 프롬프트, 페르소나 샘플링, 점수, cache key에는 전달하지 않는다.
+- 아래 조건이면 섹션을 자동 숨김 처리한다.
+  - 참가격 값이 제품 가격과 직접 비교되는 문장이나 비율을 만들 때
+  - 개별 상품명, 판매업소, 개별 가격표를 그대로 노출해야만 의미가 있을 때
+  - 기준 기간, 출처, 단위가 빠졌을 때
+  - ECOS 단위를 `원`으로 강제 변환해야만 표시 가능한 경우
+
 **완료 기준**:
 
-- 기본 리포트에서 접힘, 상세 리포트 토글로만 노출
-- 의류 직접 가격 비교로 오해될 섹션은 자동 숨김
+- 후보별 채택/보류 판정과 이유가 공식 근거 URL과 함께 기록됨
+- 기본 리포트 미노출, 상세 리포트 opt-in 노출, 자동 숨김 조건이 구현 전 정책으로 확정됨
+- 구현 범위가 문서 정책 확정과 실제 connector 구현으로 분리됨
 
 ---
 
@@ -311,7 +365,7 @@ KOSIS 확장(v0.7.0)은 **`src/economic_context.py` 내부**에서 진행하고,
 | 연령 슬라이더-직접 입력 동기화 (`tests/test_app.py`) | 3 | 프리셋→슬라이더, 슬라이더→직접 입력, 하한>상한 보정 |
 | prompt_version bump (`tests/test_prompt_builder.py`) | 2 | v0_3/v0_4 cache key 분리 검증 |
 | forbidden phrases (`tests/test_report_writer.py`) | 신규 phrase당 1 | 신규 추가 phrase 회귀 |
-| **API 키 부재 fallback** (`tests/`) | 2 | KOSIS, 행안부(v0.7.1) — `MISSING_API_KEY → snapshot/`"참고 통계 미사용"` |
+| **API 키 부재 fallback** (`tests/`) | 2 | KOSIS, 행안부(v0.7.1) — `MISSING_API_KEY → snapshot / "API 갱신 미사용/실패, 스냅샷 사용"` |
 | **feature flag** (`K_FASHION_VALIDATION_FLAGS`) | 2 | on/off 동작 |
 
 ### 4.8 [G9] feature flag 정책
@@ -332,11 +386,19 @@ K_FASHION_VALIDATION_FLAGS=on|off
 class AuthAdapter(Protocol):
     def apply(self, url: str, params: dict) -> tuple[str, dict]: ...
 
-class KosisAuthAdapter:  # serviceKey URL param
-class DataGoKrAuthAdapter:  # 공공데이터포털 인증키
+class KosisAuthAdapter:  # KOSIS apiKey param
+class DataGoKrAuthAdapter:  # data.go.kr serviceKey param
+class SgisAccessTokenAuthAdapter:  # SGIS accessToken param
+class KmaApiHubAuthAdapter:  # KMA API Hub authKey param
 ```
 
-v0.7.0에서 인터페이스만 잡고, 구현은 v0.7.1(행안부)에서 첫 사례로 박는다.
+v0.7.0에서 인터페이스를 잡고, v0.7.1(행안부)에서 data.go.kr 첫 사례를 박았다. v0.8.0은 SGIS와 기상청 API허브의 인증 파라미터 차이를 같은 인터페이스로 흡수한다.
+
+환경변수 계약:
+
+- `DATAGOKR_SERVICE_KEY`: 행안부, 소상공인 상가정보, data.go.kr 기상청 경로
+- `SGIS_CONSUMER_KEY`, `SGIS_CONSUMER_SECRET`: SGIS accessToken 발급용
+- `KMA_APIHUB_AUTH_KEY`: 기상청 API허브 경로
 
 ---
 
@@ -475,13 +537,35 @@ v0.7.1 슬라이스:
 
 - 분리 이유: §0.2 G12 — v0.7.0에 묶으면 일정 리스크 큼
 - 인증 어댑터 첫 구현
-- 패널 분포 ↔ 인구 분포 비교 섹션을 리포트에 추가
+- 패널 분포 ↔ MOIS 선택 조건 주변비율 참고 섹션을 리포트에 추가
 
-### WS-12 SGIS/상권/기상 (v0.8.0)
+### WS-12A SGIS 공간 통계 (v0.8.0)
 
-- 지역 입력 있을 때만 호출. 전국 타깃이면 호출 안 함
-- 시즌성 강한 상품일 때만 날씨 섹션 표시
-- 점수 보정 금지 — 참고 섹션만
+- 지역 입력이 있을 때만 호출. 전국 타깃이면 호출 안 함
+- SGIS accessToken 발급과 실제 통계 호출을 분리하고 cache key에 출처/연도/행정구역코드를 포함
+- **DoD**: 키 부재, token 실패, 통계 응답 없음, cache hit 4 케이스가 네트워크 없는 fixture로 통과
+- **리포트**: 지역 인구/가구/사업체 등 공간 맥락을 참고값으로만 표시
+
+### WS-12B 상가(상권)정보 (v0.8.0)
+
+- 지역 입력 + 오프라인 판매/상권 맥락이 있을 때만 호출
+- 소상공인시장진흥공단 상가(상권)정보 API는 업종/좌표/주소/상호 등 원천 항목을 그대로 개인 수요 추정에 쓰지 않음
+- **DoD**: `DATAGOKR_SERVICE_KEY` 부재 시 `not_used`, API 실패 시 fallback note, 업종 필터 없음 3 케이스 통과
+- **리포트**: 관련 업종 수/분포 참고. "매출", "수요", "판매 가능성" 표현 금지
+
+### WS-12C 기상/단기예보 (v0.8.0)
+
+- 시즌성 강한 상품이나 날씨 민감 카테고리일 때만 호출
+- 기상청 API허브 `authKey` 경로와 data.go.kr `serviceKey` 경로 중 하나만 선택해 connector를 단순화
+- **DoD**: 키 부재, 좌표 없음, API 실패, 지원 카테고리 아님 4 케이스 통과
+- **리포트**: 기온/강수/하늘상태 등 시점성 맥락을 기준 시각과 함께 표시. 페르소나 반응 점수 보정 금지
+
+### WS-9B 이미지 기반 컨셉 설명 보조 구현 (v0.8.0)
+
+- 기본 OFF. 사용자가 토글 ON 후 이미지 1장을 확인해야 1회 호출
+- 이미지 분석 결과는 "컨셉 설명 초안" 편집란에만 들어가고, 사용자가 확정한 텍스트만 평가 입력으로 전달
+- 업로드 이미지는 저장하지 않음. 로그/리포트에도 원본 이미지나 vision raw response 저장 금지
+- **DoD**: 토글 OFF 호출 0회, 토글 ON 1회, 페르소나 평가 루프 이미지 전달 0회, 저장 파일 0개 테스트
 
 ### WS-13 참가격/ECOS (v0.9.0)
 
@@ -523,12 +607,16 @@ update-PLAN.md의 우선순위를 PM 결정에 맞춰 정리. v0.7.0 범위만.
 | 연령 필터로 표본 부족 | §4.5A 임계값 + 보조 포함 비율 리포트 노출 |
 | 연령 슬라이더-직접 입력 충돌 | 단일 상태값 기준 동기화, 하한>상한 자동 보정 |
 | 프롬프트 강화만 믿게 됨 | 사후 검증을 P0로 유지 |
-| KOSIS/행안부 API 키 부재 | 스냅샷 fallback + "참고 통계 미사용" 표시 + fixture 회귀 |
+| KOSIS/행안부 API 키 부재 | 스냅샷 fallback + "API 갱신 미사용/실패, 스냅샷 사용" 표시 + fixture 회귀 |
 | 행안부 인증 방식 차이 | §4.10 어댑터 인터페이스 |
 | 머지 conflict 다발 | §5.2 머지 시퀀스 강제. 동일 핫스팟 동시 PR 금지 |
 | v0.7.0 일정 리스크 | WS-11(행안부)을 v0.7.1로 분리 |
 | HF Space와 GitHub 커밋 SHA 불일치 | 콘텐츠 기준 확인 (`docs/CHANGELOG.md` 버전 일치) |
 | 이미지 보조가 평가 기능으로 오해됨 | 기능명 "이미지 기반 컨셉 설명 보조"로 한정, 기본 OFF, v0.7.0 구현 없음 |
+| SGIS 인증이 data.go.kr과 다름 | SGIS는 accessToken 어댑터로 분리하고 토큰 발급 실패를 `not_used`로 처리 |
+| 상권 데이터가 수요/매출 예측으로 오해됨 | 업종 수/분포 참고만 표시하고 forbidden phrase 회귀에 "수요 예측", "매출 예측" 추가 |
+| 기상 예보의 시점성이 과대해석됨 | 기준 시각을 항상 표시하고 페르소나 점수 보정 금지 |
+| 이미지 업로드가 원본 평가/저장으로 오해됨 | 기본 OFF, 1회 설명 초안 생성, 저장 금지, 평가 루프 이미지 전달 0회 테스트 |
 
 ---
 
@@ -565,17 +653,39 @@ update-PLAN.md의 우선순위를 PM 결정에 맞춰 정리. v0.7.0 범위만.
 
 ### 9.2 v0.7.1 (행안부 슬라이스)
 
-- [ ] `pyproject.toml` 버전 `0.7.1`
-- [ ] `src/app_config.py` `APP_VERSION = "0.7.1"`
-- [ ] `src/public_data/population/` 추가
-- [ ] 인증 어댑터 (`KosisAuthAdapter`, `DataGoKrAuthAdapter`)
-- [ ] 행안부 API 키 부재 시 fallback 확인
-- [ ] 패널 분포 ↔ 인구 분포 비교 섹션 리포트 추가
-- [ ] `docs/CHANGELOG.md` v0.7.1 항목
+- [x] `pyproject.toml` 버전 `0.7.1`
+- [x] `src/app_config.py` `APP_VERSION = "0.7.1"`
+- [x] `src/public_data/population/` 추가
+- [x] 인증 어댑터 (`KosisAuthAdapter`, `DataGoKrAuthAdapter`)
+- [x] 행안부 API 키 부재 시 fallback 확인
+- [x] 패널 분포 ↔ MOIS 선택 조건 주변비율 참고 섹션 리포트 추가
+- [x] MOIS 10세 연령 버킷과 주변분포 한계 문구 표시
+- [x] v0.7.1 release gate 통과: compileall, ruff, ruff format --check, bandit, pip-audit, pytest, diff check
+- [x] `docs/CHANGELOG.md` v0.7.1 항목
 
-### 9.3 v0.8.0 / v0.9.0
+### 9.3 v0.8.0 (컨텍스트 확장)
 
-- 별도 PLAN 업데이트로 상세화. 본 PLAN.md는 스코프와 완료 기준만 §3에 박는다.
+- [x] v0.8.0 공식 API 후보 재확인: SGIS S-Open API, 소상공인 상가(상권)정보 API, 기상청 단기예보/API허브
+- [x] 인증 환경변수 계약 추가: `SGIS_CONSUMER_KEY`, `SGIS_CONSUMER_SECRET`, `KMA_APIHUB_AUTH_KEY`
+- [x] 인증 어댑터 추가: `SgisAccessTokenAuthAdapter`, `KmaApiHubAuthAdapter`
+- [x] `src/public_data/spatial/` SGIS connector 추가
+- [x] SGIS 키 부재/토큰 실패/응답 없음/cache hit fixture
+- [x] `src/public_data/commercial/` 상가(상권)정보 connector 추가
+- [x] 상권 API 키 부재/API 실패/업종 필터 없음 fixture
+- [x] `src/public_data/weather/` 기상 connector 추가
+- [x] 기상 키 부재/좌표 없음/API 실패/지원 카테고리 아님 fixture
+- [x] 리포트에 SGIS/상권/기상 섹션 추가. 모든 섹션은 참고 통계만 표시
+- [x] 상권/기상/SGIS 섹션의 수요·매출·구매율·점수 보정 오해 문구 forbidden phrase 회귀
+- [x] 이미지 기반 컨셉 설명 보조 토글 OFF 기본 구현
+- [x] 이미지 보조 1회 호출/평가 루프 이미지 전달 0회/이미지 저장 0개 테스트
+- [x] `pyproject.toml`, `src/app_config.py`, README, docs 표기 `0.8.0` 갱신
+- [x] v0.8.0 release gate 통과: compileall, ruff, ruff format --check, bandit, pip-audit, pytest, diff check
+
+### 9.4 v0.9.0
+
+- [x] 한국소비자원 참가격 API 후보 재검토: 공식 공공데이터포털 `3043385`/`15083256` 기준으로 인증, 비용, 트래픽, 라이선스, 단위, 갱신주기, 직접 의류 가격 비교 오해 리스크를 기록하고 후순위 보류로 판정
+- [x] 한국은행 ECOS API 후보 재검토: 공식 ECOS Open API와 sample JSON 기준으로 인증키, 단위(`UNIT_NAME`), 기간(`CYCLE`), 상세 리포트 전용 가치, 비용/quota/재배포 근거 부족 리스크를 기록하고 조건부 채택으로 판정
+- [x] 기본 리포트 접힘/상세 토글 정책 확정: 구현 전까지 기본 리포트에는 생활물가/거시경제 데이터를 노출하지 않고, 상세 리포트 opt-in에서만 접힘 섹션으로 노출하며, 의류 직접 가격 비교로 오해될 경우 자동 숨김으로 정의
 
 ---
 

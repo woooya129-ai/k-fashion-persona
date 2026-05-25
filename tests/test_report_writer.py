@@ -110,6 +110,87 @@ def sample_population_context() -> dict:
     }
 
 
+@pytest.fixture()
+def sample_public_contexts() -> dict:
+    return {
+        "spatial": {
+            "title": "SGIS 공간 통계 참고",
+            "provider": "SGIS / KOSTAT",
+            "source_name": "SGIS S-Open API",
+            "source_url": "https://sgis.mods.go.kr/contents/shortcut/shortcut_06.jsp",
+            "reference_region_label": "서울",
+            "period": "2026",
+            "api_status": "success",
+            "metric_rows": [
+                {
+                    "label": "SGIS 생활업종 사업체",
+                    "value": 123,
+                    "unit": "count",
+                    "period": "2026",
+                    "source_name": "SGIS S-Open API",
+                    "source_url": "https://sgis.mods.go.kr/contents/shortcut/shortcut_06.jsp",
+                }
+            ],
+            "context_note": (
+                "SGIS 공간 통계는 집계 참고값이며 페르소나 점수나 표본을 보정하지 않습니다."
+            ),
+            "warnings": (),
+        },
+        "commercial": {
+            "title": "상가(상권)정보 참고",
+            "provider": "소상공인시장진흥공단 / data.go.kr",
+            "source_name": "소상공인시장진흥공단 상가(상권)정보 API",
+            "source_url": "https://www.data.go.kr/data/15012005/openapi.do",
+            "reference_region_label": "서울",
+            "period": "2026-04",
+            "api_status": "success",
+            "metric_rows": [
+                {
+                    "label": "상가정보 관련 업종 수",
+                    "value": 21,
+                    "unit": "count",
+                    "period": "2026-04",
+                    "source_name": "소상공인시장진흥공단 상가(상권)정보 API",
+                    "note": "상호, 주소, 좌표 원천 항목은 리포트에 저장하지 않습니다.",
+                }
+            ],
+            "context_note": (
+                "상가(상권)정보는 업종 집계 참고값이며 개인 수요, 판매량, 매출을 추정하지 않습니다."
+            ),
+            "warnings": (),
+        },
+        "weather": {
+            "title": "기상청 날씨/시즌 참고",
+            "provider": "기상청 API허브",
+            "source_name": "기상청 API허브 단기예보",
+            "source_url": "https://apihub.kma.go.kr/apiList.do?seqApi=10",
+            "reference_region_label": "격자 60,127",
+            "period": "20260519 1200",
+            "api_status": "success",
+            "metric_rows": [
+                {
+                    "label": "KMA 기온",
+                    "value": "21",
+                    "unit": "celsius",
+                    "period": "20260519 1200",
+                    "source_name": "기상청 API허브 단기예보",
+                },
+                {
+                    "label": "KMA 강수확률",
+                    "value": "30",
+                    "unit": "percent",
+                    "period": "20260519 1200",
+                    "source_name": "기상청 API허브 단기예보",
+                },
+            ],
+            "context_note": (
+                "기상 정보는 시점성 참고값이며 페르소나 반응 점수나 표본을 보정하지 않습니다."
+            ),
+            "warnings": (),
+        },
+    }
+
+
 # ---------------------------------------------------------------------------
 # required_footer_text
 # ---------------------------------------------------------------------------
@@ -294,6 +375,17 @@ class TestRenderMarkdown:
         assert "API 갱신 미사용, 스냅샷 사용" in md
         assert "성별, 연령, 지역을 모두 교차한 값이 아니라" in md
 
+    def test_public_context_sections_present(self, full_report, sample_public_contexts):
+        md = render_markdown(full_report, public_contexts=sample_public_contexts)
+
+        assert "## SGIS 공간 통계 참고" in md
+        assert "## 상가(상권)정보 참고" in md
+        assert "## 기상청 날씨/시즌 참고" in md
+        assert "123개" in md
+        assert "21℃" in md
+        assert "30%" in md
+        assert "기본 합성 패널 평가와 분리해 해석해야 합니다." in md
+
     def test_validation_section_hidden_when_feature_flag_off(self, monkeypatch):
         monkeypatch.setenv("K_FASHION_VALIDATION_FLAGS", "off")
         report = aggregate(
@@ -458,6 +550,14 @@ class TestRenderCsv:
         assert "API 갱신 미사용, 스냅샷 사용" in csv_text
         assert "20-29, 30-39" in csv_text
 
+    def test_csv_contains_public_contexts(self, full_report, sample_public_contexts):
+        csv_text = render_csv(full_report, public_contexts=sample_public_contexts)
+        assert "공공컨텍스트_SGIS 공간 통계 참고" in csv_text
+        assert "공공컨텍스트_상가(상권)정보 참고" in csv_text
+        assert "공공컨텍스트_기상청 날씨/시즌 참고" in csv_text
+        assert "123개" in csv_text
+        assert "21℃" in csv_text
+
     def test_forbidden_phrase_in_reasons_raises(self):
         # 금지 표현이 EvaluationResult.main_reasons 를 통해 CSV 셀에 들어오면
         # render_csv 가 assert_safe_phrasing 으로 차단해야 한다.
@@ -584,6 +684,29 @@ class TestWriteReportFiles:
         md_path, _ = write_report_files(full_report, tmp_path, "proj", "job-footer")
         content = md_path.read_text(encoding="utf-8")
         assert "본 도구는 합성 페르소나와 LLM 기반의 사전 가설 분석 도구입니다." in content
+
+    def test_passes_public_contexts_to_renderers(
+        self,
+        tmp_path,
+        full_report,
+        sample_price_context,
+        sample_population_context,
+        sample_public_contexts,
+    ):
+        md_path, csv_path = write_report_files(
+            full_report,
+            tmp_path,
+            "proj",
+            "job-context",
+            price_context=sample_price_context,
+            population_context=sample_population_context,
+            public_contexts=sample_public_contexts,
+        )
+
+        assert "## MOIS 주민등록 인구 참고 통계" in md_path.read_text(encoding="utf-8")
+        assert "## SGIS 공간 통계 참고" in md_path.read_text(encoding="utf-8")
+        assert "MOIS주민등록인구" in csv_path.read_text(encoding="utf-8")
+        assert "공공컨텍스트_SGIS 공간 통계 참고" in csv_path.read_text(encoding="utf-8")
 
     def test_csv_content_has_bom(self, tmp_path, full_report):
         _, csv_path = write_report_files(full_report, tmp_path, "proj", "job-bom")

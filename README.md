@@ -34,7 +34,7 @@ tags:
 
 # K-fashion 컨셉을 AI 페르소나로 먼저 점검
 
-[![Version](https://img.shields.io/badge/version-0.7.1-0F766E)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.8.0-0F766E)](pyproject.toml)
 [![HF Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea)
 [![GitHub](https://img.shields.io/badge/GitHub-k--fashion--persona-181717?logo=github&logoColor=white)](https://github.com/woooya129-ai/k-fashion-persona)
 [![HF Space](https://img.shields.io/badge/HF%20Space-k--fashion--persona-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/spaces/w00ya/k-fashion-persona)
@@ -431,6 +431,9 @@ QWEN_API_KEY=
 HF_TOKEN=
 KOSIS_API_KEY=
 DATAGOKR_SERVICE_KEY=
+SGIS_CONSUMER_KEY=
+SGIS_CONSUMER_SECRET=
+KMA_APIHUB_AUTH_KEY=
 KOSIS_STATISTICS_DATA_URL=
 MOIS_POPULATION_API_URL=
 ```
@@ -490,6 +493,7 @@ uv run python -m src.agent_bridge import --pack outputs\agent-pack-demo --result
 - 기본 로딩: Hugging Face `datasets` streaming
 - 기본 scan: 실행마다 최대 3000행까지 순차 scan해서 조건에 맞는 패널을 채움
 
+소득, 자산, 의류·신발 지출은 개별 페르소나에서 추정하지 않습니다. 리포트의 가격 부담 참고값은 KOSTAT/KOSIS 공개 통계 스냅샷 `data/public/kosis_household_context.csv`를 사용합니다. KOSIS API key와 `statisticsData` URL을 입력하면 실행 시 해당 응답을 먼저 참고하고, 실패하면 스냅샷으로 fallback합니다. 주민등록 인구 참고값은 MOIS 스냅샷 `data/public/mois_population_context.csv`를 사용하며, `DATAGOKR_SERVICE_KEY`와 `MOIS_POPULATION_API_URL`이 있으면 data.go.kr 응답을 먼저 시도합니다. v0.8.0의 SGIS 공간 통계, 소상공인 상가(상권)정보, 기상청 날씨 맥락은 선택 참고 섹션으로만 표시되며 `SGIS_SPATIAL_API_URL`, `SBDC_COMMERCIAL_API_URL`, `KMA_WEATHER_API_URL`, `KMA_FORECAST_NX`, `KMA_FORECAST_NY`를 설정한 경우에만 API 갱신을 시도합니다.
 
 ## 권장 사양
 

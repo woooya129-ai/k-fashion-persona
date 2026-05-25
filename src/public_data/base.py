@@ -39,3 +39,29 @@ class DataGoKrAuthAdapter:
             applied["serviceKey"] = self.service_key
         applied.setdefault("type", "json")
         return url, applied
+
+
+class SgisAccessTokenAuthAdapter:
+    """SGIS S-Open API accessToken style auth adapter."""
+
+    def __init__(self, access_token: str = "") -> None:
+        self.access_token = access_token.strip()
+
+    def apply(self, url: str, params: dict[str, str]) -> tuple[str, dict[str, str]]:
+        applied = dict(params)
+        if self.access_token:
+            applied["accessToken"] = self.access_token
+        return url, applied
+
+
+class KmaApiHubAuthAdapter:
+    """KMA API Hub authKey style auth adapter."""
+
+    def __init__(self, auth_key: str = "") -> None:
+        self.auth_key = auth_key.strip()
+
+    def apply(self, url: str, params: dict[str, str]) -> tuple[str, dict[str, str]]:
+        applied = dict(params)
+        if self.auth_key:
+            applied["authKey"] = self.auth_key
+        return url, applied

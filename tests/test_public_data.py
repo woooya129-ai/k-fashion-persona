@@ -4,10 +4,13 @@ import pytest
 
 from src.public_data import (
     DataGoKrAuthAdapter,
+    KmaApiHubAuthAdapter,
     KosisAuthAdapter,
     PublicDataCache,
+    SgisAccessTokenAuthAdapter,
     SourceMetadata,
 )
+from src.public_data.commercial import build_commercial_context, fetch_commercial_rows
 from src.public_data.population import (
     PopulationRow,
     build_population_context,
@@ -15,6 +18,12 @@ from src.public_data.population import (
     load_population_snapshot,
     parse_population_api_rows,
 )
+from src.public_data.spatial import (
+    build_spatial_context,
+    fetch_sgis_access_token,
+    fetch_sgis_spatial_rows,
+)
+from src.public_data.weather import build_weather_context, fetch_weather_rows
 
 pytestmark = pytest.mark.no_network
 
@@ -34,6 +43,27 @@ def test_datagokr_auth_adapter_applies_service_key_and_json_type() -> None:
     )
     assert params["serviceKey"] == "service-key"
     assert params["type"] == "json"
+
+
+def test_sgis_auth_adapter_applies_access_token() -> None:
+    url, params = SgisAccessTokenAuthAdapter("sgis-access-token").apply(
+        "https://sgisapi.mods.go.kr/OpenAPI3/startupbiz/corpdistsummary.json",
+        {"adm_cd": "11010"},
+    )
+
+    assert url == "https://sgisapi.mods.go.kr/OpenAPI3/startupbiz/corpdistsummary.json"
+    assert params["adm_cd"] == "11010"
+    assert params["accessToken"] == "sgis-access-token"
+
+
+def test_kma_apihub_auth_adapter_applies_auth_key() -> None:
+    _, params = KmaApiHubAuthAdapter("kma-auth-key").apply(
+        "https://apihub.kma.go.kr/api/typ02/openApi/VilageFcstInfoService_2.0/getVilageFcst",
+        {"dataType": "JSON"},
+    )
+
+    assert params["dataType"] == "JSON"
+    assert params["authKey"] == "kma-auth-key"
 
 
 def test_public_data_cache_round_trip_and_clear() -> None:
@@ -265,3 +295,301 @@ def test_fetch_population_api_rows_uses_cache(monkeypatch: pytest.MonkeyPatch) -
     assert len(calls) == 1
     assert calls[0]["serviceKey"] == "fake-service-key"
     assert calls[0]["type"] == "json"
+
+
+def test_spatial_context_missing_key_reports_missing_api_key() -> None:
+    context = build_spatial_context(
+        provinces={"서울"},
+        use_api_refresh=True,
+        consumer_key="",
+        consumer_secret="",
+        api_url="https://sgisapi.mods.go.kr/OpenAPI3/startupbiz/sggtobcorpcount.json",
+    )
+
+    assert context["api_status"] == "missing_api_key"
+    assert context["metric_rows"] == []
+
+
+def test_spatial_context_token_failure_does_not_block_report() -> None:
+    def fail_token(**_: object) -> str:
+        raise RuntimeError("boom")
+
+    context = build_spatial_context(
+        provinces={"서울"},
+        use_api_refresh=True,
+        consumer_key="key",
+        consumer_secret="secret",
+        api_url="https://sgisapi.mods.go.kr/OpenAPI3/startupbiz/sggtobcorpcount.json",
+        fetch_token_fn=fail_token,
+    )
+
+    assert context["api_status"] == "failed"
+    assert any("SGIS API 갱신 실패" in warning for warning in context["warnings"])
+
+
+def test_spatial_context_no_supported_rows_reports_failed() -> None:
+    context = build_spatial_context(
+        provinces={"서울"},
+        use_api_refresh=True,
+        consumer_key="key",
+        consumer_secret="secret",
+        api_url="https://sgisapi.mods.go.kr/OpenAPI3/startupbiz/sggtobcorpcount.json",
+        fetch_token_fn=lambda **_: "token",
+        fetch_rows_fn=lambda **_: [],
+    )
+
+    assert context["api_status"] == "failed"
+    assert "지원하는 통계 항목" in context["warnings"][0]
+
+
+def test_fetch_sgis_access_token_rejects_unapproved_host(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    called = False
+
+    def fake_get(*_: object, **__: object) -> object:
+        nonlocal called
+        called = True
+        raise AssertionError("httpx.get should not be called")
+
+    monkeypatch.setattr("src.public_data.spatial.connector.httpx.get", fake_get)
+
+    with pytest.raises(ValueError, match="host"):
+        fetch_sgis_access_token(
+            consumer_key="key",
+            consumer_secret="secret",
+            token_url="https://example.com/OpenAPI3/auth/authentication.json",
+        )
+
+    assert called is False
+
+
+def test_fetch_sgis_spatial_rows_uses_cache(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[dict[str, str]] = []
+
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict:
+            return {"errCd": "0", "result": [{"corp_cnt": "12", "base_year": "2026"}]}
+
+    def fake_get(_url: str, *, params: dict[str, str], timeout: float) -> FakeResponse:
+        assert timeout == 10.0
+        calls.append(params)
+        return FakeResponse()
+
+    monkeypatch.setattr("src.public_data.spatial.connector.httpx.get", fake_get)
+    cache = PublicDataCache()
+
+    first = fetch_sgis_spatial_rows(
+        access_token="token",
+        api_url="https://sgisapi.mods.go.kr/OpenAPI3/startupbiz/sggtobcorpcount.json",
+        params={"adm_cd": "11"},
+        cache=cache,
+    )
+    second = fetch_sgis_spatial_rows(
+        access_token="token",
+        api_url="https://sgisapi.mods.go.kr/OpenAPI3/startupbiz/sggtobcorpcount.json",
+        params={"adm_cd": "11"},
+        cache=cache,
+    )
+
+    assert first == [{"corp_cnt": "12", "base_year": "2026"}]
+    assert second == first
+    assert len(calls) == 1
+    assert calls[0]["accessToken"] == "token"
+
+
+def test_commercial_context_missing_key_is_not_used() -> None:
+    context = build_commercial_context(
+        concept={"category": "패션 의류", "occasion": "오프라인 팝업 매장"},
+        provinces={"서울"},
+        use_api_refresh=True,
+        service_key="",
+        api_url="https://apis.data.go.kr/B553077/api/open/sdsc2/storeListInDong",
+    )
+
+    assert context["api_status"] == "not_used"
+    assert "serviceKey" in context["warnings"][0]
+
+
+def test_commercial_context_api_failure_falls_back() -> None:
+    def fail_rows(**_: object) -> list[dict]:
+        raise RuntimeError("boom")
+
+    context = build_commercial_context(
+        concept={"category": "패션 의류", "occasion": "오프라인 팝업 매장"},
+        provinces={"서울"},
+        use_api_refresh=True,
+        service_key="fake-service-key",
+        api_url="https://apis.data.go.kr/B553077/api/open/sdsc2/storeListInDong",
+        fetch_rows_fn=fail_rows,
+    )
+
+    assert context["api_status"] == "failed"
+    assert any("상가정보 API 갱신 실패" in warning for warning in context["warnings"])
+
+
+def test_commercial_context_without_industry_filter_is_not_used() -> None:
+    context = build_commercial_context(
+        concept={"category": "카페", "occasion": "오프라인 팝업 매장"},
+        provinces={"서울"},
+        use_api_refresh=True,
+        service_key="fake-service-key",
+        api_url="https://apis.data.go.kr/B553077/api/open/sdsc2/storeListInDong",
+    )
+
+    assert context["api_status"] == "not_used"
+    assert "업종 필터" in context["warnings"][0]
+
+
+def test_fetch_commercial_rows_rejects_unapproved_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    called = False
+
+    def fake_get(*_: object, **__: object) -> object:
+        nonlocal called
+        called = True
+        raise AssertionError("httpx.get should not be called")
+
+    monkeypatch.setattr("src.public_data.commercial.connector.httpx.get", fake_get)
+
+    with pytest.raises(ValueError, match="path"):
+        fetch_commercial_rows(
+            service_key="fake-service-key",
+            api_url="https://apis.data.go.kr/not-sbdc/mock",
+        )
+
+    assert called is False
+
+
+def test_commercial_context_success_strips_raw_store_fields() -> None:
+    rows = [
+        {
+            "ctprvnNm": "서울특별시",
+            "indsLclsNm": "소매",
+            "indsMclsNm": "의복",
+            "indsSclsNm": "여성의류",
+            "bizesNm": "원천상호",
+            "rdnmAdr": "원천주소",
+            "stdrYm": "202604",
+        }
+    ]
+    context = build_commercial_context(
+        concept={"category": "패션 의류", "occasion": "오프라인 팝업 매장"},
+        provinces={"서울"},
+        use_api_refresh=True,
+        service_key="fake-service-key",
+        api_url="https://apis.data.go.kr/B553077/api/open/sdsc2/storeListInDong",
+        fetch_rows_fn=lambda **_: rows,
+    )
+
+    assert context["api_status"] == "success"
+    dumped = str(context["metric_rows"])
+    assert "원천상호" not in dumped
+    assert "원천주소" not in dumped
+    assert "상가정보 관련 업종 수" in dumped
+
+
+def test_weather_context_missing_key_reports_missing_api_key() -> None:
+    context = build_weather_context(
+        concept={"category": "겨울 아우터", "season": "F/W"},
+        nx=60,
+        ny=127,
+        use_api_refresh=True,
+        auth_key="",
+        api_url="https://apihub.kma.go.kr/api/typ02/openApi/VilageFcstInfoService_2.0/getVilageFcst",
+    )
+
+    assert context["api_status"] == "missing_api_key"
+
+
+def test_weather_context_without_coordinates_is_not_used() -> None:
+    context = build_weather_context(
+        concept={"category": "겨울 아우터", "season": "F/W"},
+        nx=None,
+        ny=127,
+        use_api_refresh=True,
+        auth_key="fake-auth-key",
+        api_url="https://apihub.kma.go.kr/api/typ02/openApi/VilageFcstInfoService_2.0/getVilageFcst",
+    )
+
+    assert context["api_status"] == "not_used"
+    assert "격자 좌표" in context["warnings"][0]
+
+
+def test_weather_context_api_failure_falls_back() -> None:
+    def fail_rows(**_: object) -> list[dict]:
+        raise RuntimeError("boom")
+
+    context = build_weather_context(
+        concept={"category": "겨울 아우터", "season": "F/W"},
+        nx=60,
+        ny=127,
+        use_api_refresh=True,
+        auth_key="fake-auth-key",
+        api_url="https://apihub.kma.go.kr/api/typ02/openApi/VilageFcstInfoService_2.0/getVilageFcst",
+        fetch_rows_fn=fail_rows,
+    )
+
+    assert context["api_status"] == "failed"
+    assert any("기상청 API 갱신 실패" in warning for warning in context["warnings"])
+
+
+def test_weather_context_unsupported_category_is_not_used() -> None:
+    context = build_weather_context(
+        concept={"category": "기본 티셔츠", "season": "올시즌"},
+        nx=60,
+        ny=127,
+        use_api_refresh=True,
+        auth_key="fake-auth-key",
+        api_url="https://apihub.kma.go.kr/api/typ02/openApi/VilageFcstInfoService_2.0/getVilageFcst",
+    )
+
+    assert context["api_status"] == "not_used"
+    assert "날씨 민감" in context["warnings"][0]
+
+
+def test_fetch_weather_rows_rejects_unapproved_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    called = False
+
+    def fake_get(*_: object, **__: object) -> object:
+        nonlocal called
+        called = True
+        raise AssertionError("httpx.get should not be called")
+
+    monkeypatch.setattr("src.public_data.weather.connector.httpx.get", fake_get)
+
+    with pytest.raises(ValueError, match="path"):
+        fetch_weather_rows(
+            auth_key="fake-auth-key",
+            api_url="https://apihub.kma.go.kr/not-weather",
+            nx=60,
+            ny=127,
+        )
+
+    assert called is False
+
+
+def test_weather_context_success_parses_supported_categories() -> None:
+    rows = [
+        {"category": "TMP", "fcstValue": "21", "fcstDate": "20260519", "fcstTime": "1200"},
+        {"category": "POP", "fcstValue": "30", "fcstDate": "20260519", "fcstTime": "1200"},
+        {"category": "UNKNOWN", "fcstValue": "x"},
+    ]
+    context = build_weather_context(
+        concept={"category": "겨울 아우터", "season": "F/W"},
+        nx=60,
+        ny=127,
+        use_api_refresh=True,
+        auth_key="fake-auth-key",
+        api_url="https://apihub.kma.go.kr/api/typ02/openApi/VilageFcstInfoService_2.0/getVilageFcst",
+        fetch_rows_fn=lambda **_: rows,
+    )
+
+    assert context["api_status"] == "success"
+    assert context["metric_rows"][0]["label"] == "KMA 기온"
+    assert context["metric_rows"][0]["unit"] == "celsius"
+    assert context["metric_rows"][1]["unit"] == "percent"

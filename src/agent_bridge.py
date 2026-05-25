@@ -473,16 +473,16 @@ def _coerce_evaluation_payload(value: Any, depth: int = 0) -> dict[str, Any] | N
 def _iter_result_documents(results_path: Path) -> Iterable[Any]:
     paths: list[Path]
     if results_path.is_dir():
-        paths = sorted(
-            path
-            for path in results_path.rglob("*")
-            if path.is_file() and path.suffix.lower() in {".json", ".jsonl", ".txt"}
-        )
+        paths = sorted(path for path in results_path.rglob("*") if path.is_file())
     else:
         paths = [results_path]
 
     for path in paths:
-        text = path.read_text(encoding="utf-8")
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            yield None
+            continue
         documents = _json_documents_from_text(text)
         if not documents:
             yield None

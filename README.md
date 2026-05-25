@@ -49,6 +49,20 @@ tags:
 
 실제 구매 행동, 매출, 시장 점유율을 예측하는 서비스가 아닙니다. 설문, 인터뷰, 판매 데이터 분석 전에 가설을 좁히는 보조 도구입니다.
 
+## 현재 버전: v0.8.0
+
+v0.8.0은 v0.7.1의 MOIS 주민등록 인구 참고값 위에 지역·상권·날씨 맥락과 이미지 설명 보조 경계를 추가한 버전입니다. 공공 통계는 맥락 설명과 리포트 참고값으로만 쓰며, 페르소나 점수·샘플 가중치·매출·수요·구매율 예측에는 쓰지 않습니다.
+
+| 영역 | 업데이트 | 동작 방식 |
+|:---|:---|:---|
+| KOSIS/KOSTAT | 의류·신발 지출, 소득, 자산 참고값 유지 | API URL과 key가 있으면 갱신을 시도하고, 실패하면 스냅샷을 사용 |
+| MOIS/data.go.kr | 주민등록 인구 참고값 추가 | 선택한 연령·성별·지역 조건 주변의 집계 인구 맥락을 리포트/CSV에 표시 |
+| SGIS | 공간 통계 참고 섹션 추가 | 지역 입력과 SGIS key/endpoint가 있을 때만 선택적으로 표시 |
+| SBDC 상가정보 | 오프라인 상권 참고 섹션 추가 | 지역과 오프라인 판매 맥락이 있을 때만 data.go.kr 상가정보를 참고 |
+| KMA APIHub | 날씨/시즌 참고 섹션 추가 | 날씨 민감 상품이고 KMA authKey, endpoint, 격자 좌표가 있을 때만 표시 |
+| 이미지 설명 보조 | 기본 OFF 토글 추가 | 이미지 1장으로 제품 설명 초안을 만들 수 있지만, 원본 이미지는 저장하지 않고 페르소나 평가 루프에도 보내지 않음 |
+| 안전 경계 | raw image context 차단 | 평가 payload에 이미지 바이트/base64/raw vision 응답이 들어가면 코드 레벨에서 거부 |
+
 ## Nemotron-Personas-Korea 소개
 
 ![Nemotron-Personas-Korea 생성 구조](docs/assets/nemotron-personas-korea.png)
@@ -64,9 +78,9 @@ Nemotron-Personas-Korea는 NVIDIA가 2026년 4월 공개한 CC BY 4.0 한국어 
 | 입력 | 카테고리, 가격, 핏, 소재, 컬러, 시즌, 착용 상황, 스타일 톤, 타깃 가설, 제품 설명 |
 | 패널 | NVIDIA Nemotron-Personas-Korea 기반 합성 페르소나 |
 | 필터 | 연령, 성별, 지역, 직업, seed, 샘플 수 |
-| 출력 | 반응 분포, 관심도, 주요 이유, 주요 우려, 가격 부담, 대표 카드, Markdown/CSV |
+| 출력 | 반응 분포, 관심도, 주요 이유, 주요 우려, 가격 부담, 공식 통계 참고값, 대표 카드, Markdown/CSV |
 | 기본 프리셋 | FAST 50명, BALANCE 100명, HIGH 300명, MAX 1000명 |
-| Advanced | 샘플 수 직접 입력 가능 |
+| Advanced | 샘플 수 직접 입력, 선택 통계 API 갱신, 이미지 기반 설명 초안 보조 |
 
 ![main screen](docs/assets/kfashionpersona-screenshot-01.webp)
 
@@ -355,15 +369,15 @@ Nemotron-Personas-Korea는 NVIDIA가 2026년 4월 공개한 CC BY 4.0 한국어 
 ---
 
 본 도구는 합성 페르소나와 LLM 기반의 사전 가설 분석 도구입니다.
+합성 페르소나 기반 사전 리스크 점검으로만 사용해야 합니다.
 실제 소비자 조사, 실제 판매 성과 판단, 법률 자문, 최종 사업 판단을 대체하지 않습니다.
-모델 성능에 따라 한국어 품질, JSON 안정성, 분석 깊이가 달라질 수 있습니다.
 Persona dataset: NVIDIA Nemotron-Personas-Korea, CC BY 4.0.
 Dataset URL: https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea
 CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
-This beta uses the creator's personal paid Gemini 3.1 Flash-Lite API; API charges are billed to the creator. Google documentation states paid API requests and responses are not used to improve products. Do not include personal, sensitive, or trade-secret information.
 k-fashion-persona.
 Public statistics context uses KOSIS/KOSTAT household clothing-footwear spending, income, and asset statistics; it does not infer individual income or assets.
 MOIS resident-registration population context is aggregate public statistics; it does not infer individual demand.
+SGIS, SBDC commercial-area, and KMA weather contexts are optional public statistics references; they do not adjust persona scores.
 Built with Codex and Claude Code.
 Contact: woooya129 [at] gmail [dot] com
 ```
@@ -374,6 +388,8 @@ Contact: woooya129 [at] gmail [dot] com
 - Streamlit API 모드는 사용자가 선택한 provider API 서버로 프롬프트를 전송합니다.
 - Agent Pack 모드는 프롬프트 파일을 내보내고, 사용자의 Codex 또는 Claude Code CLI가 평가합니다.
 - API key는 앱이 저장하지 않습니다. 화면 입력값은 현재 Streamlit 세션에서만 사용합니다.
+- KOSIS/MOIS/SGIS/SBDC/KMA API 갱신은 선택 기능입니다. key나 endpoint가 없거나 호출이 실패해도 기본 분석과 리포트 생성은 계속됩니다.
+- 이미지 설명 보조는 기본 OFF입니다. 켜더라도 이미지는 설명 초안 생성에만 쓰고, 평가 루프에는 사용자가 확인한 텍스트만 전달합니다.
 - LLM API endpoint는 `config/pricing_config.yaml`의 `api_base_url` host만 허용합니다. 설정을 바꾸면 허용 host set도 바뀌므로 공유 배포에서는 코드 리뷰 대상으로 봐야 합니다.
 - 공개 HF Space는 `KFPS_REQUIRE_USER_PROVIDER_KEY=1`로 배포됩니다. 운영자 공용 LLM provider API key를 사용하지 않으며, 사용자가 본인 key를 입력해야 실행됩니다.
 
@@ -429,13 +445,23 @@ GROQ_API_KEY=
 DEEPSEEK_API_KEY=
 QWEN_API_KEY=
 HF_TOKEN=
+
 KOSIS_API_KEY=
 DATAGOKR_SERVICE_KEY=
 SGIS_CONSUMER_KEY=
 SGIS_CONSUMER_SECRET=
 KMA_APIHUB_AUTH_KEY=
+
 KOSIS_STATISTICS_DATA_URL=
 MOIS_POPULATION_API_URL=
+SGIS_SPATIAL_API_URL=
+SBDC_COMMERCIAL_API_URL=
+KMA_WEATHER_API_URL=
+KMA_FORECAST_NX=
+KMA_FORECAST_NY=
+
+KFPS_IMAGE_ASSIST_PROVIDER=openai
+KFPS_IMAGE_ASSIST_MODEL=
 ```
 
 ## 구독형 Codex / Claude Code
@@ -493,7 +519,15 @@ uv run python -m src.agent_bridge import --pack outputs\agent-pack-demo --result
 - 기본 로딩: Hugging Face `datasets` streaming
 - 기본 scan: 실행마다 최대 3000행까지 순차 scan해서 조건에 맞는 패널을 채움
 
-소득, 자산, 의류·신발 지출은 개별 페르소나에서 추정하지 않습니다. 리포트의 가격 부담 참고값은 KOSTAT/KOSIS 공개 통계 스냅샷 `data/public/kosis_household_context.csv`를 사용합니다. KOSIS API key와 `statisticsData` URL을 입력하면 실행 시 해당 응답을 먼저 참고하고, 실패하면 스냅샷으로 fallback합니다. 주민등록 인구 참고값은 MOIS 스냅샷 `data/public/mois_population_context.csv`를 사용하며, `DATAGOKR_SERVICE_KEY`와 `MOIS_POPULATION_API_URL`이 있으면 data.go.kr 응답을 먼저 시도합니다. v0.8.0의 SGIS 공간 통계, 소상공인 상가(상권)정보, 기상청 날씨 맥락은 선택 참고 섹션으로만 표시되며 `SGIS_SPATIAL_API_URL`, `SBDC_COMMERCIAL_API_URL`, `KMA_WEATHER_API_URL`, `KMA_FORECAST_NX`, `KMA_FORECAST_NY`를 설정한 경우에만 API 갱신을 시도합니다.
+통계 컨텍스트는 가격·지역·상권·날씨 맥락 설명과 리포트/CSV 참고값입니다. 개별 페르소나의 소득·자산·구매력·수요를 추정하지 않고, 평가 점수나 샘플을 보정하지 않습니다.
+
+| 소스 | 사용 위치 | 대체/조건 |
+|:---|:---|:---|
+| KOSIS/KOSTAT | 가격 부담, 가구 소득·자산, 의류·신발 지출 참고 | `KOSIS_API_KEY`와 `KOSIS_STATISTICS_DATA_URL`이 있으면 API 응답을 먼저 시도하고 실패하면 `data/public/kosis_household_context.csv` 사용 |
+| MOIS/data.go.kr | 선택한 연령·성별·지역 주변 인구 참고 | `DATAGOKR_SERVICE_KEY`와 `MOIS_POPULATION_API_URL`이 있으면 API 응답을 먼저 시도하고 실패하면 `data/public/mois_population_context.csv` 사용 |
+| SGIS S-Open API | 지역 기반 공간 통계 참고 | `SGIS_CONSUMER_KEY`, `SGIS_CONSUMER_SECRET`, `SGIS_SPATIAL_API_URL`이 있고 지역 입력이 있을 때만 표시 |
+| 소상공인시장진흥공단 상가정보 | 오프라인 상권·업종 참고 | `DATAGOKR_SERVICE_KEY`, `SBDC_COMMERCIAL_API_URL`, 지역 입력, 오프라인 판매 맥락이 있을 때만 표시 |
+| 기상청 APIHub | 날씨·시즌 민감 상품 참고 | `KMA_APIHUB_AUTH_KEY`, `KMA_WEATHER_API_URL`, `KMA_FORECAST_NX`, `KMA_FORECAST_NY`가 있고 상품 설명이 날씨/시즌에 민감할 때만 표시 |
 
 ## 권장 사양
 
@@ -528,8 +562,9 @@ uv run python -m src.agent_bridge import --pack outputs\agent-pack-demo --result
 
 - 합성 페르소나 반응은 실제 소비자 행동과 다를 수 있습니다.
 - 데이터셋은 패션 구매 전용 데이터가 아닙니다.
-- 이미지, 룩북, 착용 사진, 체형 정보는 기본 평가에 포함되지 않습니다.
-- KOSIS/KOSTAT 값은 가구 단위 집계 통계이며, MOIS 값은 주민등록 기준 집계 통계입니다. 개별 페르소나의 실제 경제 상태나 구매력을 뜻하지 않습니다.
+- 이미지, 룩북, 착용 사진, 체형 정보는 기본 평가에 포함되지 않습니다. v0.8.0 이미지 보조는 설명 초안 생성용이며 기본 OFF입니다.
+- KOSIS/KOSTAT 값은 가구 단위 집계 통계이며, MOIS 값은 주민등록 기준 집계 통계입니다. SGIS, SBDC, KMA 값도 집계·시점성 참고값입니다.
+- 공공 통계는 개별 페르소나의 실제 경제 상태, 구매력, 수요, 매출 가능성을 뜻하지 않습니다.
 - 최종 판단은 실제 조사, 판매 데이터, 전문가 검토와 함께 해야 합니다.
 
 ## 라이선스와 출처
@@ -537,7 +572,7 @@ uv run python -m src.agent_bridge import --pack outputs\agent-pack-demo --result
 - 코드 라이선스: GNU AGPL-3.0-only
 - 기본 페르소나 데이터셋: NVIDIA Nemotron-Personas-Korea
 - 데이터셋 라이선스: CC BY 4.0 attribution
-- 통계 컨텍스트: KOSIS/KOSTAT 공개 통계, MOIS 주민등록 인구 통계
+- 통계 컨텍스트: KOSIS/KOSTAT 공개 통계, MOIS 주민등록 인구 통계, SGIS S-Open API, 소상공인시장진흥공단 상가정보, 기상청 APIHub
 - 전체 고지: [LICENSE](LICENSE), [NOTICE](docs/legal/NOTICE.md), [THIRD_PARTY_NOTICES](docs/legal/THIRD_PARTY_NOTICES.md)
 - 인용 형식: [CITATION.cff](CITATION.cff)
 - 방법론: [docs/legal/METHODOLOGY_AND_RIGHTS.md](docs/legal/METHODOLOGY_AND_RIGHTS.md)

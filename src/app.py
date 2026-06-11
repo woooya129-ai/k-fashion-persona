@@ -152,6 +152,7 @@ from src.ui.rendering import (
     render_persona_results_anchor,
     render_price_context,
     render_quick_guide,
+    render_readiness_chips,
     render_report_placeholder,
     render_run_panel,
     render_sample_inputs,
@@ -784,6 +785,19 @@ def main() -> None:
     if not model:
         return
 
+    local_ready = dataset["source"] == "huggingface" or bool(dataset.get("local_path"))
+    sidebar_api_key = _safe_provider_key(
+        model["provider"],
+        model["api_key"],
+        getattr(model.get("pricing"), "api_key_env", None),
+    )
+    render_readiness_chips(
+        lang,
+        api_key_ok=bool(sidebar_api_key),
+        model_ok=bool(model.get("model_alias")),
+        dataset_ok=local_ready,
+    )
+
     render_section_band(
         ui_text(lang, "section_project"),
         ui_text(lang, "section_project_caption"),
@@ -801,11 +815,7 @@ def main() -> None:
         st.warning(ui_text(lang, "injection_warning"))
 
     render_run_panel(lang)
-    api_key = _safe_provider_key(
-        model["provider"],
-        model["api_key"],
-        getattr(model.get("pricing"), "api_key_env", None),
-    )
+    api_key = sidebar_api_key
     confirmed = st.checkbox(
         ui_text(lang, "cost_confirm"),
         value=False,
@@ -821,21 +831,31 @@ def main() -> None:
             key="kfps_injection_confirm",
         )
 
-    local_ready = dataset["source"] == "huggingface" or bool(dataset.get("local_path"))
     has_user_concept_input = bool(concept.get("description"))
     active_job_in_progress = _has_active_job_in_progress()
-    run_button_disabled = (
-        not (
-            cost_state.get("ready")
-            and confirmed
-            and injection_confirmed
-            and has_user_concept_input
-            and concept["category"]
-            and api_key
-            and local_ready
-        )
-        or active_job_in_progress
-    )
+
+    gate_checks = [
+        (ui_text(lang, "gate_api_key"), bool(api_key)),
+        (ui_text(lang, "gate_category"), bool(concept["category"])),
+        (ui_text(lang, "gate_description"), has_user_concept_input),
+        (ui_text(lang, "gate_dataset"), local_ready),
+        (ui_text(lang, "gate_cost_confirm"), bool(cost_state.get("ready")) and confirmed),
+    ]
+    if injection_hits:
+        gate_checks.append((ui_text(lang, "gate_injection_confirm"), injection_confirmed))
+
+    all_checks_ok = all(ok for _, ok in gate_checks)
+    run_button_disabled = (not all_checks_ok) or active_job_in_progress
+
+    unmet_checks = [label for label, ok in gate_checks if not ok]
+    if unmet_checks:
+        st.caption(f"**{ui_text(lang, 'gate_checklist_header')}**")
+        st.caption(ui_text(lang, "gate_checklist_blocked"))
+        for label in unmet_checks:
+            st.caption(f"{ui_text(lang, 'gate_check_missing')} {label}")
+    elif not active_job_in_progress:
+        st.caption(f"{ui_text(lang, 'gate_check_ok')} {ui_text(lang, 'gate_checklist_ready')}")
+
     if not api_key:
         render_inline_note(ui_text(lang, "need_api_key"))
     if active_job_in_progress:

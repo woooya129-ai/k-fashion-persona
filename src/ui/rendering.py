@@ -1057,6 +1057,57 @@ def render_secrets_status(lang: str) -> None:
         st.html(f'<div class="kfps-secret-status-grid">{"".join(cards)}</div>')
 
 
+def render_readiness_chips(
+    lang: str,
+    *,
+    api_key_ok: bool,
+    model_ok: bool,
+    dataset_ok: bool,
+) -> None:
+
+    items = (
+        (ui_text(lang, "setup_readiness_model"), model_ok),
+        (ui_text(lang, "setup_readiness_api_key"), api_key_ok),
+        (ui_text(lang, "setup_readiness_dataset"), dataset_ok),
+    )
+
+    cards = []
+
+    for label, ok in items:
+        state_class = "ok" if ok else "missing"
+
+        mark = ui_text(lang, "secret_present") if ok else ui_text(lang, "secret_missing")
+
+        hint = "" if ok else ui_text(lang, "setup_readiness_hint")
+
+        hint_html = (
+            f'<span class="kfps-help-dot" data-tooltip="{html.escape(hint, quote=True)}" '
+            f'aria-label="{html.escape(hint, quote=True)}" tabindex="0">?</span>'
+            if hint
+            else ""
+        )
+
+        cards.append(
+            f"""
+
+            <div class="kfps-secret-status-card kfps-readiness-card">
+
+              <span class="kfps-secret-provider">{html.escape(label)}</span>
+
+              <span class="kfps-secret-state {state_class}">{html.escape(mark)}</span>
+
+              {hint_html}
+
+            </div>
+
+            """
+        )
+
+    st.html(
+        f'<div class="kfps-secret-status-grid kfps-readiness-grid">{"".join(cards)}</div>'
+    )
+
+
 def _render_image_concept_assist(lang: str) -> None:
     enabled = st.toggle(
         ui_text(lang, "image_assist_toggle"),
@@ -1537,6 +1588,7 @@ def render_simple_setup(pricing_config: dict[str, ModelPricing], lang: str) -> d
     st.caption(ui_text(lang, "quick_setup_caption"))
 
     mode_labels = {
+        _run_mode_label(lang, "preview"): "preview",
         _run_mode_label(lang, "quick"): "quick",
         _run_mode_label(lang, "balanced"): "balanced",
         _run_mode_label(lang, "deep"): "deep",
@@ -1596,6 +1648,35 @@ def render_simple_setup(pricing_config: dict[str, ModelPricing], lang: str) -> d
         "filter": PersonaFilter(sex=audience_sex_filter),
     }
 
+    st.markdown(f"**{ui_text(lang, 'model_header')}**")
+
+    model_alias = st.selectbox(
+        ui_text(lang, "model"),
+        model_options,
+        index=model_options.index(model_alias),
+        key="kfps_model_alias",
+        format_func=lambda alias: _model_option_label(alias, pricing_config),
+    )
+
+    pricing = get_model_pricing(pricing_config, model_alias)
+
+    model_name = pricing.provider_model_id or model_alias
+
+    render_model_metadata(pricing, model_name, sample_size=int(sample["sample_size"]), lang=lang)
+
+    api_override = str(st.session_state.get("kfps_api_key", ""))
+
+    secrets_status = secrets_loader.load_secrets_from_env_path()
+    api_label = ui_text(lang, "api_key").format(provider=pricing.provider)
+
+    api_key = render_secret_password_input(
+        api_label,
+        placeholder=ui_text(lang, "api_key_placeholder"),
+        key="kfps_api_key",
+        present=bool(_safe_provider_key(pricing.provider, api_override, pricing.api_key_env)),
+        help_text=ui_text(lang, "api_key_help"),
+    )
+
     with st.expander(
         ui_text(lang, "advanced_header"),
         expanded=False,
@@ -1652,6 +1733,18 @@ def render_simple_setup(pricing_config: dict[str, ModelPricing], lang: str) -> d
 
         temperature = st.slider("temperature", 0.0, 1.0, temperature, 0.1)
 
+        hf_override = str(st.session_state.get("kfps_hf_token", ""))
+
+        hf_token = render_secret_password_input(
+            ui_text(lang, "hf_token"),
+            placeholder=ui_text(lang, "hf_token_placeholder"),
+            key="kfps_hf_token",
+            present=bool(hf_override.strip()) or secrets_status.hf_token_present,
+            help_text=ui_text(lang, "hf_token_help"),
+        )
+
+        kosis = render_kosis_inputs(lang)
+
     st.caption(
         f"{_product_audience_label(lang, product_audience)} · "
         + ui_text(lang, "simple_summary").format(
@@ -1660,47 +1753,6 @@ def render_simple_setup(pricing_config: dict[str, ModelPricing], lang: str) -> d
             temperature=temperature,
         )
     )
-
-    st.markdown(f"**{ui_text(lang, 'model_header')}**")
-
-    model_alias = st.selectbox(
-        ui_text(lang, "model"),
-        model_options,
-        index=model_options.index(model_alias),
-        key="kfps_model_alias",
-        format_func=lambda alias: _model_option_label(alias, pricing_config),
-    )
-
-    pricing = get_model_pricing(pricing_config, model_alias)
-
-    model_name = pricing.provider_model_id or model_alias
-
-    render_model_metadata(pricing, model_name, sample_size=int(sample["sample_size"]), lang=lang)
-
-    api_override = str(st.session_state.get("kfps_api_key", ""))
-
-    hf_override = str(st.session_state.get("kfps_hf_token", ""))
-
-    secrets_status = secrets_loader.load_secrets_from_env_path()
-    api_label = ui_text(lang, "api_key").format(provider=pricing.provider)
-
-    api_key = render_secret_password_input(
-        api_label,
-        placeholder=ui_text(lang, "api_key_placeholder"),
-        key="kfps_api_key",
-        present=bool(_safe_provider_key(pricing.provider, api_override, pricing.api_key_env)),
-        help_text=ui_text(lang, "api_key_help"),
-    )
-
-    hf_token = render_secret_password_input(
-        ui_text(lang, "hf_token"),
-        placeholder=ui_text(lang, "hf_token_placeholder"),
-        key="kfps_hf_token",
-        present=bool(hf_override.strip()) or secrets_status.hf_token_present,
-        help_text=ui_text(lang, "hf_token_help"),
-    )
-
-    kosis = render_kosis_inputs(lang)
 
     return {
         "dataset": dataset,

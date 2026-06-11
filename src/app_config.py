@@ -74,6 +74,7 @@ ESTIMATE_SCHEMA_INSTRUCTION_TOKENS = 120
 ESTIMATE_OUTPUT_TOKENS_PER_PERSONA = 325
 MAX_OUTPUT_TOKENS_PER_PERSONA = 1200
 RUN_MODE_PRESETS: dict[str, dict[str, Any]] = {
+    "preview": {"sample_size": 5, "temperature": 0.2},
     "quick": {"sample_size": 50, "temperature": 0.2},
     "balanced": {"sample_size": 100, "temperature": 0.3},
     "deep": {"sample_size": 300, "temperature": 0.3},

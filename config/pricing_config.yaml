@@ -20,6 +20,7 @@ models:
     supports_json_object: true
     supports_json_schema: true
     supports_tool_use: true
+    supports_vision: true
     input_per_million_usd: 5.00
     output_per_million_usd: 30.00
     source_url: "https://developers.openai.com/api/docs/pricing"
@@ -33,6 +34,7 @@ models:
     supports_json_object: true
     supports_json_schema: true
     supports_tool_use: true
+    supports_vision: true
     input_per_million_usd: 30.00
     output_per_million_usd: 180.00
     source_url: "https://developers.openai.com/api/docs/pricing"
@@ -46,6 +48,7 @@ models:
     supports_json_object: true
     supports_json_schema: true
     supports_tool_use: true
+    supports_vision: true
     input_per_million_usd: 1.75
     output_per_million_usd: 14.00
     source_url: "https://platform.openai.com/docs/pricing/"
@@ -59,6 +62,7 @@ models:
     supports_json_object: true
     supports_json_schema: true
     supports_tool_use: true
+    supports_vision: true
     input_per_million_usd: 1.75
     output_per_million_usd: 14.00
     source_url: "https://platform.openai.com/docs/pricing/"
@@ -72,6 +76,7 @@ models:
     supports_json_object: true
     supports_json_schema: true
     supports_tool_use: true
+    supports_vision: true
     input_per_million_usd: 1.75
     output_per_million_usd: 14.00
     source_url: "https://platform.openai.com/docs/pricing/"
@@ -85,6 +90,7 @@ models:
     supports_json_object: true
     supports_json_schema: true
     supports_tool_use: true
+    supports_vision: true
     input_per_million_usd: 21.00
     output_per_million_usd: 168.00
     source_url: "https://platform.openai.com/docs/pricing/"
@@ -98,6 +104,7 @@ models:
     supports_json_object: true
     supports_json_schema: true
     supports_tool_use: true
+    supports_vision: true
     input_per_million_usd: 1.25
     output_per_million_usd: 10.00
     source_url: "https://platform.openai.com/docs/pricing/"
@@ -111,6 +118,7 @@ models:
     supports_json_object: true
     supports_json_schema: true
     supports_tool_use: true
+    supports_vision: true
     input_per_million_usd: 0.25
     output_per_million_usd: 2.00
     source_url: "https://platform.openai.com/docs/pricing/"
@@ -124,6 +132,7 @@ models:
     supports_json_object: true
     supports_json_schema: true
     supports_tool_use: true
+    supports_vision: true
     input_per_million_usd: 0.05
     output_per_million_usd: 0.40
     source_url: "https://platform.openai.com/docs/pricing/"
@@ -137,6 +146,7 @@ models:
     supports_json_object: true
     supports_json_schema: true
     supports_tool_use: true
+    supports_vision: true
     input_per_million_usd: 2.00
     output_per_million_usd: 8.00
     source_url: "https://platform.openai.com/docs/pricing/"
@@ -150,6 +160,7 @@ models:
     supports_json_object: true
     supports_json_schema: true
     supports_tool_use: true
+    supports_vision: true
     input_per_million_usd: 0.40
     output_per_million_usd: 1.60
     source_url: "https://platform.openai.com/docs/pricing/"
@@ -163,6 +174,7 @@ models:
     supports_json_object: true
     supports_json_schema: true
     supports_tool_use: true
+    supports_vision: true
     input_per_million_usd: 0.10
     output_per_million_usd: 0.40
     source_url: "https://platform.openai.com/docs/pricing/"
@@ -176,6 +188,7 @@ models:
     supports_json_object: true
     supports_json_schema: true
     supports_tool_use: true
+    supports_vision: true
     input_per_million_usd: 0.15
     output_per_million_usd: 0.60
     source_url: "https://platform.openai.com/docs/pricing/"
@@ -189,6 +202,7 @@ models:
     supports_json_object: true
     supports_json_schema: true
     supports_tool_use: true
+    supports_vision: true
     input_per_million_usd: 2.50
     output_per_million_usd: 10.00
     source_url: "https://platform.openai.com/docs/pricing/"
@@ -203,6 +217,7 @@ models:
     supports_json_object: false
     supports_json_schema: false
     supports_tool_use: true
+    supports_vision: true
     input_per_million_usd: 5.00
     output_per_million_usd: 25.00
     source_url: "https://platform.claude.com/docs/en/about-claude/pricing"
@@ -216,6 +231,7 @@ models:
     supports_json_object: false
     supports_json_schema: false
     supports_tool_use: true
+    supports_vision: true
     input_per_million_usd: 5.00
     output_per_million_usd: 25.00
     source_url: "https://platform.claude.com/docs/en/about-claude/pricing"
@@ -229,6 +245,7 @@ models:
     supports_json_object: false
     supports_json_schema: false
     supports_tool_use: true
+    supports_vision: true
     input_per_million_usd: 5.00
     output_per_million_usd: 25.00
     source_url: "https://platform.claude.com/docs/en/about-claude/pricing"
@@ -242,6 +259,7 @@ models:
     supports_json_object: false
     supports_json_schema: false
     supports_tool_use: true
+    supports_vision: true
     input_per_million_usd: 3.00
     output_per_million_usd: 15.00
     source_url: "https://platform.claude.com/docs/en/about-claude/pricing"
@@ -255,6 +273,7 @@ models:
     supports_json_object: false
     supports_json_schema: false
     supports_tool_use: true
+    supports_vision: true
     input_per_million_usd: 3.00
     output_per_million_usd: 15.00
     source_url: "https://platform.claude.com/docs/en/about-claude/pricing"
@@ -268,6 +287,7 @@ models:
     supports_json_object: false
     supports_json_schema: false
     supports_tool_use: true
+    supports_vision: true
     input_per_million_usd: 1.00
     output_per_million_usd: 5.00
     source_url: "https://platform.claude.com/docs/en/about-claude/pricing"
@@ -282,6 +302,7 @@ models:
     supports_json_object: true
     supports_json_schema: true
     supports_tool_use: false
+    supports_vision: true
     input_per_million_usd: 0.25
     output_per_million_usd: 1.50
     source_url: "https://ai.google.dev/gemini-api/docs/pricing"
@@ -295,6 +316,7 @@ models:
     supports_json_object: true
     supports_json_schema: true
     supports_tool_use: false
+    supports_vision: true
     input_per_million_usd: 2.00
     output_per_million_usd: 12.00
     source_url: "https://ai.google.dev/gemini-api/docs/pricing"
@@ -308,6 +330,7 @@ models:
     supports_json_object: true
     supports_json_schema: true
     supports_tool_use: false
+    supports_vision: true
     input_per_million_usd: 0.50
     output_per_million_usd: 3.00
     source_url: "https://ai.google.dev/gemini-api/docs/pricing"
@@ -321,6 +344,7 @@ models:
     supports_json_object: true
     supports_json_schema: true
     supports_tool_use: false
+    supports_vision: true
     input_per_million_usd: 0.10
     output_per_million_usd: 0.40
     source_url: "https://ai.google.dev/gemini-api/docs/pricing"
@@ -334,6 +358,7 @@ models:
     supports_json_object: true
     supports_json_schema: true
     supports_tool_use: false
+    supports_vision: true
     input_per_million_usd: 0.30
     output_per_million_usd: 2.50
     source_url: "https://ai.google.dev/gemini-api/docs/pricing"
@@ -347,6 +372,7 @@ models:
     supports_json_object: true
     supports_json_schema: true
     supports_tool_use: false
+    supports_vision: true
     input_per_million_usd: 1.25
     output_per_million_usd: 10.00
     source_url: "https://ai.google.dev/gemini-api/docs/pricing"

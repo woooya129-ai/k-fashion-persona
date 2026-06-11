@@ -8,7 +8,9 @@
 
 ## 1. 지금 어디까지 됐나 (한눈에)
 
-- **브랜치**: `integration/fable5` (로컬 전용, **아직 push 안 함**). main 기준 머지 커밋 4개 + Phase 2 커밋 1개.
+- **브랜치**: `integration/fable5` — **origin에 push 완료**, 로컬이 `origin/integration/fable5` 추적 중. main 기준 머지 커밋 4개 + Phase 2 커밋 1개 + 문서 커밋.
+- **PR**: 아직 안 열림. 생성 링크 → `https://github.com/woooya129-ai/k-fashion-persona/pull/new/integration/fable5` (또는 `gh pr create`).
+- **GitHub 인증**: `gh` CLI(`~/.local/bin/gh`, v2.94.0)로 `woooya129-ai` 로그인 완료(device flow, 토큰 keyring 저장, `repo` 권한). `gh auth setup-git` 적용돼 이 머신에선 추가 push/PR이 프롬프트 없이 동작.
 - **테스트**: `787 passed, 1 failed`. 신규 +12건 전부 통과, **회귀 0건**.
   - 유일한 실패는 **기존부터 있던** `tests/test_docs_text.py::test_user_docs_and_default_prompt_avoid_forbidden_public_claim_phrases` — README의 "구매율 예측**에는 쓰지 않습니다**"(부정문)를 단순 부분 문자열로 걸러낸 오탐. 우리 작업과 무관(§5 참고).
 - **검증 명령**: `uv run pytest --tb=no -p no:cacheprovider -o addopts=""`
@@ -113,8 +115,10 @@ integration/fable5
   89a4674 Merge stream C (gate checklist + sidebar slim + chips + preview)
   ed6ab88 Merge stream D (summary card + 4-tab + guide collapse)
 ```
-- 작업용 worktree(kfp-a/b/c/d)는 머지 후 제거 완료. feature 브랜치(`feat/*`)는 남아 있음(필요시 `git branch -d`).
-- 시작 명령: `git checkout integration/fable5 && uv sync --all-extras --dev && uv run streamlit run src/app.py`
+- 작업용 worktree(kfp-a/b/c/d)는 머지 후 제거 완료. feature 브랜치(`feat/*`)는 로컬에 남아 있음(필요시 `git branch -d`). origin에는 `integration/fable5`만 올라감.
+- 이어받기(같은 머신): `git checkout integration/fable5 && git pull && uv sync --all-extras --dev && uv run streamlit run src/app.py`
+- 이어받기(다른 머신/새 클론): `git clone ... && git checkout integration/fable5` 후, push/PR 하려면 `gh auth login`(device flow) 1회 필요 — 현재 토큰은 이 머신 keyring에만 있음.
+- PR 생성 예시: `gh pr create --base main --head integration/fable5 --title "fable5: 입력 간소화 + UI 재구성" --body-file "fable 5-handoff.md"`
 
 ---
 

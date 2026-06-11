@@ -334,6 +334,20 @@ UI_COPY: dict[str, dict[str, str]] = {
             "모델별 성능에 따라 문장 품질과 JSON 안정성에 차이가 생길 수 있어요. "
             "실제 조사나 사업 판단을 대체하지 않아요."
         ),
+        "summary_card_title": "한눈에 보기",
+        "summary_positive_rate": "긍정률",
+        "summary_top_risk": "가장 큰 위험 신호",
+        "summary_top_suggestion": "1순위 수정 제안",
+        "summary_no_risk": "두드러진 위험 신호가 없어요.",
+        "summary_no_suggestion": "현재 제안할 수정 사항이 없어요.",
+        "summary_signals_suffix": "건",
+        "result_tab_summary": "요약",
+        "result_tab_full_report": "전체 리포트",
+        "result_tab_source": "원문(MD)",
+        "result_tab_download": "다운로드",
+        "status_running": "진행 중",
+        "status_inprogress_label": "{done} / {total} 완료",
+        "guide_reopen": "사용 방법 다시 보기",
     },
     "EN": {
         "nav_brand": "k-fashion-persona",
@@ -680,5 +694,19 @@ UI_COPY: dict[str, dict[str, str]] = {
             "Model behavior and JSON stability can vary by provider. "
             "It does not replace real research or business decisions."
         ),
+        "summary_card_title": "At a glance",
+        "summary_positive_rate": "Positive rate",
+        "summary_top_risk": "Biggest risk signal",
+        "summary_top_suggestion": "Top suggested fix",
+        "summary_no_risk": "No standout risk signal found.",
+        "summary_no_suggestion": "No suggested fix available yet.",
+        "summary_signals_suffix": " signals",
+        "result_tab_summary": "Summary",
+        "result_tab_full_report": "Full report",
+        "result_tab_source": "Markdown source",
+        "result_tab_download": "Download",
+        "status_running": "Running",
+        "status_inprogress_label": "{done} / {total} done",
+        "guide_reopen": "Show usage guide again",
     },
 }

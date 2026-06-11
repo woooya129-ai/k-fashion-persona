@@ -901,6 +901,16 @@ def render_header(lang: str) -> None:
 
 def render_quick_guide(lang: str) -> None:
 
+    if st.session_state.get("kfps_has_completed_run"):
+        with st.expander(ui_text(lang, "guide_reopen"), expanded=False):
+            _render_quick_guide_cards(lang)
+        return
+
+    _render_quick_guide_cards(lang)
+
+
+def _render_quick_guide_cards(lang: str) -> None:
+
     cards = [
         (
             "guide_1_title",

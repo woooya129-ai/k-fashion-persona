@@ -1321,9 +1321,23 @@ button[data-testid="stBaseButton-header"][kind="header"],
   background: var(--kfps-primary);
 }}
 
+.kfps-readiness-grid {{
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 6px;
+  margin-bottom: 10px;
+}}
+
+.kfps-readiness-card {{
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}}
+
 @media (max-width: 760px) {{
   .kfps-secret-status-grid {{
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }}
+
+  .kfps-readiness-grid {{
+    grid-template-columns: repeat(1, minmax(0, 1fr));
   }}
 }}
 

@@ -797,6 +797,14 @@ def main() -> None:
         model_ok=bool(model.get("model_alias")),
         dataset_ok=local_ready,
     )
+    # Expose the resolved model to the concept-input helpers (quick-input parser
+    # and image assist) without changing render_concept_inputs' signature.
+    st.session_state["kfps_active_model"] = {
+        "provider": str(model.get("provider", "")),
+        "model_name": str(model.get("model_name", "")),
+        "api_key": sidebar_api_key or "",
+        "supports_vision": bool(getattr(model.get("pricing"), "supports_vision", False)),
+    }
 
     render_section_band(
         ui_text(lang, "section_project"),

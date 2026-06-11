@@ -63,6 +63,7 @@ from src.economic_context import (
 )
 from src.image_assist import (
     configured_image_analyzer_from_env,
+    image_analyzer_for_session,
     image_assist_concept_update,
     make_image_concept_draft,
 )
@@ -1152,6 +1153,15 @@ def _render_image_concept_assist(lang: str) -> None:
 
     analyzer = st.session_state.get("kfps_image_assist_analyzer")
     if not callable(analyzer):
+        # Prefer the session-selected model/key (no env setup needed); fall back
+        # to an env-configured analyzer for headless/operator deployments.
+        active = st.session_state.get("kfps_active_model") or {}
+        analyzer = image_analyzer_for_session(
+            str(active.get("provider", "")),
+            str(active.get("api_key", "")),
+            str(active.get("model_name", "")),
+        )
+    if not callable(analyzer):
         analyzer = configured_image_analyzer_from_env()
     if not callable(analyzer):
         st.warning(ui_text(lang, "image_assist_unavailable"))
@@ -1187,17 +1197,49 @@ def _apply_concept_autofill(values: dict[str, Any]) -> None:
             st.session_state[key] = str(values[key])
 
 
+# concept_parser uses field names; the manual-tab widgets use kfps_* state keys.
+# design_details is intentionally omitted: it is driven by checkboxes, not a
+# single text field, so the parser never auto-toggles it.
+_PARSER_FIELD_TO_STATE_KEY: dict[str, str] = {
+    "category": "kfps_product_category",
+    "fit": "kfps_fit",
+    "material": "kfps_material",
+    "color": "kfps_color",
+    "season": "kfps_season",
+    "occasion": "kfps_occasion",
+    "style_tone": "kfps_style_tone",
+    "target_hypothesis": "kfps_target_hypothesis",
+    "description": "kfps_concept_description",
+}
+
+
 def _stub_concept_parser(raw_text: str) -> dict[str, Any]:
     """Fallback parser: drop the raw text straight into the description field."""
 
     return {"kfps_concept_description": raw_text.strip()}
 
 
-def _run_concept_parser(raw_text: str) -> tuple[dict[str, Any], bool]:
-    """Resolve a parser and return (whitelisted values, used_real_parser).
+def _fields_to_state_keys(fields: dict[str, Any]) -> dict[str, Any]:
+    """Map concept_parser field names onto the autofill state-key whitelist."""
 
-    Priority: an injected callable in session_state (tests / Stream A wiring),
-    then the real src.concept_parser if importable, else a local stub.
+    values: dict[str, Any] = {}
+    for field, state_key in _PARSER_FIELD_TO_STATE_KEY.items():
+        raw = fields.get(field)
+        if raw is None:
+            continue
+        text = " ".join(raw) if isinstance(raw, list) else str(raw)
+        if text.strip():
+            values[state_key] = text.strip()
+    return values
+
+
+def _run_concept_parser(raw_text: str) -> tuple[dict[str, Any], bool]:
+    """Resolve a parser and return (whitelisted state values, used_real_parser).
+
+    Priority: an injected callable in session_state (tests), then the real
+    src.concept_parser driven by the session's selected model, else a local
+    stub that just seeds the description. Any failure degrades to the stub so
+    the form never breaks.
     """
 
     injected = st.session_state.get("kfps_concept_parser")
@@ -1207,16 +1249,26 @@ def _run_concept_parser(raw_text: str) -> tuple[dict[str, Any], bool]:
         except Exception:  # noqa: BLE001 - never let a bad parser break the form
             return _stub_concept_parser(raw_text), False
 
-    try:
-        from src.concept_parser import parse_concept_text  # type: ignore
-    except Exception:  # noqa: BLE001 - Stream A may not have merged yet
+    active = st.session_state.get("kfps_active_model") or {}
+    provider = str(active.get("provider", "")).strip()
+    model_name = str(active.get("model_name", "")).strip()
+    api_key = str(active.get("api_key", "")).strip()
+    if not (provider and model_name and api_key):
+        # No usable model/key yet -> seed the description and let the user edit.
         return _stub_concept_parser(raw_text), False
 
     try:
-        parsed = parse_concept_text(raw_text, llm_call=None)
-        return dict(parsed or {}), True
-    except Exception:  # noqa: BLE001 - degrade gracefully to the stub
+        from src.concept_parser import build_concept_llm_call, parse_concept_text
+
+        llm_call = build_concept_llm_call(provider, model_name, api_key)
+        draft = parse_concept_text(raw_text, llm_call=llm_call)
+    except Exception:  # noqa: BLE001 - network/parse failure -> graceful stub
         return _stub_concept_parser(raw_text), False
+
+    values = _fields_to_state_keys(dict(draft.fields))
+    if not values:
+        return _stub_concept_parser(raw_text), False
+    return values, not draft.fallback_description_only
 
 
 def _render_quick_input_tab(lang: str) -> None:

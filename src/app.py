@@ -11,10 +11,12 @@ worker lifecycle, aggregation, and report rendering.
 from __future__ import annotations
 
 import html
+import json
 import logging
 import os
 import sys
 import uuid
+from collections import Counter
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, cast
@@ -25,7 +27,9 @@ if str(REPO_ROOT) not in sys.path:
 
 import httpx
 import streamlit as st
+from pydantic import ValidationError
 
+from src.aggregator import categorize_fashion_risks, generate_modification_suggestions
 from src.app_config import (
     DEFAULT_HF_MAX_SCAN_ROWS,
     DEFAULT_PRICE_CONTEXT_VERSION,
@@ -89,6 +93,7 @@ from src.public_data.weather import (
     build_weather_context,
 )
 from src.report_writer import required_footer_text
+from src.result_parser import EvaluationResult, validate_evaluation_payload
 from src.secrets_loader import (
     get_datagokr_service_key,
     get_kma_apihub_auth_key,
@@ -517,6 +522,49 @@ def start_screening(
     st.success(f"작업 시작: {job_id}")
 
 
+def _compute_results_summary(result_rows: list[dict[str, Any]], lang: str) -> dict[str, Any]:
+    """결과 행에서 요약 카드용 값(긍정률 / 최대 위험 신호 / 1순위 수정 제안)을 계산한다.
+
+    ``build_run_report`` 의 출력은 변경하지 않고, 동일한 success/cached 행만
+    재파싱해 가벼운 요약치를 별도로 산출한다 (PM v3 분류 규칙 재사용).
+    """
+    parsed: list[EvaluationResult] = []
+    for row in result_rows:
+        status = row.get("status")
+        response_json = row.get("response_json")
+        if status in {"success", "cached"} and response_json:
+            try:
+                parsed.append(validate_evaluation_payload(json.loads(response_json)))
+            except (json.JSONDecodeError, ValidationError, TypeError):
+                continue
+
+    n = len(parsed)
+    sentiment_counts: Counter = Counter(r.sentiment for r in parsed)
+    positive_pct = round(sentiment_counts.get("positive", 0) / n * 100, 1) if n else 0.0
+
+    breakdown = categorize_fashion_risks(parsed)
+    suggestions = generate_modification_suggestions(breakdown)
+
+    top_risk_label = ui_text(lang, "summary_no_risk")
+    top_risk_n = 0
+    if suggestions:
+        top_risk_label = suggestions[0].category_label
+        top_risk_n = suggestions[0].n_signals
+
+    top_suggestion = ui_text(lang, "summary_no_suggestion")
+    if suggestions:
+        top_suggestion = suggestions[0].suggestion
+
+    return {
+        "positive_pct": positive_pct,
+        "n": n,
+        "top_risk_label": top_risk_label,
+        "top_risk_n": top_risk_n,
+        "top_suggestion": top_suggestion,
+        "has_signal": bool(suggestions),
+    }
+
+
 def _render_job_panel_impl(lang: str) -> None:
     job_id = st.session_state.get("active_job_id")
     run_id = st.session_state.get("active_run_id")
@@ -546,15 +594,19 @@ def _render_job_panel_impl(lang: str) -> None:
 
     done = job.cached_count + job.success_count + job.failed_count
     progress = done / job.total_count if job.total_count else 0.0
-    st.progress(progress)
-    cols = st.columns(5)
-    cols[0].metric("status", job.status)
-    cols[1].metric("total", job.total_count)
-    cols[2].metric("cached", job.cached_count)
-    cols[3].metric("success", job.success_count)
-    cols[4].metric("failed", job.failed_count)
 
     if job.status not in TERMINAL_STATUSES:
+        st.progress(progress)
+        status_label = ui_text(lang, "status_inprogress_label").format(
+            done=done, total=job.total_count
+        )
+        with st.status(
+            f"{ui_text(lang, 'status_running')} ({job.status}) — "
+            f"{status_label} · cached={job.cached_count} success={job.success_count} "
+            f"failed={job.failed_count}",
+            expanded=False,
+        ):
+            st.caption(status_label)
         render_loading_panel(lang)
         render_report_placeholder(lang)
         c1, c2 = st.columns(2)
@@ -564,6 +616,10 @@ def _render_job_panel_impl(lang: str) -> None:
         if c2.button(ui_text(lang, "refresh")):
             st.rerun()
         return
+
+    st.session_state["kfps_has_completed_run"] = True
+    st.progress(progress)
+    st.metric("status", job.status)
 
     result_rows = load_result_rows(DB_PATH, run_id)
     if not result_rows:
@@ -588,25 +644,57 @@ def _render_job_panel_impl(lang: str) -> None:
 
     st.html('<span class="kfps-result-anchor" data-kfps-anchor="report-markdown"></span>')
 
-    rh1, rh2 = st.columns([4, 1])
-    with rh1:
-        st.subheader(ui_text(lang, "report_header"))
-    with rh2:
-        st.download_button(
-            ui_text(lang, "report_export_button"),
-            data=run_report.report_markdown,
-            file_name=f"{project_name}-{job_id}.md",
-            mime="text/markdown",
-            key=f"kfps_export_md_{job_id}",
-            type="primary",
-            use_container_width=True,
+    st.subheader(ui_text(lang, "report_header"))
+
+    summary = _compute_results_summary(result_rows, lang)
+    q = run_report.quality
+
+    tab_summary, tab_full, tab_source, tab_download = st.tabs(
+        [
+            ui_text(lang, "result_tab_summary"),
+            ui_text(lang, "result_tab_full_report"),
+            ui_text(lang, "result_tab_source"),
+            ui_text(lang, "result_tab_download"),
+        ]
+    )
+
+    with tab_summary:
+        st.markdown(f"#### {ui_text(lang, 'summary_card_title')}")
+        sc1, sc2 = st.columns(2)
+        sc1.metric(ui_text(lang, "summary_positive_rate"), f"{summary['positive_pct']}%")
+        if summary["has_signal"]:
+            sc2.metric(
+                ui_text(lang, "summary_top_risk"),
+                summary["top_risk_label"],
+                f"{summary['top_risk_n']}{ui_text(lang, 'summary_signals_suffix')}",
+            )
+        else:
+            sc2.metric(ui_text(lang, "summary_top_risk"), summary["top_risk_label"])
+
+        st.markdown(f"**{ui_text(lang, 'summary_top_suggestion')}**")
+        if summary["has_signal"]:
+            st.markdown(summary["top_suggestion"])
+        else:
+            st.caption(summary["top_suggestion"])
+
+        st.divider()
+        c1, c2, c3 = st.columns(3)
+        c1.metric(ui_text(lang, "included"), q.distribution_included)
+        c2.metric(ui_text(lang, "parse_failed"), q.parse_failed)
+        c3.metric(ui_text(lang, "api_failed"), q.api_failed)
+        st.caption(ui_text(lang, "report_footer_disclaimer"))
+
+        render_persona_opinion_preview(
+            result_rows,
+            persona_attributes,
+            project_name,
+            job_id,
+            lang,
         )
 
-    tab_rendered, tab_source = st.tabs(
-        [ui_text(lang, "report_tab_rendered"), ui_text(lang, "report_tab_source")]
-    )
-    with tab_rendered:
+    with tab_full:
         st.markdown(run_report.report_markdown)
+
     with tab_source:
         report_source_label = html.escape(
             ui_text(lang, "report_tab_source"),
@@ -622,31 +710,24 @@ def _render_job_panel_impl(lang: str) -> None:
             """
         )
 
-    q = run_report.quality
-    c1, c2, c3 = st.columns(3)
-    c1.metric(ui_text(lang, "included"), q.distribution_included)
-    c2.metric(ui_text(lang, "parse_failed"), q.parse_failed)
-    c3.metric(ui_text(lang, "api_failed"), q.api_failed)
-
-    st.caption(ui_text(lang, "report_footer_disclaimer"))
-
-    render_persona_opinion_preview(
-        result_rows,
-        persona_attributes,
-        project_name,
-        job_id,
-        lang,
-    )
-
-    st.markdown(f"#### {ui_text(lang, 'csv_download')}")
-    st.download_button(
-        ui_text(lang, "csv_download"),
-        data=run_report.report_csv,
-        file_name=f"{project_name}-{job_id}.csv",
-        mime="text/csv",
-        key=f"kfps_export_csv_{job_id}",
-        use_container_width=True,
-    )
+    with tab_download:
+        st.download_button(
+            ui_text(lang, "report_export_button"),
+            data=run_report.report_markdown,
+            file_name=f"{project_name}-{job_id}.md",
+            mime="text/markdown",
+            key=f"kfps_export_md_{job_id}",
+            type="primary",
+            use_container_width=True,
+        )
+        st.download_button(
+            ui_text(lang, "csv_download"),
+            data=run_report.report_csv,
+            file_name=f"{project_name}-{job_id}.csv",
+            mime="text/csv",
+            key=f"kfps_export_csv_{job_id}",
+            use_container_width=True,
+        )
 
     scroll_key = f"kfps_scrolled_report_{job_id}"
     if not st.session_state.get(scroll_key):

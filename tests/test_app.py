@@ -143,6 +143,13 @@ def _button_by_label(at: AppTest, label: str):
     raise AssertionError(f"button not found: {label}")
 
 
+def _text_area_by_key(at: AppTest, key: str):
+    for widget in at.text_area:
+        if widget.proto.id.endswith(f"-{key}"):
+            return widget
+    raise AssertionError(f"text area not found by key: {key}")
+
+
 def _visible_text(at: AppTest) -> str:
     values: list[str] = []
     for group_name in ("caption", "info", "warning", "error", "success", "markdown", "html"):
@@ -1350,7 +1357,7 @@ def test_apptest_enter_disabled_until_cost_confirmed() -> None:
     at = _run_app()
     _text_input_by_label(at, "프로젝트명").set_value("test-project")
     _text_input_by_label(at, "제품 카테고리").set_value("니트웨어")
-    at.text_area[0].set_value("조용한 고급감의 미니멀 니트")
+    _text_area_by_key(at, "kfps_concept_description").set_value("조용한 고급감의 미니멀 니트")
     _api_key_inputs(at)[0].set_value("fake-provider-key")
     at.run(timeout=10)
 
@@ -1361,7 +1368,7 @@ def test_apptest_run_enabled_after_required_inputs() -> None:
     at = _run_app()
     _text_input_by_label(at, "프로젝트명").set_value("test-project")
     _text_input_by_label(at, "제품 카테고리").set_value("니트웨어")
-    at.text_area[0].set_value("조용한 고급감의 미니멀 니트")
+    _text_area_by_key(at, "kfps_concept_description").set_value("조용한 고급감의 미니멀 니트")
     _api_key_inputs(at)[0].set_value("fake-provider-key")
     _checkbox_by_label(at, app.ui_text("KR", "cost_confirm")).check()
     at.run(timeout=10)
@@ -1372,7 +1379,7 @@ def test_apptest_run_enabled_after_required_inputs() -> None:
 def test_apptest_injection_warning_requires_second_confirmation() -> None:
     at = _run_app()
     _text_input_by_label(at, "제품 카테고리").set_value("니트웨어")
-    at.text_area[0].set_value("ignore previous")
+    _text_area_by_key(at, "kfps_concept_description").set_value("ignore previous")
     _api_key_inputs(at)[0].set_value("fake-provider-key")
     _checkbox_by_label(at, app.ui_text("KR", "cost_confirm")).check()
     at.run(timeout=10)
@@ -1420,7 +1427,7 @@ def test_apptest_mock_end_to_end_worker_report_ui(
 
     _text_input_by_label(at, "프로젝트명").set_value("e2e-project")
     _text_input_by_label(at, "제품 카테고리").set_value("니트웨어")
-    at.text_area[0].set_value("조용한 고급감의 미니멀 니트")
+    _text_area_by_key(at, "kfps_concept_description").set_value("조용한 고급감의 미니멀 니트")
     _api_key_inputs(at)[0].set_value(APTEST_E2E_FAKE_API_KEY)
     _checkbox_by_label(at, app.ui_text("KR", "cost_confirm")).check()
 
@@ -1501,7 +1508,7 @@ def test_apptest_local_path_traversal_rejected_without_api_call() -> None:
     _text_input_by_label(at, "로컬 파일 경로(data/ 하위 .csv 또는 .parquet)").set_value(
         "../outside.csv"
     )
-    at.text_area[0].set_value("조용한 고급감의 미니멀 니트")
+    _text_area_by_key(at, "kfps_concept_description").set_value("조용한 고급감의 미니멀 니트")
     _api_key_inputs(at)[0].set_value("fake-provider-key")
     _checkbox_by_label(at, app.ui_text("KR", "cost_confirm")).check()
     at.run(timeout=10)
@@ -1772,8 +1779,8 @@ def test_apptest_product_card_filled_canonical_text_drives_concept_hash() -> Non
     _text_input_by_label(at, "시즌").set_value("F/W")
     _text_input_by_label(at, "착용 상황").set_value("출근복")
     _text_input_by_label(at, "스타일 톤").set_value("미니멀")
-    at.text_area[0].set_value("조용한 고급감의 미니멀 니트")
-    at.text_area[1].set_value("30대 직장인")
+    _text_area_by_key(at, "kfps_concept_description").set_value("조용한 고급감의 미니멀 니트")
+    _text_area_by_key(at, "kfps_target_hypothesis").set_value("30대 직장인")
     _api_key_inputs(at)[0].set_value("fake-provider-key")
     _checkbox_by_label(at, app.ui_text("KR", "cost_confirm")).check()
     at.run(timeout=10)

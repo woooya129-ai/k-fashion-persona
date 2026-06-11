@@ -19,6 +19,8 @@ from pydantic import ValidationError
 from src import secrets_loader
 from src.app_config import (
     BEGINNER_MODEL_PRIORITY,
+    CONCEPT_AUTOFILL_STATE_KEYS,
+    CONCEPT_EXAMPLE_PRESETS,
     DEFAULT_PRICE_CONTEXT_VERSION,
     DEFAULT_TEMPERATURE,
     DESIGN_DETAIL_OPTIONS,
@@ -28,14 +30,17 @@ from src.app_config import (
     ESTIMATE_SCHEMA_INSTRUCTION_TOKENS,
     ESTIMATE_SIDEBAR_CONCEPT_TOKENS,
     ESTIMATE_SYSTEM_PROMPT_TOKENS,
+    FIT_PRESETS,
     KOREA_PROVINCE_OPTIONS,
     MAX_OUTPUT_TOKENS_PER_PERSONA,
+    OCCASION_PRESETS,
     OCCUPATION_KEYWORD_OPTIONS,
     PRICE_POSITION_OPTIONS,
     PRODUCT_CARD_EMPTY_PLACEHOLDER,
     PRODUCT_CARD_FIELD_LABELS_KR,
     PRODUCT_CARD_FIELD_ORDER,
     RUN_MODE_PRESETS,
+    SEASON_PRESETS,
     STYLE_TONE_PRESETS,
 )
 from src.cache import compute_concept_hash, compute_price_context_hash, normalize_concept_text
@@ -1109,153 +1114,290 @@ def _render_image_concept_assist(lang: str) -> None:
     st.success(ui_text(lang, "image_assist_done"))
 
 
+def _apply_concept_autofill(values: dict[str, Any]) -> None:
+    """Write parsed/example values into session_state, restricted to the whitelist.
+
+    Only keys in CONCEPT_AUTOFILL_STATE_KEYS are ever touched; any other key is
+    silently ignored so the quick/example tabs can never clobber unrelated widgets.
+    """
+
+    for key in CONCEPT_AUTOFILL_STATE_KEYS:
+        if key in values and values[key] is not None:
+            st.session_state[key] = str(values[key])
+
+
+def _stub_concept_parser(raw_text: str) -> dict[str, Any]:
+    """Fallback parser: drop the raw text straight into the description field."""
+
+    return {"kfps_concept_description": raw_text.strip()}
+
+
+def _run_concept_parser(raw_text: str) -> tuple[dict[str, Any], bool]:
+    """Resolve a parser and return (whitelisted values, used_real_parser).
+
+    Priority: an injected callable in session_state (tests / Stream A wiring),
+    then the real src.concept_parser if importable, else a local stub.
+    """
+
+    injected = st.session_state.get("kfps_concept_parser")
+    if callable(injected):
+        try:
+            return dict(injected(raw_text) or {}), True
+        except Exception:  # noqa: BLE001 - never let a bad parser break the form
+            return _stub_concept_parser(raw_text), False
+
+    try:
+        from src.concept_parser import parse_concept_text  # type: ignore
+    except Exception:  # noqa: BLE001 - Stream A may not have merged yet
+        return _stub_concept_parser(raw_text), False
+
+    try:
+        parsed = parse_concept_text(raw_text, llm_call=None)
+        return dict(parsed or {}), True
+    except Exception:  # noqa: BLE001 - degrade gracefully to the stub
+        return _stub_concept_parser(raw_text), False
+
+
+def _render_quick_input_tab(lang: str) -> None:
+    """빠른 입력 tab: a single raw text area parsed into whitelisted state keys.
+
+    NOTE: this tab never creates the real input widgets (they live only in the
+    manual tab). It writes into session_state and reruns, avoiding DuplicateWidgetID.
+    """
+
+    st.caption(ui_text(lang, "input_tab_quick_help"))
+    raw_text = st.text_area(
+        ui_text(lang, "parse_raw_label"),
+        placeholder=ui_text(lang, "parse_raw_placeholder"),
+        max_chars=3000,
+        height=220,
+        key="kfps_parse_raw",
+    )
+    if not st.button(
+        ui_text(lang, "parse_button"),
+        key="kfps_parse_button",
+        use_container_width=True,
+    ):
+        return
+
+    if not raw_text.strip():
+        st.warning(ui_text(lang, "parse_empty"))
+        return
+
+    values, used_real = _run_concept_parser(raw_text)
+    _apply_concept_autofill(values)
+    st.session_state["kfps_autofill_notice"] = True
+    if used_real:
+        st.success(ui_text(lang, "parse_done"))
+    else:
+        st.info(ui_text(lang, "parse_fallback"))
+    st.rerun()
+
+
+def _render_examples_tab(lang: str) -> None:
+    """예시 tab: preset concept cards that fill the manual tab's state keys."""
+
+    st.caption(ui_text(lang, "preset_examples_caption"))
+    for preset_id, preset in CONCEPT_EXAMPLE_PRESETS.items():
+        with st.container(border=True):
+            st.markdown(f"**{preset['label']}**")
+            st.caption(str(preset["summary"]))
+            if st.button(
+                ui_text(lang, "preset_example_apply"),
+                key=f"kfps_example_apply_{preset_id}",
+                use_container_width=True,
+            ):
+                _apply_concept_autofill(dict(preset["values"]))
+                st.session_state["kfps_autofill_notice"] = True
+                st.rerun()
+
+
 def render_concept_inputs(lang: str) -> dict[str, Any]:
 
     st.subheader(ui_text(lang, "concept_header"))
     _render_product_audience_buttons(lang)
     product_audience = _current_product_audience(lang)
 
-    render_input_section_heading(ui_text(lang, "input_section_basics"))
-
-    basic_project_col, basic_category_col, basic_price_col = st.columns(3, gap="small")
-
-    with basic_project_col:
-        project_name = st.text_input(
-            ui_text(lang, "project_name"),
-            max_chars=100,
-            key="kfps_project_name",
-        )
-
-    with basic_category_col:
-        category = st.text_input(
-            ui_text(lang, "category"),
-            placeholder=ui_text(lang, "category_placeholder"),
-            max_chars=80,
-            key="kfps_product_category",
-        )
-
-    with basic_price_col:
-        product_price_krw = st.number_input(
-            ui_text(lang, "price"),
-            min_value=1,
-            max_value=10_000_000_000,
-            value=159_000,
-            step=10_000,
-            key="kfps_product_price_krw",
-        )
-
-    render_input_section_heading(ui_text(lang, "input_section_style"))
-
-    season_col, occasion_col, style_col = st.columns(3, gap="small")
-
-    with season_col:
-        season = st.text_input(
-            ui_text(lang, "season"),
-            placeholder=ui_text(lang, "season_placeholder"),
-            max_chars=40,
-            key="kfps_season",
-        )
-
-    with occasion_col:
-        occasion = st.text_input(
-            ui_text(lang, "occasion"),
-            placeholder=ui_text(lang, "occasion_placeholder"),
-            max_chars=120,
-            key="kfps_occasion",
-        )
-
-    with style_col:
-        style_tone_preset = st.selectbox(
-            ui_text(lang, "style_tone_preset"),
-            STYLE_TONE_PRESETS,
-            key="kfps_style_tone_preset",
-        )
-        style_tone_custom = st.text_input(
-            ui_text(lang, "style_tone"),
-            placeholder=ui_text(lang, "style_tone_placeholder"),
-            max_chars=80,
-            key="kfps_style_tone",
-        )
-        style_tone = style_tone_custom.strip() or (
-            "" if str(style_tone_preset) == "직접 입력" else str(style_tone_preset)
-        )
-
-    render_input_section_heading(ui_text(lang, "input_section_product"))
-
-    fit_col, material_col, color_col = st.columns(3, gap="small")
-
-    with fit_col:
-        fit = st.text_input(
-            ui_text(lang, "fit"),
-            placeholder=ui_text(lang, "fit_placeholder"),
-            max_chars=80,
-            key="kfps_fit",
-        )
-
-    with material_col:
-        material = st.text_input(
-            ui_text(lang, "material"),
-            placeholder=ui_text(lang, "material_placeholder"),
-            max_chars=80,
-            key="kfps_material",
-        )
-
-    with color_col:
-        color = st.text_input(
-            ui_text(lang, "color"),
-            placeholder=ui_text(lang, "color_placeholder"),
-            max_chars=80,
-            key="kfps_color",
-        )
-
-    design_details: list[str] = []
-    design_cols = st.columns(4, gap="small")
-    for idx, option in enumerate(DESIGN_DETAIL_OPTIONS):
-        if design_cols[idx % 4].checkbox(option, key=f"kfps_design_detail_{idx}"):
-            design_details.append(option)
-    design_other = st.text_input(
-        ui_text(lang, "design_detail_other"),
-        placeholder=ui_text(lang, "design_detail_other_placeholder"),
-        max_chars=120,
-        key="kfps_design_detail_other",
+    quick_tab, manual_tab, examples_tab = st.tabs(
+        [
+            ui_text(lang, "input_tab_quick"),
+            ui_text(lang, "input_tab_manual"),
+            ui_text(lang, "input_tab_examples"),
+        ]
     )
-    if "장식 없음" in design_details:
-        design_details = ["장식 없음"]
-    elif design_other.strip():
-        design_details.append(design_other.strip())
 
-    render_input_section_heading(ui_text(lang, "input_section_target"))
+    with quick_tab:
+        _render_quick_input_tab(lang)
 
-    description_col, target_col, run_col = st.columns([1.35, 0.9, 0.9], gap="small")
+    with examples_tab:
+        _render_examples_tab(lang)
 
-    with description_col:
-        _render_image_concept_assist(lang)
+    # All real input widgets live here only (single creation per run -> no
+    # DuplicateWidgetID). The other tabs only seed session_state + st.rerun().
+    with manual_tab:
+        if st.session_state.pop("kfps_autofill_notice", False):
+            st.info(ui_text(lang, "parse_notice"))
+
+        render_input_section_heading(ui_text(lang, "input_section_basics"))
+        st.caption(ui_text(lang, "input_tab_required_caption"))
+
+        basic_project_col, basic_category_col, basic_price_col = st.columns(3, gap="small")
+
+        with basic_project_col:
+            project_name = st.text_input(
+                ui_text(lang, "project_name"),
+                max_chars=100,
+                key="kfps_project_name",
+            )
+
+        with basic_category_col:
+            category = st.text_input(
+                ui_text(lang, "category"),
+                placeholder=ui_text(lang, "category_placeholder"),
+                max_chars=80,
+                key="kfps_product_category",
+            )
+
+        with basic_price_col:
+            product_price_krw = st.number_input(
+                ui_text(lang, "price"),
+                min_value=1,
+                max_value=10_000_000_000,
+                value=159_000,
+                step=10_000,
+                key="kfps_product_price_krw",
+            )
+
         description = st.text_area(
             ui_text(lang, "concept_text"),
             placeholder=ui_text(lang, "concept_placeholder"),
             max_chars=3000,
-            height=272,
+            height=200,
             key="kfps_concept_description",
         )
 
-    with target_col:
-        price_position = st.selectbox(
-            ui_text(lang, "price_position"),
-            PRICE_POSITION_OPTIONS,
-            key="kfps_price_position",
-        )
-        target_hypothesis = st.text_area(
-            ui_text(lang, "target"),
-            placeholder=ui_text(lang, "target_placeholder"),
-            max_chars=1000,
-            height=272,
-            key="kfps_target_hypothesis",
-        )
+        with st.expander(ui_text(lang, "input_tab_optional"), expanded=False):
+            render_input_section_heading(ui_text(lang, "input_section_style"))
 
-    with run_col, st.container(key="kfps_enter_overlay"):
-        render_enter_card(lang)
+            season_col, occasion_col, style_col = st.columns(3, gap="small")
 
-        enter_button_placeholder = st.empty()
+            with season_col:
+                season_presets = st.multiselect(
+                    ui_text(lang, "preset_season_label"),
+                    SEASON_PRESETS,
+                    key="kfps_season_preset",
+                )
+                season_custom = st.text_input(
+                    ui_text(lang, "season"),
+                    placeholder=ui_text(lang, "season_placeholder"),
+                    max_chars=40,
+                    key="kfps_season",
+                )
+                season = season_custom.strip() or ", ".join(season_presets)
+
+            with occasion_col:
+                occasion_presets = st.multiselect(
+                    ui_text(lang, "preset_occasion_label"),
+                    OCCASION_PRESETS,
+                    key="kfps_occasion_preset",
+                )
+                occasion_custom = st.text_input(
+                    ui_text(lang, "occasion"),
+                    placeholder=ui_text(lang, "occasion_placeholder"),
+                    max_chars=120,
+                    key="kfps_occasion",
+                )
+                occasion = occasion_custom.strip() or ", ".join(occasion_presets)
+
+            with style_col:
+                style_tone_preset = st.selectbox(
+                    ui_text(lang, "style_tone_preset"),
+                    STYLE_TONE_PRESETS,
+                    key="kfps_style_tone_preset",
+                )
+                style_tone_custom = st.text_input(
+                    ui_text(lang, "style_tone"),
+                    placeholder=ui_text(lang, "style_tone_placeholder"),
+                    max_chars=80,
+                    key="kfps_style_tone",
+                )
+                style_tone = style_tone_custom.strip() or (
+                    "" if str(style_tone_preset) == "직접 입력" else str(style_tone_preset)
+                )
+
+            render_input_section_heading(ui_text(lang, "input_section_product"))
+
+            fit_col, material_col, color_col = st.columns(3, gap="small")
+
+            with fit_col:
+                fit_preset = st.selectbox(
+                    ui_text(lang, "preset_fit_label"),
+                    FIT_PRESETS,
+                    key="kfps_fit_preset",
+                )
+                fit_custom = st.text_input(
+                    ui_text(lang, "fit"),
+                    placeholder=ui_text(lang, "fit_placeholder"),
+                    max_chars=80,
+                    key="kfps_fit",
+                )
+                fit = fit_custom.strip() or (
+                    "" if str(fit_preset) == "직접 입력" else str(fit_preset)
+                )
+
+            with material_col:
+                material = st.text_input(
+                    ui_text(lang, "material"),
+                    placeholder=ui_text(lang, "material_placeholder"),
+                    max_chars=80,
+                    key="kfps_material",
+                )
+
+            with color_col:
+                color = st.text_input(
+                    ui_text(lang, "color"),
+                    placeholder=ui_text(lang, "color_placeholder"),
+                    max_chars=80,
+                    key="kfps_color",
+                )
+
+            design_details: list[str] = []
+            design_cols = st.columns(4, gap="small")
+            for idx, option in enumerate(DESIGN_DETAIL_OPTIONS):
+                if design_cols[idx % 4].checkbox(option, key=f"kfps_design_detail_{idx}"):
+                    design_details.append(option)
+            design_other = st.text_input(
+                ui_text(lang, "design_detail_other"),
+                placeholder=ui_text(lang, "design_detail_other_placeholder"),
+                max_chars=120,
+                key="kfps_design_detail_other",
+            )
+            if "장식 없음" in design_details:
+                design_details = ["장식 없음"]
+            elif design_other.strip():
+                design_details.append(design_other.strip())
+
+            render_input_section_heading(ui_text(lang, "input_section_target"))
+
+            price_position = st.selectbox(
+                ui_text(lang, "price_position"),
+                PRICE_POSITION_OPTIONS,
+                key="kfps_price_position",
+            )
+            target_hypothesis = st.text_area(
+                ui_text(lang, "target"),
+                placeholder=ui_text(lang, "target_placeholder"),
+                max_chars=1000,
+                height=160,
+                key="kfps_target_hypothesis",
+            )
+
+            _render_image_concept_assist(lang)
+
+        with st.container(key="kfps_enter_overlay"):
+            render_enter_card(lang)
+
+            enter_button_placeholder = st.empty()
 
     raw_fields: dict[str, Any] = {
         "category": category,
